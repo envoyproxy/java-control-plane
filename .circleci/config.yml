@@ -1,0 +1,33 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/repo
+
+    environment:
+      # Customize the JVM maximum heap limit
+      MAVEN_OPTS: -Xms512m -Xmx1024m
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run: mvn -B install -DskipTests dependency:go-offline
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
+
+      # run tests!
+      - run: mvn -B verify
+
+      - run: bash <(curl -s https://codecov.io/bash)
