@@ -31,11 +31,10 @@ public class TestMain {
             ImmutableList.of(
                 Cluster.newBuilder()
                     .setName("cluster0")
-                    .setConnectTimeout(Duration.newBuilder().setSeconds(5).build())
+                    .setConnectTimeout(Duration.newBuilder().setSeconds(5))
                     .setType(DiscoveryType.STATIC)
                     .addHosts(Address.newBuilder()
-                        .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1234).build())
-                        .build())
+                        .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1234)))
                     .build()),
             ImmutableList.of(),
             ImmutableList.of(),
@@ -67,11 +66,10 @@ public class TestMain {
             ImmutableList.of(
                 Cluster.newBuilder()
                     .setName("cluster1")
-                    .setConnectTimeout(Duration.newBuilder().setSeconds(5).build())
+                    .setConnectTimeout(Duration.newBuilder().setSeconds(5))
                     .setType(DiscoveryType.STATIC)
                     .addHosts(Address.newBuilder()
-                        .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1235).build())
-                        .build())
+                        .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1235)))
                     .build()),
             ImmutableList.of(),
             ImmutableList.of(),

@@ -55,8 +55,7 @@ public class Resources {
         : ConfigSource.newBuilder()
             .setApiConfigSource(ApiConfigSource.newBuilder()
                 .setApiType(ApiType.GRPC)
-                .addClusterNames(XDS_CLUSTER)
-                .build())
+                .addClusterNames(XDS_CLUSTER))
             .build();
 
     return Cluster.newBuilder()
@@ -64,8 +63,7 @@ public class Resources {
         .setConnectTimeout(Durations.fromSeconds(5))
         .setEdsClusterConfig(EdsClusterConfig.newBuilder()
             .setEdsConfig(edsSource)
-            .setServiceName(clusterName)
-            .build())
+            .setServiceName(clusterName))
         .setType(DiscoveryType.EDS)
         .build();
   }
@@ -86,12 +84,7 @@ public class Resources {
                         .setSocketAddress(SocketAddress.newBuilder()
                             .setAddress(LOCALHOST)
                             .setPortValue(port)
-                            .setProtocol(Protocol.TCP)
-                            .build())
-                        .build())
-                    .build())
-                .build())
-            .build())
+                            .setProtocol(Protocol.TCP))))))
         .build();
   }
 
@@ -111,8 +104,7 @@ public class Resources {
         : ConfigSource.newBuilder()
             .setApiConfigSource(ApiConfigSource.newBuilder()
                 .setApiType(ApiType.GRPC)
-                .addClusterNames(XDS_CLUSTER)
-                .build())
+                .addClusterNames(XDS_CLUSTER))
             .build();
 
     HttpConnectionManager manager = HttpConnectionManager.newBuilder()
@@ -120,11 +112,9 @@ public class Resources {
         .setStatPrefix("http")
         .setRds(Rds.newBuilder()
             .setConfigSource(rdsSource)
-            .setRouteConfigName(routeName)
-            .build())
+            .setRouteConfigName(routeName))
         .addHttpFilters(HttpFilter.newBuilder()
-            .setName(ROUTER)
-            .build())
+            .setName(ROUTER))
         .build();
 
     return Listener.newBuilder()
@@ -133,15 +123,11 @@ public class Resources {
             .setSocketAddress(SocketAddress.newBuilder()
                 .setAddress(LOCALHOST)
                 .setPortValue(port)
-                .setProtocol(Protocol.TCP)
-                .build())
-            .build())
+                .setProtocol(Protocol.TCP)))
         .addFilterChains(FilterChain.newBuilder()
             .addFilters(Filter.newBuilder()
                 .setName(HTTP_FILTER)
-                .setConfig(messageAsStruct(manager))
-                .build())
-            .build())
+                .setConfig(messageAsStruct(manager))))
         .build();
   }
 
@@ -159,13 +145,9 @@ public class Resources {
             .addDomains("*")
             .addRoutes(Route.newBuilder()
                 .setMatch(RouteMatch.newBuilder()
-                    .setPrefix("/")
-                    .build())
+                    .setPrefix("/"))
                 .setRoute(RouteAction.newBuilder()
-                    .setCluster(clusterName)
-                    .build())
-                .build())
-            .build())
+                    .setCluster(clusterName))))
         .build();
   }
 
