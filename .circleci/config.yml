@@ -20,14 +20,23 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
-      - run: mvn -B install -DskipTests dependency:go-offline
+      # Build
+      - run: mvn -B -s .circleci/settings.xml install -DskipTests dependency:go-offline
 
+      # Save the dependency cache for future runs
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
 
-      # run tests!
-      - run: mvn -B verify
+      # Test
+      - run: mvn -B -s .circleci/settings.xml verify
+
+      # Deploy
+      - deploy:
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              mvn -B -s .circleci/settings.xml deploy
+            fi
 
       - run: bash <(curl -s https://codecov.io/bash)

@@ -32,7 +32,48 @@
         <!-- Maven Plugin Versions -->
         <jacoco-maven-plugin.version>0.8.0</jacoco-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
+        <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
     </properties>
+
+    <name>java-control-plane</name>
+    <url>https://github.com/envoyproxy/java-control-plane</url>
+    <description>
+        The Envoy java-control-plane is a Java-based library for building
+        implementations of the data-plane-api.
+    </description>
+
+    <organization>
+        <name>The Envoy Project</name>
+        <url>http://envoyproxy.io/</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <inceptionYear>2018</inceptionYear>
+
+    <scm>
+        <url>https://github.com/envoyproxy/java-control-plane</url>
+        <connection>scm:git:git://github.com/envoyproxy/java-control-plane.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/envoyproxy/java-control-plane.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>envoyproxy.io</id>
+            <name>The Envoy Contributors</name>
+            <email>envoy-users@googlegroups.com</email>
+            <url>http://envoyproxy.io/</url>
+            <organization>The Envoy Project</organization>
+            <organizationUrl>http://envoyproxy.io/</organizationUrl>
+        </developer>
+    </developers>
 
     <dependencies>
         <!-- Test Dependencies -->
@@ -50,6 +91,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <build>
         <plugins>
@@ -84,6 +132,41 @@
             </plugin>
 
             <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <author>false</author>
+                    <breakiterator>true</breakiterator>
+                    <doclint>accessibility,html,reference,syntax</doclint>
+                    <keywords>true</keywords>
+                    <version>false</version>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources-no-fork</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin.version}</version>
@@ -101,6 +184,18 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${nexus-staging-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>sonatype-nexus-staging</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
             </plugin>
         </plugins>
     </build>
