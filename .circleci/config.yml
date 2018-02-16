@@ -21,7 +21,7 @@ jobs:
           - v1-dependencies-
 
       # Build
-      - run: mvn -B -s .circleci/settings.xml install -DskipTests dependency:go-offline
+      - run: mvn -B -s .circleci/settings.xml install -DskipTests -Dmaven.javadoc.skip=true dependency:go-offline
 
       # Save the dependency cache for future runs
       - save_cache:
@@ -30,7 +30,7 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
 
       # Test
-      - run: mvn -B -s .circleci/settings.xml verify
+      - run: mvn -B -s .circleci/settings.xml -Dmaven.javadoc.skip=true verify
 
       # Deploy
       - deploy:
