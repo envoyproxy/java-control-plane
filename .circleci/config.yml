@@ -32,11 +32,20 @@ jobs:
       # Test
       - run: mvn -B -s .circleci/settings.xml -Dmaven.javadoc.skip=true verify
 
-      # Deploy
+      - add_ssh_keys
+
+      # Deploy if on master branch. If the $RELEASE and $NEXT variables are set then perform a full maven release,
+      # otherwise just assume we're deploying a snapshot.
       - deploy:
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              mvn -B -s .circleci/settings.xml deploy
+              if [[ -n "${RELEASE}" && -n "${NEXT}" ]]; then
+                git config --global user.email "envoy-ci@users.noreply.github.com"
+                git config --global user.name "envoy-ci"
+                mvn -B -s .circleci/settings.xml release:prepare release:perform -Darguments="-s .circleci/settings.xml" -DreleaseVersion=$RELEASE -DdevelopmentVersion=$NEXT -DscmCommentPrefix="release: "
+              else
+                mvn -B -s .circleci/settings.xml deploy
+              fi
             fi
 
       - run: bash <(curl -s https://codecov.io/bash)
