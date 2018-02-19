@@ -17,6 +17,26 @@ maximize the chances of your PR being merged.
 
 * See [STYLE.md](STYLE.md)
 
+## Maintaining clean commit history
+
+The following conventions should be followed for keeping history clean and making code reviews easier
+for reviewers:
+
+* First line of commit messages should be in format of
+
+  `package-name: summary of change`
+
+  for example:
+
+  `cache,server: improve caching behaviour`
+
+* Every time you receive a feedback on your pull request, push changes that
+  address it as a separate one or multiple commits with a descriptive commit
+  message (try to avoid using vague `addressed pr feedback` type of messages).
+
+  Project maintainers are obligated to squash those commits into one when
+  merging.
+
 # Submitting a PR
 
 * Fork the repo.
