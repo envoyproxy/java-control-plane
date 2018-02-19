@@ -32,7 +32,7 @@ for reviewers:
 
 * Every time you receive a feedback on your pull request, push changes that
   address it as a separate one or multiple commits with a descriptive commit
-  message (try avoid using vauge `addressed pr feedback` type of messages).
+  message (try to avoid using vague `addressed pr feedback` type of messages).
 
   Project maintainers are obligated to squash those commits into one when
   merging.
