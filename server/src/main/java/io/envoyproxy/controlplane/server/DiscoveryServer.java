@@ -207,7 +207,10 @@ public class DiscoveryServer {
 
         LOGGER.info("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
 
-        responseObserver.onNext(discoveryResponse);
+        //Multiple updates might come - so need synchronized here
+        synchronized (responseObserver) {
+          responseObserver.onNext(discoveryResponse);
+        }
 
         return nonce;
       }
