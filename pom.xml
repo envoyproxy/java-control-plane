@@ -4,7 +4,7 @@
 
     <groupId>io.envoyproxy.controlplane</groupId>
     <artifactId>java-control-plane</artifactId>
-    <version>0.0.3</version>
+    <version>0.0.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -63,7 +63,7 @@
         <url>https://github.com/envoyproxy/java-control-plane</url>
         <connection>scm:git:git://github.com/envoyproxy/java-control-plane.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/envoyproxy/java-control-plane.git</developerConnection>
-        <tag>v0.0.3</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
