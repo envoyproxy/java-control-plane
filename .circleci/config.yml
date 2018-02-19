@@ -7,7 +7,7 @@ jobs:
     working_directory: ~/repo
 
     environment:
-      GIT_COMMIT_DESC: git log --format=oneline -n 1 $CIRCLE_SHA1
+      GIT_COMMIT_SUBJECT: git show -s --format=%s $CIRCLE_SHA1
 
       # Customize the JVM maximum heap limit
       MAVEN_OPTS: -Xms512m -Xmx1024m
@@ -49,7 +49,7 @@ jobs:
                 git config --global user.email "36644060+envoy-java-control-plane-bot@users.noreply.github.com"
                 git config --global user.name "envoy-java-control-plane-bot"
                 mvn -B -s .circleci/settings.xml release:prepare release:perform -Darguments="-s .circleci/settings.xml" -DreleaseVersion=$RELEASE -DdevelopmentVersion=$NEXT -DscmCommentPrefix="release: "
-              elif [[ "${GIT_COMMIT_DESC:0:9}" == "release: " ]]; then
+              elif [[ "${GIT_COMMIT_SUBJECT:0:9}" == "release: " ]]; then
                 echo "Skipping deployment. Deployment of the release was already done in the initial release build."
               else
                 mvn -B -s .circleci/settings.xml deploy
