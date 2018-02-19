@@ -146,6 +146,18 @@ public class DiscoveryServer {
             nonce,
             request.getVersionInfo());
 
+        //TODO(ramachavali): we should implement back-off strategy here.
+        if (request.hasErrorDetail()) {
+           LOGGER.error("[{}] request {}[{}] failed with {}",
+               streamId,
+               typeUrl,
+               String.join(", ", request.getResourceNamesList()),
+               Status.fromCodeValue(
+                   request.getErrorDetail().getCode())
+                   .withDescription(request.getErrorDetail().getMessage())
+                   .toString());
+        }
+
         for (ResourceType type : ResourceType.values()) {
           String resourceNonce = nonces.get(type);
 
