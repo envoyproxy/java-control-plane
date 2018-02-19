@@ -10,6 +10,10 @@
 
     <artifactId>api</artifactId>
 
+    <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.grpc</groupId>
