@@ -207,7 +207,8 @@ public class DiscoveryServer {
 
         LOGGER.info("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
 
-        //Multiple updates might come - so need synchronized here
+        // The watch value streams are being observed on multiple threads, so we need to synchronize
+        // here because StreamObserver instances are not thread-safe.
         synchronized (responseObserver) {
           responseObserver.onNext(discoveryResponse);
         }
