@@ -9,7 +9,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class SimpleCache<T> implements Cache<T> {
 
   private final Consumer<T> callback;
   private final NodeGroup<T> groups;
+  private final ExecutorService executorService;
 
   private final Object lock = new Object();
 
@@ -44,9 +46,27 @@ public class SimpleCache<T> implements Cache<T> {
   @GuardedBy("lock")
   private long watchCount;
 
-  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups) {
+  /**
+   * Constructs a simple cache that uses {@link ForkJoinPool#commonPool()} to execute async callbacks
+   *
+   * @param callback callback invoked when a group is seen for the first time
+   * @param groups maps an envoy host to a node group
+   */
+  public SimpleCache(Consumer<T> callback, NodeGroup groups) {
+    this(callback, groups, ForkJoinPool.commonPool());
+  }
+
+  /**
+   * Constructs a simple cache.
+   *
+   * @param callback callback invoked when a group is seen for the first time
+   * @param groups maps an envoy host to a node group
+   * @param executorService executor service used to execute async callbacks
+   */
+  public SimpleCache(Consumer<T> callback, NodeGroup groups, ExecutorService executorService) {
     this.callback = callback;
     this.groups = groups;
+    this.executorService = executorService;
   }
 
   /**
@@ -95,7 +115,7 @@ public class SimpleCache<T> implements Cache<T> {
           LOGGER.info("callback {} at {}", group, version);
 
           // TODO(jbratton): Should we track these CFs somewhere (e.g. to force completion on shutdown)?
-          CompletableFuture.runAsync(() -> callback.accept(group));
+          executorService.submit(() -> callback.accept(group));
         }
 
         LOGGER.info("open watch for {}[{}] from key {} from version {}",
