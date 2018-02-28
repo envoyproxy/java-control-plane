@@ -122,11 +122,7 @@ public class SimpleCache<T> implements Cache<T> {
 
         watch.setStop(() -> {
           synchronized (lock) {
-            Map<Long, Watch> groupWatches = watches.row(group);
-
-            if (groupWatches != null) {
-              groupWatches.remove(id);
-            }
+            watches.remove(group, id);
           }
         });
 
