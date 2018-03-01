@@ -44,7 +44,7 @@ public class SimpleCacheTest {
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponse() {
-    SimpleCache cache = new SimpleCache(null, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(null, new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT);
 
@@ -59,7 +59,7 @@ public class SimpleCacheTest {
 
   @Test
   public void watchNullNodeReturnWatcherWithNoResponse() {
-    SimpleCache cache = new SimpleCache(null, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(null, new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT);
 
@@ -70,7 +70,7 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatch() {
-    SimpleCache cache = new SimpleCache(null, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(null, new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT);
 
@@ -90,7 +90,7 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetAfterWatch() {
-    SimpleCache cache = new SimpleCache(null, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(null, new SingleNodeGroup());
 
     Map<ResourceType, Watch> watches = Arrays.stream(ResourceType.values())
         .collect(Collectors.toMap(
@@ -110,7 +110,7 @@ public class SimpleCacheTest {
 
   @Test
   public void watchesAreReleasedAfterCancel() {
-    SimpleCache cache = new SimpleCache(null, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(null, new SingleNodeGroup());
 
     Map<ResourceType, Watch> watches = Arrays.stream(ResourceType.values())
         .collect(Collectors.toMap(
@@ -131,7 +131,7 @@ public class SimpleCacheTest {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<String> receivedKey = new AtomicReference<>();
 
-    SimpleCache cache = new SimpleCache(
+    SimpleCache<String> cache = new SimpleCache<>(
         key -> {
           receivedKey.set(key);
           latch.countDown();
@@ -147,7 +147,7 @@ public class SimpleCacheTest {
     assertThat(receivedKey).hasValue(SingleNodeGroup.GROUP);
   }
 
-  private static class SingleNodeGroup implements NodeGroup {
+  private static class SingleNodeGroup implements NodeGroup<String> {
 
     private static final String GROUP = "node";
 

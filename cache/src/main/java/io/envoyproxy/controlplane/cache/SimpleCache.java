@@ -5,8 +5,10 @@ import com.google.protobuf.Message;
 import envoy.api.v2.core.Base.Node;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -26,23 +28,24 @@ import org.slf4j.LoggerFactory;
  * only the responses for the particular type of the xDS service that the cache serves. Synchronization of multiple
  * caches for different response types is left to the configuration producer.
  */
-public class SimpleCache implements Cache {
+public class SimpleCache<T> implements Cache<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
-  private final Consumer<String> callback;
-  private final NodeGroup groups;
+  private final Consumer<T> callback;
+  private final NodeGroup<T> groups;
 
   private final Object lock = new Object();
+
   @GuardedBy("lock")
-  private final Map<String, Snapshot> snapshots = new HashMap<>();
+  private final Map<T, Snapshot> snapshots = new HashMap<>();
   @GuardedBy("lock")
-  private final Map<String, Map<Long, Watch>> watches = new HashMap<>();
+  private final Map<T, Map<Long, Watch>> watches = new HashMap<>();
 
   @GuardedBy("lock")
   private long watchCount;
 
-  public SimpleCache(Consumer<String> callback, NodeGroup groups) {
+  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups) {
     this.callback = callback;
     this.groups = groups;
   }
@@ -51,7 +54,7 @@ public class SimpleCache implements Cache {
    * {@inheritDoc}
    */
   @Override
-  public void setSnapshot(String group, Snapshot snapshot) {
+  public void setSnapshot(T group, Snapshot snapshot) {
     synchronized (lock) {
       // Update the existing entry.
       snapshots.put(group, snapshot);
@@ -73,7 +76,7 @@ public class SimpleCache implements Cache {
   public Watch watch(ResourceType type, Node node, String version, Collection<String> names) {
     Watch watch = new Watch(names, type);
 
-    final String group;
+    final T group;
 
     // Do nothing if group hashing failed.
     try {
@@ -127,8 +130,8 @@ public class SimpleCache implements Cache {
     }
   }
 
-  private void respond(Watch watch, Snapshot snapshot, String group) {
-    Collection<Message> resources = snapshot.resources().get(watch.type());
+  private void respond(Watch watch, Snapshot snapshot, T group) {
+    Collection<Message> snapshotResources = snapshot.resources().get(watch.type());
 
     // Remove clean-up as the watch is discarded immediately
     watch.setStop(null);
@@ -136,11 +139,11 @@ public class SimpleCache implements Cache {
     // The request names must match the snapshot names. If they do not, then the watch is never responded, and it is
     // expected that envoy makes another request.
     if (!watch.names().isEmpty()) {
-      Map<String, Boolean> names = watch.names().stream().collect(Collectors.toMap(name -> name, name -> true));
+      Set<String> watchedResourceNames = new HashSet<>(watch.names());
 
-      Optional<String> missingResourceName = resources.stream()
+      Optional<String> missingResourceName = snapshotResources.stream()
           .map(Resources::getResourceName)
-          .filter(n -> !names.containsKey(n))
+          .filter(n -> !watchedResourceNames.contains(n))
           .findFirst();
 
       if (missingResourceName.isPresent()) {
@@ -155,11 +158,11 @@ public class SimpleCache implements Cache {
       }
     }
 
-    watch.valueEmitter().onNext(Response.create(false, resources, snapshot.version()));
+    watch.valueEmitter().onNext(Response.create(false, snapshotResources, snapshot.version()));
   }
 
   @VisibleForTesting
-  Map<String, Map<Long, Watch>> watches() {
+  Map<T, Map<Long, Watch>> watches() {
     return watches;
   }
 }
