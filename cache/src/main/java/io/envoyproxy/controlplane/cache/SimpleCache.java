@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,9 +35,13 @@ public class SimpleCache<T> implements Cache<T> {
   private final NodeGroup<T> groups;
 
   private final Object lock = new Object();
+
+  @GuardedBy("lock")
   private final Map<T, Snapshot> snapshots = new HashMap<>();
+  @GuardedBy("lock")
   private final Map<T, Map<Long, Watch>> watches = new HashMap<>();
 
+  @GuardedBy("lock")
   private long watchCount;
 
   public SimpleCache(Consumer<T> callback, NodeGroup<T> groups) {
