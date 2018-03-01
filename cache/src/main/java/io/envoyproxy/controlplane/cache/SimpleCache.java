@@ -25,20 +25,20 @@ import org.slf4j.LoggerFactory;
  * only the responses for the particular type of the xDS service that the cache serves. Synchronization of multiple
  * caches for different response types is left to the configuration producer.
  */
-public class SimpleCache implements Cache {
+public class SimpleCache<T> implements Cache<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
-  private final Consumer<String> callback;
-  private final NodeGroup groups;
+  private final Consumer<T> callback;
+  private final NodeGroup<T> groups;
 
   private final Object lock = new Object();
-  private final Map<String, Snapshot> snapshots = new HashMap<>();
-  private final Map<String, Map<Long, Watch>> watches = new HashMap<>();
+  private final Map<T, Snapshot> snapshots = new HashMap<>();
+  private final Map<T, Map<Long, Watch>> watches = new HashMap<>();
 
   private long watchCount;
 
-  public SimpleCache(Consumer<String> callback, NodeGroup groups) {
+  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups) {
     this.callback = callback;
     this.groups = groups;
   }
@@ -47,7 +47,7 @@ public class SimpleCache implements Cache {
    * {@inheritDoc}
    */
   @Override
-  public void setSnapshot(String group, Snapshot snapshot) {
+  public void setSnapshot(T group, Snapshot snapshot) {
     synchronized (lock) {
       // Update the existing entry.
       snapshots.put(group, snapshot);
@@ -69,7 +69,7 @@ public class SimpleCache implements Cache {
   public Watch watch(ResourceType type, Node node, String version, Collection<String> names) {
     Watch watch = new Watch(names, type);
 
-    final String group;
+    final T group;
 
     // Do nothing if group hashing failed.
     try {
@@ -123,7 +123,7 @@ public class SimpleCache implements Cache {
     }
   }
 
-  private void respond(Watch watch, Snapshot snapshot, String group) {
+  private void respond(Watch watch, Snapshot snapshot, T group) {
     Collection<Message> resources = snapshot.resources().get(watch.type());
 
     // Remove clean-up as the watch is discarded immediately
@@ -155,7 +155,7 @@ public class SimpleCache implements Cache {
   }
 
   @VisibleForTesting
-  Map<String, Map<Long, Watch>> watches() {
+  Map<T, Map<Long, Watch>> watches() {
     return watches;
   }
 }
