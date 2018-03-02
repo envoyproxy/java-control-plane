@@ -1,6 +1,9 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import com.google.protobuf.Message;
 import envoy.api.v2.core.Base.Node;
 import java.util.Collection;
@@ -12,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +45,7 @@ public class SimpleCache<T> implements Cache<T> {
   @GuardedBy("lock")
   private final Map<T, Snapshot> snapshots = new HashMap<>();
   @GuardedBy("lock")
-  private final Map<T, Map<Long, Watch>> watches = new HashMap<>();
+  private final Table<T, Long, Watch> watches = HashBasedTable.create();
 
   @GuardedBy("lock")
   private long watchCount;
@@ -78,13 +82,19 @@ public class SimpleCache<T> implements Cache<T> {
       // Update the existing entry.
       snapshots.put(group, snapshot);
 
-      // Trigger existing watches.
-      if (watches().containsKey(group)) {
-        watches().get(group).values().forEach(watch -> respond(watch, snapshot, group));
+      // Trigger existing watches
+      Set<Long> idsToRemove = watches.row(group).entrySet().stream()
+          .map(watchEntry -> {
+            respond(watchEntry.getValue(), snapshot, group);
+            return watchEntry.getKey();
+          })
+          .collect(Collectors.toSet());
 
-        // Discard all watches; the client must request a new watch to receive updates and ACK/NACK.
-        watches().remove(group);
-      }
+      // Discard all watches; the client must request a new watch to receive updates and ACK/NACK.
+      //
+      // Note that the removals have to happen after we're done iterating over the row Map otherwise
+      // we get a java.util.ConcurrentModificationException
+      idsToRemove.forEach(idToRemove -> watches.remove(group, idToRemove));
     }
   }
 
@@ -128,15 +138,11 @@ public class SimpleCache<T> implements Cache<T> {
 
         long id = watchCount;
 
-        watches().computeIfAbsent(group, g -> new HashMap<>()).put(id, watch);
+        watches.put(group, id, watch);
 
         watch.setStop(() -> {
           synchronized (lock) {
-            Map<Long, Watch> groupWatches = watches().get(group);
-
-            if (groupWatches != null) {
-              groupWatches.remove(id);
-            }
+            watches.remove(group, id);
           }
         });
 
@@ -181,7 +187,9 @@ public class SimpleCache<T> implements Cache<T> {
   }
 
   @VisibleForTesting
-  Map<T, Map<Long, Watch>> watches() {
-    return watches;
+  Table<T, Long, Watch> watches() {
+    synchronized (lock) {
+      return ImmutableTable.copyOf(watches);
+    }
   }
 }

@@ -117,11 +117,11 @@ public class SimpleCacheTest {
             type -> type,
             type -> cache.watch(type, Node.getDefaultInstance(), "", NAMES.get(type))));
 
-    assertThat(cache.watches().get(SingleNodeGroup.GROUP)).hasSize(watches.size());
+    assertThat(cache.watches().row(SingleNodeGroup.GROUP)).hasSize(watches.size());
 
     watches.values().forEach(Watch::cancel);
 
-    assertThat(cache.watches().get(SingleNodeGroup.GROUP)).isEmpty();
+    assertThat(cache.watches().row(SingleNodeGroup.GROUP)).isEmpty();
 
     watches.values().forEach(watch -> assertThat(watch.valueEmitter().isTerminated()).isTrue());
   }
