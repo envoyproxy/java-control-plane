@@ -47,7 +47,7 @@ public class SimpleCache<T> implements Cache<T> {
   private long watchCount;
 
   /**
-   * Constructs a simple cache that uses {@link ForkJoinPool#commonPool()} to execute async callbacks
+   * Constructs a simple cache that uses {@link ForkJoinPool#commonPool()} to execute async callbacks.
    *
    * @param callback callback invoked when a group is seen for the first time
    * @param groups maps an envoy host to a node group
