@@ -52,7 +52,7 @@ public class SimpleCache<T> implements Cache<T> {
    * @param callback callback invoked when a group is seen for the first time
    * @param groups maps an envoy host to a node group
    */
-  public SimpleCache(Consumer<T> callback, NodeGroup groups) {
+  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups) {
     this(callback, groups, ForkJoinPool.commonPool());
   }
 
@@ -63,7 +63,7 @@ public class SimpleCache<T> implements Cache<T> {
    * @param groups maps an envoy host to a node group
    * @param executorService executor service used to execute async callbacks
    */
-  public SimpleCache(Consumer<T> callback, NodeGroup groups, ExecutorService executorService) {
+  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups, ExecutorService executorService) {
     this.callback = callback;
     this.groups = groups;
     this.executorService = executorService;
