@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
-import java.util.Collection;
+import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.EmitterProcessor;
@@ -12,15 +12,13 @@ import reactor.core.publisher.EmitterProcessor;
 public class Watch {
 
   private final AtomicBoolean isCancelled = new AtomicBoolean();
-  private final Collection<String> names;
-  private final ResourceType type;
+  private final DiscoveryRequest request;
   private final EmitterProcessor<Response> value = EmitterProcessor.create();
 
   private Runnable stop;
 
-  public Watch(Collection<String> names, ResourceType type) {
-    this.names = names;
-    this.type = type;
+  public Watch(DiscoveryRequest request) {
+    this.request = request;
   }
 
   /**
@@ -28,25 +26,28 @@ public class Watch {
    * may be called multiple times, with each subsequent call being a no-op.
    */
   public void cancel() {
-    if (isCancelled.compareAndSet(false, true) && stop != null) {
-      valueEmitter().onComplete();
-      stop.run();
+    if (isCancelled.compareAndSet(false, true)) {
+      try {
+        valueEmitter().onComplete();
+      } catch (Exception e) {
+        // If the underlying exception was an IllegalStateException then we assume that means the stream was already
+        // closed elsewhere and ignore it, otherwise we re-throw.
+        if (!(e.getCause() instanceof IllegalStateException)) {
+          throw e;
+        }
+      }
+
+      if (stop != null) {
+        stop.run();
+      }
     }
   }
 
   /**
-   * Returns the names of the requested resources, or empty for all resources. Resources not explicitly mentioned are
-   * ignored.
+   * Returns the original request for the watch.
    */
-  public Collection<String> names() {
-    return names;
-  }
-
-  /**
-   * Returns the resource type that is being watched.
-   */
-  public ResourceType type() {
-    return type;
+  public DiscoveryRequest request() {
+    return request;
   }
 
   /**

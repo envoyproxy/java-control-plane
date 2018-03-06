@@ -23,7 +23,7 @@ public class TestMain {
    * @param arg command-line args
    */
   public static void main(String[] arg) throws IOException, InterruptedException {
-    SimpleCache cache = new SimpleCache(null, node -> GROUP);
+    SimpleCache<String> cache = new SimpleCache<>(true, node -> GROUP);
 
     cache.setSnapshot(
         GROUP,

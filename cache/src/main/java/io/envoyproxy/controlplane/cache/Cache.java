@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import envoy.api.v2.core.Base.Node;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
@@ -9,11 +10,9 @@ import javax.annotation.concurrent.ThreadSafe;
 public interface Cache<T> extends ConfigWatcher {
 
   /**
-   * Set the {@link Snapshot} for the given node group. Snapshots should have distinct versions and be internally
-   * consistent (i.e. all referenced resources must be included in the snapshot).
+   * Returns the current {@link StatusInfo} for the given {@link Node} group.
    *
-   * @param group group identifier
-   * @param snapshot a versioned collection of node config data
+   * @param group the node group whose status is being fetched
    */
-  void setSnapshot(T group, Snapshot snapshot);
+  StatusInfo statusInfo(T group);
 }

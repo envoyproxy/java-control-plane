@@ -1,5 +1,6 @@
-package io.envoyproxy.controlplane.server;
+package io.envoyproxy.controlplane.cache;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.Struct;
@@ -15,8 +16,6 @@ import envoy.api.v2.core.AddressOuterClass.Address;
 import envoy.api.v2.core.AddressOuterClass.SocketAddress;
 import envoy.api.v2.core.AddressOuterClass.SocketAddress.Protocol;
 import envoy.api.v2.core.ConfigSourceOuterClass.AggregatedConfigSource;
-import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource;
-import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource.ApiType;
 import envoy.api.v2.core.ConfigSourceOuterClass.ConfigSource;
 import envoy.api.v2.endpoint.EndpointOuterClass.Endpoint;
 import envoy.api.v2.endpoint.EndpointOuterClass.LbEndpoint;
@@ -31,32 +30,25 @@ import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionMana
 import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager.CodecType;
 import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpFilter;
 import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.Rds;
-import java.io.IOException;
-import java.net.ServerSocket;
 
-public class Resources {
+/**
+ * {@code TestResources} provides helper methods for generating resource messages for testing. It is not intended to be
+ * used in production code.
+ */
+@VisibleForTesting
+public class TestResources {
 
   private static final String LOCALHOST   = "127.0.0.1";
-  private static final String HTTP_FILTER = "envoy.http_connection_manager";
-  private static final String ROUTER      = "envoy.router";
-  private static final String XDS_CLUSTER = "xds_cluster";
 
   /**
    * Returns a new test cluster.
    *
-   * @param ads use ADS for disco?
    * @param clusterName name of the new cluster
    */
-  public static Cluster createCluster(boolean ads, String clusterName) {
-    ConfigSource edsSource = ads
-        ? ConfigSource.newBuilder()
-            .setAds(AggregatedConfigSource.getDefaultInstance())
-            .build()
-        : ConfigSource.newBuilder()
-            .setApiConfigSource(ApiConfigSource.newBuilder()
-                .setApiType(ApiType.GRPC)
-                .addClusterNames(XDS_CLUSTER))
-            .build();
+  public static Cluster createCluster(String clusterName) {
+    ConfigSource edsSource = ConfigSource.newBuilder()
+        .setAds(AggregatedConfigSource.getDefaultInstance())
+        .build();
 
     return Cluster.newBuilder()
         .setName(clusterName)
@@ -91,21 +83,14 @@ public class Resources {
   /**
    * Returns a new test listener.
    *
-   * @param ads use ADS for disco?
    * @param listenerName name of the new listener
    * @param port port to use for the listener
    * @param routeName name of the test route that is associated with this listener
    */
-  public static Listener createListener(boolean ads, String listenerName, int port, String routeName) {
-    ConfigSource rdsSource = ads
-        ? ConfigSource.newBuilder()
-            .setAds(AggregatedConfigSource.getDefaultInstance())
-            .build()
-        : ConfigSource.newBuilder()
-            .setApiConfigSource(ApiConfigSource.newBuilder()
-                .setApiType(ApiType.GRPC)
-                .addClusterNames(XDS_CLUSTER))
-            .build();
+  public static Listener createListener(String listenerName, int port, String routeName) {
+    ConfigSource rdsSource = ConfigSource.newBuilder()
+        .setAds(AggregatedConfigSource.getDefaultInstance())
+        .build();
 
     HttpConnectionManager manager = HttpConnectionManager.newBuilder()
         .setCodecType(CodecType.AUTO)
@@ -114,7 +99,7 @@ public class Resources {
             .setConfigSource(rdsSource)
             .setRouteConfigName(routeName))
         .addHttpFilters(HttpFilter.newBuilder()
-            .setName(ROUTER))
+            .setName(Resources.FILTER_ENVOY_ROUTER))
         .build();
 
     return Listener.newBuilder()
@@ -126,7 +111,7 @@ public class Resources {
                 .setProtocol(Protocol.TCP)))
         .addFilterChains(FilterChain.newBuilder()
             .addFilters(Filter.newBuilder()
-                .setName(HTTP_FILTER)
+                .setName(Resources.FILTER_HTTP_CONNECTION_MANAGER)
                 .setConfig(messageAsStruct(manager))))
         .build();
   }
@@ -151,17 +136,6 @@ public class Resources {
         .build();
   }
 
-  /**
-   * Returns a random available port.
-   */
-  public static int getAvailablePort() {
-    try (ServerSocket s = new ServerSocket(0)) {
-      return s.getLocalPort();
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to get an available port", e);
-    }
-  }
-
   private static Struct messageAsStruct(MessageOrBuilder message) {
     try {
       String json = JsonFormat.printer()
@@ -178,5 +152,5 @@ public class Resources {
     }
   }
 
-  private Resources() { }
+  private TestResources() { }
 }

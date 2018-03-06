@@ -1,76 +1,113 @@
 package io.envoyproxy.controlplane.cache;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.ImmutableTable;
-import com.google.common.collect.Table;
 import com.google.protobuf.Message;
-import envoy.api.v2.core.Base.Node;
+import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.function.Consumer;
+import java.util.Objects;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@code SimpleCache} is a snapshot-based cache that maintains a single versioned snapshot of responses per node group,
- * with no canary updates. SimpleCache does not track status of remote nodes and consistently replies with the latest
- * snapshot. For the protocol to work correctly, EDS/RDS requests are responded only when all resources in the snapshot
- * xDS response are named as part of the request. It is expected that the CDS response names all EDS clusters, and the
- * LDS response names all RDS routes in a snapshot, to ensure that Envoy makes the request for all EDS clusters or RDS
- * routes eventually.
+ * {@code SimpleCache} provides a default implementation of {@link SnapshotCache}. It maintains a single versioned
+ * {@link Snapshot} per node group. For the protocol to work correctly in ADS mode, EDS/RDS requests are responded to
+ * only when all resources in the snapshot xDS response are named as part of the request. It is expected that the CDS
+ * response names all EDS clusters, and the LDS response names all RDS routes in a snapshot, to ensure that Envoy makes
+ * the request for all EDS clusters or RDS routes eventually.
  *
- * <p>SimpleCache can also be used as a config cache for distinct xDS requests. The snapshots are required to contain
- * only the responses for the particular type of the xDS service that the cache serves. Synchronization of multiple
- * caches for different response types is left to the configuration producer.
+ * <p>The snapshot can be partial, e.g. only include RDS or EDS resources.
  */
-public class SimpleCache<T> implements Cache<T> {
+public class SimpleCache<T> implements SnapshotCache<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
-  private final Consumer<T> callback;
+  private final boolean ads;
   private final NodeGroup<T> groups;
-  private final ExecutorService executorService;
 
-  private final Object lock = new Object();
+  private final ReadWriteLock lock = new ReentrantReadWriteLock();
+  private final Lock readLock = lock.readLock();
+  private final Lock writeLock = lock.writeLock();
 
   @GuardedBy("lock")
   private final Map<T, Snapshot> snapshots = new HashMap<>();
   @GuardedBy("lock")
-  private final Table<T, Long, Watch> watches = HashBasedTable.create();
+  private final Map<T, CacheStatusInfo> statuses = new HashMap<>();
 
   @GuardedBy("lock")
   private long watchCount;
 
   /**
-   * Constructs a simple cache that uses {@link ForkJoinPool#commonPool()} to execute async callbacks.
+   * Constructs a simple cache.
    *
-   * @param callback callback invoked when a group is seen for the first time
+   * @param ads if running in ADS-mode, responses are delayed until all resources are explicitly named
    * @param groups maps an envoy host to a node group
    */
-  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups) {
-    this(callback, groups, ForkJoinPool.commonPool());
+  public SimpleCache(boolean ads, NodeGroup<T> groups) {
+    this.ads = ads;
+    this.groups = groups;
   }
 
   /**
-   * Constructs a simple cache.
-   *
-   * @param callback callback invoked when a group is seen for the first time
-   * @param groups maps an envoy host to a node group
-   * @param executorService executor service used to execute async callbacks
+   * {@inheritDoc}
    */
-  public SimpleCache(Consumer<T> callback, NodeGroup<T> groups, ExecutorService executorService) {
-    this.callback = callback;
-    this.groups = groups;
-    this.executorService = executorService;
+  @Override
+  public Watch createWatch(DiscoveryRequest request) {
+    T group = groups.hash(request.getNode());
+
+    writeLock.lock();
+
+    try {
+      CacheStatusInfo status = statuses.computeIfAbsent(group, g -> new CacheStatusInfo(request.getNode()));
+
+      status.setLastWatchRequestTime(System.currentTimeMillis());
+
+      Snapshot snapshot = snapshots.get(group);
+      String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl());
+
+      Watch watch = new Watch(request);
+
+      // If the requested version is up-to-date or missing a response, leave an open watch.
+      if (snapshot == null || request.getVersionInfo().equals(version)) {
+        watchCount++;
+
+        long watchId = watchCount;
+
+        LOGGER.info("open watch {} for {}[{}] from node {} for version {}",
+            watchId,
+            request.getTypeUrl(),
+            String.join(", ", request.getResourceNamesList()),
+            group,
+            request.getVersionInfo());
+
+        status.setWatch(watchId, watch);
+
+        watch.setStop(() -> {
+          writeLock.lock();
+
+          try {
+            status.removeWatch(watchId);
+          } finally {
+            writeLock.unlock();
+          }
+        });
+
+        return watch;
+      }
+
+      // Otherwise, the watch may be responded immediately
+      respond(watch, snapshot, group);
+
+      return watch;
+
+    } finally {
+      writeLock.unlock();
+    }
   }
 
   /**
@@ -78,23 +115,38 @@ public class SimpleCache<T> implements Cache<T> {
    */
   @Override
   public void setSnapshot(T group, Snapshot snapshot) {
-    synchronized (lock) {
-      // Update the existing entry.
+    writeLock.lock();
+
+    try {
+      // Update the existing snapshot entry.
       snapshots.put(group, snapshot);
 
-      // Trigger existing watches
-      Set<Long> idsToRemove = watches.row(group).entrySet().stream()
-          .map(watchEntry -> {
-            respond(watchEntry.getValue(), snapshot, group);
-            return watchEntry.getKey();
-          })
-          .collect(Collectors.toSet());
+      CacheStatusInfo status = statuses.get(group);
 
-      // Discard all watches; the client must request a new watch to receive updates and ACK/NACK.
-      //
-      // Note that the removals have to happen after we're done iterating over the row Map otherwise
-      // we get a java.util.ConcurrentModificationException
-      idsToRemove.forEach(idToRemove -> watches.remove(group, idToRemove));
+      if (status == null) {
+        return;
+      }
+
+      status.watchesRemoveIf((id, watch) -> {
+        String version = snapshot.version(watch.request().getTypeUrl());
+
+        if (!watch.request().getVersionInfo().equals(version)) {
+          LOGGER.info("responding to open watch {}[{}] with new version {}",
+              id,
+              String.join(", ", watch.request().getResourceNamesList()),
+              version);
+
+          respond(watch, snapshot, group);
+
+          // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
+          return true;
+        }
+
+        // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
+        return false;
+      });
+    } finally {
+      writeLock.unlock();
     }
   }
 
@@ -102,94 +154,60 @@ public class SimpleCache<T> implements Cache<T> {
    * {@inheritDoc}
    */
   @Override
-  public Watch watch(ResourceType type, Node node, String version, Collection<String> names) {
-    Watch watch = new Watch(names, type);
+  public StatusInfo statusInfo(T group) {
+    readLock.lock();
 
-    final T group;
-
-    // Do nothing if group hashing failed.
     try {
-      group = groups.hash(node);
-    } catch (Exception e) {
-      LOGGER.error("failed to hash node {} into group", node, e);
-
-      return watch;
-    }
-
-    synchronized (lock) {
-      // If the requested version is up-to-date or missing a response, leave an open watch.
-      Snapshot snapshot = snapshots.get(group);
-
-      if (snapshot == null || snapshot.version().equals(version)) {
-        if (snapshot == null && callback != null) {
-          LOGGER.info("callback {} at {}", group, version);
-
-          // TODO(jbratton): Should we track these CFs somewhere (e.g. to force completion on shutdown)?
-          executorService.submit(() -> callback.accept(group));
-        }
-
-        LOGGER.info("open watch for {}[{}] from key {} from version {}",
-            type,
-            String.join(", ", names),
-            group,
-            version);
-
-        watchCount++;
-
-        long id = watchCount;
-
-        watches.put(group, id, watch);
-
-        watch.setStop(() -> {
-          synchronized (lock) {
-            watches.remove(group, id);
-          }
-        });
-
-        return watch;
-      }
-
-      // Otherwise, the watch may be responded immediately.
-      respond(watch, snapshot, group);
-      return watch;
+      return statuses.get(group);
+    } finally {
+      readLock.unlock();
     }
   }
 
+  private Response createResponse(DiscoveryRequest request, Map<String, ? extends Message> resources, String version) {
+    Collection<? extends Message> filtered = request.getResourceNamesCount() == 0
+        ? resources.values()
+        : request.getResourceNamesList().stream()
+            .map(resources::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+    return Response.create(request, filtered, version);
+  }
+
   private void respond(Watch watch, Snapshot snapshot, T group) {
-    Collection<Message> snapshotResources = snapshot.resources().get(watch.type());
+    Map<String, ? extends Message> snapshotResources = snapshot.resources(watch.request().getTypeUrl());
 
-    // Remove clean-up as the watch is discarded immediately
-    watch.setStop(null);
+    if (watch.request().getResourceNamesCount() != 0 && ads) {
+      Collection<String> missingNames = watch.request().getResourceNamesList().stream()
+          .filter(name -> !snapshotResources.containsKey(name))
+          .collect(Collectors.toList());
 
-    // The request names must match the snapshot names. If they do not, then the watch is never responded, and it is
-    // expected that envoy makes another request.
-    if (!watch.names().isEmpty()) {
-      Set<String> watchedResourceNames = new HashSet<>(watch.names());
-
-      Optional<String> missingResourceName = snapshotResources.stream()
-          .map(Resources::getResourceName)
-          .filter(n -> !watchedResourceNames.contains(n))
-          .findFirst();
-
-      if (missingResourceName.isPresent()) {
-        LOGGER.info("not responding for {} from {} at {} since {} not requested [{}]",
-            watch.type(),
+      if (!missingNames.isEmpty()) {
+        LOGGER.info("not responding in ADS mode for {} from node {} at version {} since [{}] not requested in [{}]",
+            watch.request().getTypeUrl(),
             group,
-            snapshot.version(),
-            missingResourceName.get(),
-            String.join(", ", watch.names()));
+            snapshot.version(watch.request().getTypeUrl()),
+            String.join(", ", missingNames),
+            String.join(", ", watch.request().getResourceNamesList()));
 
         return;
       }
     }
 
-    watch.valueEmitter().onNext(Response.create(false, snapshotResources, snapshot.version()));
-  }
+    String version = snapshot.version(watch.request().getTypeUrl());
 
-  @VisibleForTesting
-  Table<T, Long, Watch> watches() {
-    synchronized (lock) {
-      return ImmutableTable.copyOf(watches);
-    }
+    LOGGER.info("responding for {} from node {} at version {} with version {}",
+        watch.request().getTypeUrl(),
+        group,
+        watch.request().getVersionInfo(),
+        version);
+
+    Response response = createResponse(
+        watch.request(),
+        snapshotResources,
+        version);
+
+    watch.valueEmitter().onNext(response);
   }
 }

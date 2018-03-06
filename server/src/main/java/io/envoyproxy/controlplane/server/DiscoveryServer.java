@@ -1,9 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.envoyproxy.controlplane.cache.ResourceType.CLUSTER;
-import static io.envoyproxy.controlplane.cache.ResourceType.ENDPOINT;
-import static io.envoyproxy.controlplane.cache.ResourceType.LISTENER;
 
 import com.google.protobuf.Any;
 import envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
@@ -14,7 +11,7 @@ import envoy.api.v2.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBas
 import envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
-import io.envoyproxy.controlplane.cache.ResourceType;
+import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.grpc.Status;
@@ -63,7 +60,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamClusters(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, CLUSTER.typeUrl());
+        return createRequestHandler(responseObserver, Resources.CLUSTER_TYPE_URL);
       }
     };
   }
@@ -77,7 +74,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamEndpoints(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, ENDPOINT.typeUrl());
+        return createRequestHandler(responseObserver, Resources.ENDPOINT_TYPE_URL);
       }
     };
   }
@@ -91,7 +88,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamListeners(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, LISTENER.typeUrl());
+        return createRequestHandler(responseObserver, Resources.LISTENER_TYPE_URL);
       }
     };
   }
@@ -105,7 +102,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamRoutes(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, ResourceType.ROUTE.typeUrl());
+        return createRequestHandler(responseObserver, Resources.ROUTE_TYPE_URL);
       }
     };
   }
@@ -120,53 +117,54 @@ public class DiscoveryServer {
 
     return new StreamObserver<DiscoveryRequest>() {
 
-      private final Map<ResourceType, Watch> watches = new ConcurrentHashMap<>(ResourceType.values().length);
-      private final Map<ResourceType, String> nonces = new ConcurrentHashMap<>(ResourceType.values().length);
+      private final Map<String, Watch> watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      private final Map<String, String> nonces = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
 
       private AtomicLong streamNonce = new AtomicLong();
 
       @Override
       public void onNext(DiscoveryRequest request) {
         String nonce = request.getResponseNonce();
-        String typeUrl = request.getTypeUrl();
+        String requestTypeUrl = request.getTypeUrl();
 
         if (defaultTypeUrl.equals(ANY_TYPE_URL)) {
-          if (typeUrl.isEmpty()) {
+          if (requestTypeUrl.isEmpty()) {
             responseObserver.onError(
-                Status.UNKNOWN.withDescription("type URL is required for ADS").asRuntimeException());
+                Status.UNKNOWN
+                    .withDescription(String.format("[%d] type URL is required for ADS", streamId))
+                    .asRuntimeException());
+
+            return;
           }
-        } else if (typeUrl.isEmpty()) {
-          typeUrl = defaultTypeUrl;
+        } else if (requestTypeUrl.isEmpty()) {
+          requestTypeUrl = defaultTypeUrl;
         }
 
         LOGGER.info("[{}] request {}[{}] with nonce {} from version {}",
             streamId,
-            typeUrl,
+            requestTypeUrl,
             String.join(", ", request.getResourceNamesList()),
             nonce,
             request.getVersionInfo());
 
-        for (ResourceType type : ResourceType.values()) {
-          String resourceNonce = nonces.get(type);
+        for (String typeUrl : Resources.TYPE_URLS) {
+          String resourceNonce = nonces.get(typeUrl);
 
-          if (typeUrl.equals(type.typeUrl()) && (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce))) {
-            watches.compute(type, (t, oldWatch) -> {
+          if (requestTypeUrl.equals(typeUrl) && (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce))) {
+            watches.compute(typeUrl, (t, oldWatch) -> {
               if (oldWatch != null) {
                 oldWatch.cancel();
               }
 
-              Watch newWatch = configWatcher.watch(
-                  type,
-                  request.getNode(),
-                  request.getVersionInfo(),
-                  request.getResourceNamesList());
+              Watch newWatch = configWatcher.createWatch(request);
 
               Flux.from(newWatch.value())
-                  .doAfterTerminate(() -> responseObserver.onError(
+                  .doOnError(e -> responseObserver.onError(
                       Status.UNAVAILABLE
-                          .withDescription(String.format("%s watch failed", type.toString()))
+                          .withCause(e)
+                          .withDescription(String.format("[%d] %s watch failed", streamId, typeUrl))
                           .asException()))
-                  .subscribe(r -> nonces.put(type, send(r, type.typeUrl())));
+                  .subscribe(r -> nonces.put(typeUrl, send(r, typeUrl)));
 
               return newWatch;
             });
@@ -200,7 +198,6 @@ public class DiscoveryServer {
         DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder()
             .setVersionInfo(response.version())
             .addAllResources(response.resources().stream().map(Any::pack).collect(Collectors.toList()))
-            .setCanary(response.canary())
             .setTypeUrl(typeUrl)
             .setNonce(nonce)
             .build();
