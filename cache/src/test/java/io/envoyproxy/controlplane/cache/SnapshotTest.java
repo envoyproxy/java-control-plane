@@ -1,5 +1,9 @@
 package io.envoyproxy.controlplane.cache;
 
+import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -75,19 +79,19 @@ public class SnapshotTest {
     // We have to do some lame casting to appease java's compiler, otherwise it fails to compile due to limitations with
     // generic type constraints.
 
-    assertThat((Map<String, Message>) snapshot.resources(Resources.CLUSTER_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(CLUSTER_TYPE_URL))
         .containsEntry(CLUSTER_NAME, CLUSTER)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(Resources.ENDPOINT_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(ENDPOINT_TYPE_URL))
         .containsEntry(CLUSTER_NAME, ENDPOINT)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(Resources.LISTENER_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(LISTENER_TYPE_URL))
         .containsEntry(LISTENER_NAME, LISTENER)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(Resources.ROUTE_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(ROUTE_TYPE_URL))
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
@@ -107,10 +111,10 @@ public class SnapshotTest {
         ImmutableList.of(ROUTE),
         version);
 
-    assertThat(snapshot.version(Resources.CLUSTER_TYPE_URL)).isEqualTo(version);
-    assertThat(snapshot.version(Resources.ENDPOINT_TYPE_URL)).isEqualTo(version);
-    assertThat(snapshot.version(Resources.LISTENER_TYPE_URL)).isEqualTo(version);
-    assertThat(snapshot.version(Resources.ROUTE_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(CLUSTER_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(ENDPOINT_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(LISTENER_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(ROUTE_TYPE_URL)).isEqualTo(version);
 
     assertThat(snapshot.version(null)).isEmpty();
     assertThat(snapshot.version("")).isEmpty();
@@ -140,7 +144,11 @@ public class SnapshotTest {
 
     assertThatThrownBy(snapshot1::ensureConsistent)
         .isInstanceOf(SnapshotConsistencyException.class)
-        .hasMessage(format("Mismatched cluster endpoint reference and resource lengths, [%s] != 0", CLUSTER_NAME));
+        .hasMessage(format(
+            "Mismatched %s -> %s reference and resource lengths, [%s] != 0",
+            CLUSTER_TYPE_URL,
+            ENDPOINT_TYPE_URL,
+            CLUSTER_NAME));
 
     Snapshot snapshot2 = Snapshot.create(
         ImmutableList.of(CLUSTER),
@@ -151,7 +159,11 @@ public class SnapshotTest {
 
     assertThatThrownBy(snapshot2::ensureConsistent)
         .isInstanceOf(SnapshotConsistencyException.class)
-        .hasMessage(format("Mismatched listener route reference and resource lengths, [%s] != 0", ROUTE_NAME));
+        .hasMessage(format(
+            "Mismatched %s -> %s reference and resource lengths, [%s] != 0",
+            LISTENER_TYPE_URL,
+            ROUTE_TYPE_URL,
+            ROUTE_NAME));
   }
 
   @Test
@@ -168,7 +180,12 @@ public class SnapshotTest {
 
     assertThatThrownBy(snapshot1::ensureConsistent)
         .isInstanceOf(SnapshotConsistencyException.class)
-        .hasMessage(format("Resource named '%s' not listed in [%s]", CLUSTER_NAME, otherClusterName));
+        .hasMessage(format(
+            "%s named '%s', referenced by a %s, not listed in [%s]",
+            ENDPOINT_TYPE_URL,
+            CLUSTER_NAME,
+            CLUSTER_TYPE_URL,
+            otherClusterName));
 
     Snapshot snapshot2 = Snapshot.create(
         ImmutableList.of(CLUSTER),
@@ -179,6 +196,11 @@ public class SnapshotTest {
 
     assertThatThrownBy(snapshot2::ensureConsistent)
         .isInstanceOf(SnapshotConsistencyException.class)
-        .hasMessage(format("Resource named '%s' not listed in [%s]", ROUTE_NAME, otherRouteName));
+        .hasMessage(format(
+            "%s named '%s', referenced by a %s, not listed in [%s]",
+            ROUTE_TYPE_URL,
+            ROUTE_NAME,
+            LISTENER_TYPE_URL,
+            otherRouteName));
   }
 }

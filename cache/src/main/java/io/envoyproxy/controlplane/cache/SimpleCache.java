@@ -165,7 +165,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   }
 
   private Response createResponse(DiscoveryRequest request, Map<String, ? extends Message> resources, String version) {
-    Collection<? extends Message> filtered = request.getResourceNamesCount() == 0
+    Collection<? extends Message> filtered = request.getResourceNamesList().isEmpty()
         ? resources.values()
         : request.getResourceNamesList().stream()
             .map(resources::get)
@@ -178,7 +178,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   private void respond(Watch watch, Snapshot snapshot, T group) {
     Map<String, ? extends Message> snapshotResources = snapshot.resources(watch.request().getTypeUrl());
 
-    if (watch.request().getResourceNamesCount() != 0 && ads) {
+    if (!watch.request().getResourceNamesList().isEmpty() && ads) {
       Collection<String> missingNames = watch.request().getResourceNamesList().stream()
           .filter(name -> !snapshotResources.containsKey(name))
           .collect(Collectors.toList());

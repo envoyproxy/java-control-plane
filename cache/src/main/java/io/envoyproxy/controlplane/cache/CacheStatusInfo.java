@@ -22,7 +22,7 @@ public class CacheStatusInfo implements StatusInfo {
   private final Node node;
 
   @GuardedBy("lock")
-  private final Map<Long, Watch> watches;
+  private final Map<Long, Watch> watches = new HashMap<>();
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
@@ -33,8 +33,6 @@ public class CacheStatusInfo implements StatusInfo {
 
   CacheStatusInfo(Node node) {
     this.node = node;
-
-    watches = new HashMap<>();
   }
 
   /**

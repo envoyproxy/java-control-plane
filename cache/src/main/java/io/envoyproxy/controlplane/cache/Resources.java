@@ -4,6 +4,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager.RouteSpecifierCase.RDS;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.Struct;
@@ -17,7 +18,6 @@ import envoy.api.v2.listener.Listener.Filter;
 import envoy.api.v2.listener.Listener.FilterChain;
 import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -74,7 +74,7 @@ public class Resources {
    * @param resources the resource whose dependencies we are calculating
    */
   public static Set<String> getResourceReferences(Collection<? extends Message> resources) {
-    final Set<String> refs = new HashSet<>();
+    final ImmutableSet.Builder<String> refs = ImmutableSet.builder();
 
     for (Message r : resources) {
       if (r instanceof ClusterLoadAssignment || r instanceof RouteConfiguration) {
@@ -126,7 +126,7 @@ public class Resources {
       }
     }
 
-    return refs;
+    return refs.build();
   }
 
   private static void structAsMessage(Struct struct, Message.Builder messageBuilder)

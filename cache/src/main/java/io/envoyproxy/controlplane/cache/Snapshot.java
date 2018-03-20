@@ -1,5 +1,10 @@
 package io.envoyproxy.controlplane.cache;
 
+import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -73,27 +78,11 @@ public abstract class Snapshot {
   public void ensureConsistent() throws SnapshotConsistencyException {
     Set<String> clusterEndpointRefs = Resources.getResourceReferences(clusters().resources().values());
 
-    if (clusterEndpointRefs.size() != endpoints().resources().size()) {
-      throw new SnapshotConsistencyException(
-          String.format(
-              "Mismatched cluster endpoint reference and resource lengths, [%s] != %d",
-              String.join(", ", clusterEndpointRefs),
-              endpoints().resources().size()));
-    }
-
-    ensureAllResourceNamesExist(clusterEndpointRefs, endpoints().resources());
+    ensureAllResourceNamesExist(CLUSTER_TYPE_URL, ENDPOINT_TYPE_URL, clusterEndpointRefs, endpoints().resources());
 
     Set<String> listenerRouteRefs = Resources.getResourceReferences(listeners().resources().values());
 
-    if (listenerRouteRefs.size() != routes().resources().size()) {
-      throw new SnapshotConsistencyException(
-          String.format(
-              "Mismatched listener route reference and resource lengths, [%s] != %d",
-              String.join(", ", listenerRouteRefs),
-              routes().resources().size()));
-    }
-
-    ensureAllResourceNamesExist(listenerRouteRefs, routes().resources());
+    ensureAllResourceNamesExist(LISTENER_TYPE_URL, ROUTE_TYPE_URL, listenerRouteRefs, routes().resources());
   }
 
   /**
@@ -107,13 +96,13 @@ public abstract class Snapshot {
     }
 
     switch (typeUrl) {
-      case Resources.CLUSTER_TYPE_URL:
+      case CLUSTER_TYPE_URL:
         return clusters().resources();
-      case Resources.ENDPOINT_TYPE_URL:
+      case ENDPOINT_TYPE_URL:
         return endpoints().resources();
-      case Resources.LISTENER_TYPE_URL:
+      case LISTENER_TYPE_URL:
         return listeners().resources();
-      case Resources.ROUTE_TYPE_URL:
+      case ROUTE_TYPE_URL:
         return routes().resources();
       default:
         return ImmutableMap.of();
@@ -131,13 +120,13 @@ public abstract class Snapshot {
     }
 
     switch (typeUrl) {
-      case Resources.CLUSTER_TYPE_URL:
+      case CLUSTER_TYPE_URL:
         return clusters().version();
-      case Resources.ENDPOINT_TYPE_URL:
+      case ENDPOINT_TYPE_URL:
         return endpoints().version();
-      case Resources.LISTENER_TYPE_URL:
+      case LISTENER_TYPE_URL:
         return listeners().version();
-      case Resources.ROUTE_TYPE_URL:
+      case ROUTE_TYPE_URL:
         return routes().version();
       default:
         return "";
@@ -147,19 +136,36 @@ public abstract class Snapshot {
   /**
    * Asserts that all of the given resource names have corresponding values in the given resources collection.
    *
-   * @param resourceNames the set of resource names that must exist
+   * @param parentTypeUrl the type of the parent resources (source of the resource name refs)
+   * @param dependencyTypeUrl the type of the given dependent resources
+   * @param resourceNames the set of dependent resource names that must exist
    * @param resources the collection of resources whose names are being checked
    * @throws SnapshotConsistencyException if a name is given that does not exist in the resources collection
    */
-  private void ensureAllResourceNamesExist(Set<String> resourceNames, Map<String, ? extends Message> resources)
-      throws SnapshotConsistencyException {
+  private static void ensureAllResourceNamesExist(
+      String parentTypeUrl,
+      String dependencyTypeUrl,
+      Set<String> resourceNames,
+      Map<String, ? extends Message> resources) throws SnapshotConsistencyException {
+
+    if (resourceNames.size() != resources.size()) {
+      throw new SnapshotConsistencyException(
+          String.format(
+              "Mismatched %s -> %s reference and resource lengths, [%s] != %d",
+              parentTypeUrl,
+              dependencyTypeUrl,
+              String.join(", ", resourceNames),
+              resources.size()));
+    }
 
     for (String name : resourceNames) {
       if (!resources.containsKey(name)) {
         throw new SnapshotConsistencyException(
             String.format(
-                "Resource named '%s' not listed in [%s]",
+                "%s named '%s', referenced by a %s, not listed in [%s]",
+                dependencyTypeUrl,
                 name,
+                parentTypeUrl,
                 String.join(", ", resources.keySet())));
       }
     }
