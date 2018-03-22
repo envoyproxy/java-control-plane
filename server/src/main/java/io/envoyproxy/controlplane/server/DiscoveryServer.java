@@ -26,6 +26,7 @@ import reactor.core.publisher.Flux;
 
 public class DiscoveryServer {
 
+  private static final DiscoveryServerCallbacks DEFAULT_CALLBACKS = new DiscoveryServerCallbacks() { };
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
   static final String ANY_TYPE_URL = "";
@@ -40,7 +41,7 @@ public class DiscoveryServer {
   }
 
   public DiscoveryServer(ConfigWatcher configWatcher) {
-    this(new DiscoveryServerCallbacks() { }, configWatcher);
+    this(DEFAULT_CALLBACKS, configWatcher);
   }
 
   /**
@@ -155,11 +156,7 @@ public class DiscoveryServer {
             nonce,
             request.getVersionInfo());
 
-        // If the onStreamRequest method returns false then we should ignore this request.
-        if (!callbacks.onStreamRequest(streamId, request)) {
-          LOGGER.info("[{}] request {}[{}] with nonce {} from version {} is not being processed");
-          return;
-        }
+        callbacks.onStreamRequest(streamId, request);
 
         for (String typeUrl : Resources.TYPE_URLS) {
           String resourceNonce = nonces.get(typeUrl);

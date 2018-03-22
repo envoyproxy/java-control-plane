@@ -528,11 +528,9 @@ public class DiscoveryServerTest {
     }
 
     @Override
-    public boolean onStreamRequest(long streamId, DiscoveryRequest request) {
+    public void onStreamRequest(long streamId, DiscoveryRequest request) {
       streamRequestCount.getAndIncrement();
       streamRequestLatch.countDown();
-
-      return true;
     }
 
     @Override

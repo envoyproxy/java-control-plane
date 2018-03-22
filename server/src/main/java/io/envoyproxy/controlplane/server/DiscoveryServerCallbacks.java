@@ -44,15 +44,13 @@ public interface DiscoveryServerCallbacks {
   }
 
   /**
-   * {@code onStreamRequest} is called for each {@link DiscoveryRequest} that is received on the stream. If this method
-   * returns {@code true}, then the request is processed. If it returns {@code false}, then the message is ignored.
+   * {@code onStreamRequest} is called for each {@link DiscoveryRequest} that is received on the stream.
    *
    * @param streamId an ID for this stream that is only unique to this discovery server instance
    * @param request the discovery request sent by the envoy instance
-   * @return boolean indicating whether or not the request should be processed
    */
-  default boolean onStreamRequest(long streamId, DiscoveryRequest request) {
-    return true;
+  default void onStreamRequest(long streamId, DiscoveryRequest request) {
+
   }
 
   /**
