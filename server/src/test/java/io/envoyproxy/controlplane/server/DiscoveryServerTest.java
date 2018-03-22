@@ -27,8 +27,9 @@ import envoy.api.v2.core.Base.Node;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
-import io.envoyproxy.controlplane.cache.ResourceType;
+import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
+import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -42,7 +43,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import org.assertj.core.api.Condition;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,8 +54,8 @@ public class DiscoveryServerTest {
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME    = "route0";
 
-  private static final int ENDPOINT_PORT = Resources.getAvailablePort();
-  private static final int LISTENER_PORT = Resources.getAvailablePort();
+  private static final int ENDPOINT_PORT = Ports.getAvailablePort();
+  private static final int LISTENER_PORT = Ports.getAvailablePort();
 
   private static final Node NODE = Node.newBuilder()
       .setId("test-id")
@@ -64,10 +64,10 @@ public class DiscoveryServerTest {
 
   private static final String VERSION = Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
 
-  private static final Cluster CLUSTER = Resources.createCluster(true, CLUSTER_NAME);
-  private static final ClusterLoadAssignment ENDPOINT = Resources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = Resources.createListener(true, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
-  private static final RouteConfiguration ROUTE = Resources.createRoute(ROUTE_NAME, CLUSTER_NAME);
+  private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
+  private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
+  private static final Listener LISTENER = TestResources.createListener(LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+  private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
 
   @Rule
   public final GrpcServerRule grpcServer = new GrpcServerRule().directExecutor();
@@ -87,23 +87,23 @@ public class DiscoveryServerTest {
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(ResourceType.LISTENER.typeUrl())
+        .setTypeUrl(Resources.LISTENER_TYPE_URL)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(ResourceType.CLUSTER.typeUrl())
+        .setTypeUrl(Resources.CLUSTER_TYPE_URL)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(ResourceType.ENDPOINT.typeUrl())
+        .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
         .addResourceNames(CLUSTER_NAME)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(ResourceType.ROUTE.typeUrl())
+        .setTypeUrl(Resources.ROUTE_TYPE_URL)
         .addResourceNames(ROUTE_NAME)
         .build());
 
@@ -115,16 +115,16 @@ public class DiscoveryServerTest {
 
     responseObserver.assertThatNoErrors();
 
-    for (ResourceType type : ResourceType.values()) {
-      assertThat(configWatcher.counts).containsEntry(type, 1);
+    for (String typeUrl : Resources.TYPE_URLS) {
+      assertThat(configWatcher.counts).containsEntry(typeUrl, 1);
     }
 
-    assertThat(configWatcher.counts).hasSize(ResourceType.values().length);
+    assertThat(configWatcher.counts).hasSize(Resources.TYPE_URLS.size());
 
-    for (ResourceType type : ResourceType.values()) {
+    for (String typeUrl : Resources.TYPE_URLS) {
       assertThat(responseObserver.responses).haveAtLeastOne(new Condition<>(
-          r -> r.getTypeUrl().equals(type.typeUrl()) && r.getVersionInfo().equals(VERSION),
-          "missing expected response of type %s", type));
+          r -> r.getTypeUrl().equals(typeUrl) && r.getVersionInfo().equals(VERSION),
+          "missing expected response of type %s", typeUrl));
     }
   }
 
@@ -143,31 +143,31 @@ public class DiscoveryServerTest {
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (ResourceType type : ResourceType.values()) {
+    for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
       DiscoveryRequest.Builder discoveryRequestBuilder = DiscoveryRequest.newBuilder()
           .setNode(NODE)
-          .setTypeUrl(type.typeUrl());
+          .setTypeUrl(typeUrl);
 
-      switch (type) {
-        case CLUSTER:
+      switch (typeUrl) {
+        case Resources.CLUSTER_TYPE_URL:
           requestObserver = clusterStub.streamClusters(responseObserver);
           break;
-        case ENDPOINT:
+        case Resources.ENDPOINT_TYPE_URL:
           requestObserver = endpointStub.streamEndpoints(responseObserver);
           discoveryRequestBuilder.addResourceNames(CLUSTER_NAME);
           break;
-        case LISTENER:
+        case Resources.LISTENER_TYPE_URL:
           requestObserver = listenerStub.streamListeners(responseObserver);
           break;
-        case ROUTE:
+        case Resources.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
           discoveryRequestBuilder.addResourceNames(ROUTE_NAME);
           break;
         default:
-          fail("Unsupported resource type: " + type.toString());
+          fail("Unsupported resource type: " + typeUrl);
       }
 
       requestObserver.onNext(discoveryRequestBuilder.build());
@@ -179,13 +179,13 @@ public class DiscoveryServerTest {
 
       responseObserver.assertThatNoErrors();
 
-      assertThat(configWatcher.counts).containsEntry(type, 1);
+      assertThat(configWatcher.counts).containsEntry(typeUrl, 1);
       assertThat(responseObserver.responses).haveAtLeastOne(new Condition<>(
-          r -> r.getTypeUrl().equals(type.typeUrl()) && r.getVersionInfo().equals(VERSION),
-          "missing expected response of type %s", type));
+          r -> r.getTypeUrl().equals(typeUrl) && r.getVersionInfo().equals(VERSION),
+          "missing expected response of type %s", typeUrl));
     }
 
-    assertThat(configWatcher.counts).hasSize(ResourceType.values().length);
+    assertThat(configWatcher.counts).hasSize(Resources.TYPE_URLS.size());
   }
 
   @Test
@@ -197,7 +197,7 @@ public class DiscoveryServerTest {
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (ResourceType type : ResourceType.values()) {
+    for (String typeUrl : Resources.TYPE_URLS) {
 
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -205,7 +205,7 @@ public class DiscoveryServerTest {
 
       requestObserver.onNext(DiscoveryRequest.newBuilder()
           .setNode(NODE)
-          .setTypeUrl(type.typeUrl())
+          .setTypeUrl(typeUrl)
           .build());
 
       requestObserver.onError(new RuntimeException("send error"));
@@ -231,7 +231,7 @@ public class DiscoveryServerTest {
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (ResourceType type : ResourceType.values()) {
+    for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
       responseObserver.sendError = true;
 
@@ -239,7 +239,7 @@ public class DiscoveryServerTest {
 
       requestObserver.onNext(DiscoveryRequest.newBuilder()
           .setNode(NODE)
-          .setTypeUrl(type.typeUrl())
+          .setTypeUrl(typeUrl)
           .build());
 
       if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
@@ -259,48 +259,41 @@ public class DiscoveryServerTest {
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (ResourceType type : ResourceType.values()) {
-      AtomicReference<StreamObserver<DiscoveryRequest>> requestObserver = new AtomicReference<>();
+    for (String typeUrl : Resources.TYPE_URLS) {
+      MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
-      MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver() {
-        @Override
-        public void onNext(DiscoveryResponse value) {
-          super.onNext(value);
+      StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
 
-          // Stale request, should not create a new watch.
-          requestObserver.get().onNext(
-              DiscoveryRequest.newBuilder()
-                  .setNode(NODE)
-                  .setTypeUrl(type.typeUrl())
-                  .setResponseNonce("xyz")
-                  .build());
-
-          // Fresh request, should create a new watch.
-          requestObserver.get().onNext(
-              DiscoveryRequest.newBuilder()
-                  .setNode(NODE)
-                  .setTypeUrl(type.typeUrl())
-                  .setResponseNonce("0")
-                  .setVersionInfo("0")
-                  .build());
-
-          requestObserver.get().onCompleted();
-        }
-      };
-
-      requestObserver.set(stub.streamAggregatedResources(responseObserver));
-
-      requestObserver.get().onNext(DiscoveryRequest.newBuilder()
+      requestObserver.onNext(DiscoveryRequest.newBuilder()
           .setNode(NODE)
-          .setTypeUrl(type.typeUrl())
+          .setTypeUrl(typeUrl)
           .build());
+
+      // Stale request, should not create a new watch.
+      requestObserver.onNext(
+          DiscoveryRequest.newBuilder()
+              .setNode(NODE)
+              .setTypeUrl(typeUrl)
+              .setResponseNonce("xyz")
+              .build());
+
+      // Fresh request, should create a new watch.
+      requestObserver.onNext(
+          DiscoveryRequest.newBuilder()
+              .setNode(NODE)
+              .setTypeUrl(typeUrl)
+              .setResponseNonce("0")
+              .setVersionInfo("0")
+              .build());
+
+      requestObserver.onCompleted();
 
       if (!responseObserver.completedLatch.await(1, TimeUnit.SECONDS) || responseObserver.error.get()) {
         fail(format("failed to complete request before timeout, error = %b", responseObserver.error.get()));
       }
 
       // Assert that 2 watches have been created for this resource type.
-      assertThat(configWatcher.counts.get(type)).isEqualTo(2);
+      assertThat(configWatcher.counts.get(typeUrl)).isEqualTo(2);
     }
   }
 
@@ -323,6 +316,8 @@ public class DiscoveryServerTest {
             .setNode(NODE)
             .build());
 
+    requestObserver.onCompleted();
+
     if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
       fail(format("failed to error before timeout, completed = %b", responseObserver.completed.get()));
     }
@@ -343,26 +338,26 @@ public class DiscoveryServerTest {
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (ResourceType type : ResourceType.values()) {
+    for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
 
-      switch (type) {
-        case CLUSTER:
+      switch (typeUrl) {
+        case Resources.CLUSTER_TYPE_URL:
           requestObserver = clusterStub.streamClusters(responseObserver);
           break;
-        case ENDPOINT:
+        case Resources.ENDPOINT_TYPE_URL:
           requestObserver = endpointStub.streamEndpoints(responseObserver);
           break;
-        case LISTENER:
+        case Resources.LISTENER_TYPE_URL:
           requestObserver = listenerStub.streamListeners(responseObserver);
           break;
-        case ROUTE:
+        case Resources.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
           break;
         default:
-          fail("Unsupported resource type: " + type.toString());
+          fail("Unsupported resource type: " + typeUrl);
       }
 
       // Leave off the type URL. For xDS requests it should default to the value for that handler's type.
@@ -381,35 +376,37 @@ public class DiscoveryServerTest {
     }
   }
 
-  private static Multimap<ResourceType, Response> createResponses() {
-    return ImmutableMultimap.<ResourceType, Response>builder()
-        .put(ResourceType.CLUSTER, Response.create(false, ImmutableList.of(CLUSTER), VERSION))
-        .put(ResourceType.ENDPOINT, Response.create(false, ImmutableList.of(ENDPOINT), VERSION))
-        .put(ResourceType.LISTENER, Response.create(false, ImmutableList.of(LISTENER), VERSION))
-        .put(ResourceType.ROUTE, Response.create(false, ImmutableList.of(ROUTE), VERSION))
+  private static Multimap<String, Response> createResponses() {
+    DiscoveryRequest request = DiscoveryRequest.getDefaultInstance();
+
+    return ImmutableMultimap.<String, Response>builder()
+        .put(Resources.CLUSTER_TYPE_URL, Response.create(request, ImmutableList.of(CLUSTER), VERSION))
+        .put(Resources.ENDPOINT_TYPE_URL, Response.create(request, ImmutableList.of(ENDPOINT), VERSION))
+        .put(Resources.LISTENER_TYPE_URL, Response.create(request, ImmutableList.of(LISTENER), VERSION))
+        .put(Resources.ROUTE_TYPE_URL, Response.create(request, ImmutableList.of(ROUTE), VERSION))
         .build();
   }
 
   private static class MockConfigWatcher implements ConfigWatcher {
 
     private final boolean closeWatch;
-    private final Map<ResourceType, Integer> counts;
-    private final LinkedListMultimap<ResourceType, Response> responses;
+    private final Map<String, Integer> counts;
+    private final LinkedListMultimap<String, Response> responses;
 
-    MockConfigWatcher(boolean closeWatch, Multimap<ResourceType, Response> responses) {
+    MockConfigWatcher(boolean closeWatch, Multimap<String, Response> responses) {
       this.closeWatch = closeWatch;
       this.counts = new HashMap<>();
       this.responses = LinkedListMultimap.create(responses);
     }
 
     @Override
-    public Watch watch(ResourceType type, Node node, String version, Collection<String> names) {
-      counts.put(type, counts.getOrDefault(type, 0) + 1);
+    public Watch createWatch(DiscoveryRequest request) {
+      counts.put(request.getTypeUrl(), counts.getOrDefault(request.getTypeUrl(), 0) + 1);
 
-      Watch watch = new Watch(names, type);
+      Watch watch = new Watch(request);
 
-      if (responses.get(type).size() > 0) {
-        Response response = responses.get(type).remove(0);
+      if (responses.get(request.getTypeUrl()).size() > 0) {
+        Response response = responses.get(request.getTypeUrl()).remove(0);
 
         EmitterProcessor<Response> emitter = (EmitterProcessor<Response>) watch.value();
 

@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.auto.value.AutoValue;
 import com.google.protobuf.Message;
+import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.Collection;
 
 /**
@@ -10,19 +11,19 @@ import java.util.Collection;
 @AutoValue
 public abstract class Response {
 
-  public static Response create(boolean canary, Collection<Message> resources, String version) {
-    return new AutoValue_Response(canary, resources, version);
+  public static Response create(DiscoveryRequest request, Collection<? extends Message> resources, String version) {
+    return new AutoValue_Response(request, resources, version);
   }
 
   /**
-   * Returns the canary bit to control Envoy config transition.
+   * Returns the original request associated with the response.
    */
-  public abstract boolean canary();
+  public abstract DiscoveryRequest request();
 
   /**
    * Returns the resources to include in the response.
    */
-  public abstract Collection<Message> resources();
+  public abstract Collection<? extends Message> resources();
 
   /**
    * Returns the version of the resources as tracked by the cache for the given type. Envoy responds with this version

@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
-import envoy.api.v2.core.Base.Node;
-import java.util.Collection;
+import envoy.api.v2.Discovery.DiscoveryRequest;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
@@ -13,13 +12,9 @@ import javax.annotation.concurrent.ThreadSafe;
 public interface ConfigWatcher {
 
   /**
-   * Returns a new configuration resource {@link Watch} for the given type, node, last applied version, and resource
-   * names.
+   * Returns a new configuration resource {@link Watch} for the given discovery request.
    *
-   * @param type the response type to watch (e.g. cluster, endpoint, etc.)
-   * @param node identifier for the envoy instance that is requesting config
-   * @param version the last applied snapshot version
-   * @param names requested resource names
+   * @param request the discovery request (node, names, etc.) to use to generate the watch
    */
-  Watch watch(ResourceType type, Node node, String version, Collection<String> names);
+  Watch createWatch(DiscoveryRequest request);
 }
