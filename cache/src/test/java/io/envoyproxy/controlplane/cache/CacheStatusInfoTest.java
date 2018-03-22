@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import envoy.api.v2.Discovery.DiscoveryRequest;
 import envoy.api.v2.core.Base.Node;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import org.junit.Test;
 
 public class CacheStatusInfoTest {
@@ -79,5 +82,28 @@ public class CacheStatusInfoTest {
 
     assertThat(info.numWatches()).isEqualTo(1);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId2);
+  }
+
+  @Test
+  public void testConcurrentSetWatchAndRemove() {
+    final int watchCount = 50;
+
+    CacheStatusInfo info = new CacheStatusInfo(Node.getDefaultInstance());
+
+    Collection<Long> watchIds = LongStream.range(0, watchCount).boxed().collect(Collectors.toList());
+
+    watchIds.parallelStream().forEach(watchId -> {
+      Watch watch = new Watch(DiscoveryRequest.getDefaultInstance());
+
+      info.setWatch(watchId, watch);
+    });
+
+    assertThat(info.watchIds()).containsExactlyInAnyOrder(watchIds.toArray(new Long[0]));
+    assertThat(info.numWatches()).isEqualTo(watchIds.size());
+
+    watchIds.parallelStream().forEach(info::removeWatch);
+
+    assertThat(info.watchIds()).isEmpty();
+    assertThat(info.numWatches()).isZero();
   }
 }
