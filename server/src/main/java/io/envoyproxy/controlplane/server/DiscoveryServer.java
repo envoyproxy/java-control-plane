@@ -26,15 +26,21 @@ import reactor.core.publisher.Flux;
 
 public class DiscoveryServer {
 
-  private static final String ANY_TYPE_URL = "";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
+  static final String ANY_TYPE_URL = "";
+
+  private final DiscoveryServerCallbacks callbacks;
   private final ConfigWatcher configWatcher;
   private final AtomicLong streamCount = new AtomicLong();
 
-  public DiscoveryServer(ConfigWatcher configWatcher) {
+  public DiscoveryServer(DiscoveryServerCallbacks callbacks, ConfigWatcher configWatcher) {
+    this.callbacks = callbacks;
     this.configWatcher = configWatcher;
+  }
+
+  public DiscoveryServer(ConfigWatcher configWatcher) {
+    this(new DiscoveryServerCallbacks() { }, configWatcher);
   }
 
   /**
@@ -115,6 +121,8 @@ public class DiscoveryServer {
 
     LOGGER.info("[{}] open stream from {}", streamId, defaultTypeUrl);
 
+    callbacks.onStreamOpen(streamId, defaultTypeUrl);
+
     return new StreamObserver<DiscoveryRequest>() {
 
       private final Map<String, Watch> watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
@@ -147,6 +155,12 @@ public class DiscoveryServer {
             nonce,
             request.getVersionInfo());
 
+        // If the onStreamRequest method returns false then we should ignore this request.
+        if (!callbacks.onStreamRequest(streamId, request)) {
+          LOGGER.info("[{}] request {}[{}] with nonce {} from version {} is not being processed");
+          return;
+        }
+
         for (String typeUrl : Resources.TYPE_URLS) {
           String resourceNonce = nonces.get(typeUrl);
 
@@ -177,6 +191,7 @@ public class DiscoveryServer {
       @Override
       public void onError(Throwable t) {
         LOGGER.error("[{}] stream closed with error", streamId, t);
+        callbacks.onStreamCloseWithError(streamId, defaultTypeUrl, t);
         responseObserver.onError(Status.fromThrowable(t).asException());
         cancel();
       }
@@ -184,6 +199,7 @@ public class DiscoveryServer {
       @Override
       public void onCompleted() {
         LOGGER.info("[{}] stream closed", streamId);
+        callbacks.onStreamClose(streamId, defaultTypeUrl);
         responseObserver.onCompleted();
         cancel();
       }
@@ -203,6 +219,8 @@ public class DiscoveryServer {
             .build();
 
         LOGGER.info("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
+
+        callbacks.onStreamResponse(streamId, response.request(), discoveryResponse);
 
         // The watch value streams are being observed on multiple threads, so we need to synchronize
         // here because StreamObserver instances are not thread-safe.
