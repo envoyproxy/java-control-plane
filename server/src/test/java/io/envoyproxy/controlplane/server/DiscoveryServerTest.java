@@ -5,10 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
+import com.google.protobuf.Message;
 import envoy.api.v2.Cds.Cluster;
 import envoy.api.v2.ClusterDiscoveryServiceGrpc;
 import envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub;
@@ -38,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -190,7 +192,7 @@ public class DiscoveryServerTest {
 
   @Test
   public void testWatchClosed() throws InterruptedException {
-    MockConfigWatcher configWatcher = new MockConfigWatcher(true, ImmutableMultimap.of());
+    MockConfigWatcher configWatcher = new MockConfigWatcher(true, ImmutableTable.of());
     DiscoveryServer server = new DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
@@ -299,7 +301,7 @@ public class DiscoveryServerTest {
 
   @Test
   public void testAggregateHandlerDefaultRequestType() throws InterruptedException {
-    MockConfigWatcher configWatcher = new MockConfigWatcher(true, ImmutableMultimap.of());
+    MockConfigWatcher configWatcher = new MockConfigWatcher(true, ImmutableTable.of());
     DiscoveryServer server = new DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
@@ -378,7 +380,55 @@ public class DiscoveryServerTest {
 
   @Test
   public void testCallbacksAggregateHandler() throws InterruptedException {
-    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks();
+    final CountDownLatch streamCloseLatch = new CountDownLatch(1);
+    final CountDownLatch streamOpenLatch = new CountDownLatch(1);
+    final CountDownLatch streamRequestLatch = new CountDownLatch(4);
+    final CountDownLatch streamResponseLatch = new CountDownLatch(4);
+
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+      @Override
+      public void onStreamClose(long streamId, String typeUrl) {
+        super.onStreamClose(streamId, typeUrl);
+
+        if (!typeUrl.equals(DiscoveryServer.ANY_TYPE_URL)) {
+          this.assertionErrors.add(format(
+              "onStreamClose#typeUrl => expected %s, got %s",
+              DiscoveryServer.ANY_TYPE_URL,
+              typeUrl));
+        }
+
+        streamCloseLatch.countDown();
+      }
+
+      @Override
+      public void onStreamOpen(long streamId, String typeUrl) {
+        super.onStreamOpen(streamId, typeUrl);
+
+        if (!typeUrl.equals(DiscoveryServer.ANY_TYPE_URL)) {
+          this.assertionErrors.add(format(
+              "onStreamOpen#typeUrl => expected %s, got %s",
+              DiscoveryServer.ANY_TYPE_URL,
+              typeUrl));
+        }
+
+        streamOpenLatch.countDown();
+      }
+
+      @Override
+      public void onStreamRequest(long streamId, DiscoveryRequest request) {
+        super.onStreamRequest(streamId, request);
+
+        streamRequestLatch.countDown();
+      }
+
+      @Override
+      public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
+        super.onStreamResponse(streamId, request, response);
+
+        streamResponseLatch.countDown();
+      }
+    };
+
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
     DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
 
@@ -395,12 +445,8 @@ public class DiscoveryServerTest {
         .setTypeUrl(Resources.LISTENER_TYPE_URL)
         .build());
 
-    if (!callbacks.streamOpenLatch.await(1, TimeUnit.SECONDS)) {
+    if (!streamOpenLatch.await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamOpen callback before timeout");
-    }
-
-    if (!callbacks.streamRequestLatch.await(1, TimeUnit.SECONDS)) {
-      fail("failed to execute onStreamRequest callback before timeout");
     }
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
@@ -420,37 +466,164 @@ public class DiscoveryServerTest {
         .addResourceNames(ROUTE_NAME)
         .build());
 
-    requestObserver.onCompleted();
+    if (!streamRequestLatch.await(1, TimeUnit.SECONDS)) {
+      fail("failed to execute onStreamRequest callback before timeout");
+    }
 
-    if (!callbacks.streamResponseLatch.await(1, TimeUnit.SECONDS)) {
+    if (!streamResponseLatch.await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamResponse callback before timeout");
     }
 
-    if (!callbacks.streamCloseLatch.await(1, TimeUnit.SECONDS)) {
+    requestObserver.onCompleted();
+
+    if (!streamCloseLatch.await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamClose callback before timeout");
     }
 
-    assertThat(callbacks.streamClosedCount).hasValue(1);
-    assertThat(callbacks.streamClosedWithErrorCount).hasValue(0);
-    assertThat(callbacks.streamOpenedCount).hasValue(1);
+    callbacks.assertThatNoErrors();
 
-    assertThat(callbacks.streamClosedTypeUrl).isEqualTo(DiscoveryServer.ANY_TYPE_URL);
-    assertThat(callbacks.streamClosedWithErrorError).isNull();
-    assertThat(callbacks.streamClosedWithErrorTypeUrl).isNull();
-    assertThat(callbacks.streamOpenedTypeUrl).isEqualTo(DiscoveryServer.ANY_TYPE_URL);
-
+    assertThat(callbacks.streamCloseCount).hasValue(1);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
+    assertThat(callbacks.streamOpenCount).hasValue(1);
     assertThat(callbacks.streamRequestCount).hasValue(4);
     assertThat(callbacks.streamResponseCount).hasValue(4);
   }
 
-  private static Multimap<String, Response> createResponses() {
-    DiscoveryRequest request = DiscoveryRequest.getDefaultInstance();
+  @Test
+  public void testCallbacksSeparateHandlers() throws InterruptedException {
+    final Map<String, CountDownLatch> streamCloseLatches = new ConcurrentHashMap<>();
+    final Map<String, CountDownLatch> streamOpenLatches = new ConcurrentHashMap<>();
+    final Map<String, CountDownLatch> streamRequestLatches = new ConcurrentHashMap<>();
+    final Map<String, CountDownLatch> streamResponseLatches = new ConcurrentHashMap<>();
 
-    return ImmutableMultimap.<String, Response>builder()
-        .put(Resources.CLUSTER_TYPE_URL, Response.create(request, ImmutableList.of(CLUSTER), VERSION))
-        .put(Resources.ENDPOINT_TYPE_URL, Response.create(request, ImmutableList.of(ENDPOINT), VERSION))
-        .put(Resources.LISTENER_TYPE_URL, Response.create(request, ImmutableList.of(LISTENER), VERSION))
-        .put(Resources.ROUTE_TYPE_URL, Response.create(request, ImmutableList.of(ROUTE), VERSION))
+    Resources.TYPE_URLS.forEach(typeUrl -> {
+      streamCloseLatches.put(typeUrl, new CountDownLatch(1));
+      streamOpenLatches.put(typeUrl, new CountDownLatch(1));
+      streamRequestLatches.put(typeUrl, new CountDownLatch(1));
+      streamResponseLatches.put(typeUrl, new CountDownLatch(1));
+    });
+
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+
+      @Override
+      public void onStreamClose(long streamId, String typeUrl) {
+        super.onStreamClose(streamId, typeUrl);
+
+        if (!Resources.TYPE_URLS.contains(typeUrl)) {
+          this.assertionErrors.add(format(
+              "onStreamClose#typeUrl => expected one of [%s], got %s",
+              String.join(",", Resources.TYPE_URLS),
+              typeUrl));
+        }
+
+        streamCloseLatches.get(typeUrl).countDown();
+      }
+
+      @Override
+      public void onStreamOpen(long streamId, String typeUrl) {
+        super.onStreamOpen(streamId, typeUrl);
+
+        if (!Resources.TYPE_URLS.contains(typeUrl)) {
+          this.assertionErrors.add(format(
+              "onStreamOpen#typeUrl => expected one of [%s], got %s",
+              String.join(",", Resources.TYPE_URLS),
+              typeUrl));
+        }
+
+        streamOpenLatches.get(typeUrl).countDown();
+      }
+
+      @Override
+      public void onStreamRequest(long streamId, DiscoveryRequest request) {
+        super.onStreamRequest(streamId, request);
+
+        streamRequestLatches.get(request.getTypeUrl()).countDown();
+      }
+
+      @Override
+      public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
+        super.onStreamResponse(streamId, request, response);
+
+        streamResponseLatches.get(request.getTypeUrl()).countDown();
+      }
+    };
+
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
+
+    ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    for (String typeUrl : Resources.TYPE_URLS) {
+      MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+
+      StreamObserver<DiscoveryRequest> requestObserver = null;
+
+      switch (typeUrl) {
+        case Resources.CLUSTER_TYPE_URL:
+          requestObserver = clusterStub.streamClusters(responseObserver);
+          break;
+        case Resources.ENDPOINT_TYPE_URL:
+          requestObserver = endpointStub.streamEndpoints(responseObserver);
+          break;
+        case Resources.LISTENER_TYPE_URL:
+          requestObserver = listenerStub.streamListeners(responseObserver);
+          break;
+        case Resources.ROUTE_TYPE_URL:
+          requestObserver = routeStub.streamRoutes(responseObserver);
+          break;
+        default:
+          fail("Unsupported resource type: " + typeUrl);
+      }
+
+      DiscoveryRequest discoveryRequest = DiscoveryRequest.newBuilder()
+          .setNode(NODE)
+          .setTypeUrl(typeUrl)
+          .build();
+
+      requestObserver.onNext(discoveryRequest);
+
+      if (!streamOpenLatches.get(typeUrl).await(1, TimeUnit.SECONDS)) {
+        fail(format("failed to execute onStreamOpen callback for typeUrl %s before timeout", typeUrl));
+      }
+
+      if (!streamRequestLatches.get(typeUrl).await(1, TimeUnit.SECONDS)) {
+        fail(format("failed to execute onStreamOpen callback for typeUrl %s before timeout", typeUrl));
+      }
+
+      requestObserver.onCompleted();
+
+      if (!streamResponseLatches.get(typeUrl).await(1, TimeUnit.SECONDS)) {
+        fail(format("failed to execute onStreamResponse callback for typeUrl %s before timeout", typeUrl));
+      }
+
+      if (!streamCloseLatches.get(typeUrl).await(1, TimeUnit.SECONDS)) {
+        fail(format("failed to execute onStreamClose callback for typeUrl %s before timeout", typeUrl));
+      }
+    }
+
+    callbacks.assertThatNoErrors();
+
+    assertThat(callbacks.streamCloseCount).hasValue(4);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
+    assertThat(callbacks.streamOpenCount).hasValue(4);
+    assertThat(callbacks.streamRequestCount).hasValue(4);
+    assertThat(callbacks.streamResponseCount).hasValue(4);
+  }
+
+  private static Table<String, String, Collection<? extends Message>> createResponses() {
+    return ImmutableTable.<String, String, Collection<? extends Message>>builder()
+        .put(Resources.CLUSTER_TYPE_URL, VERSION, ImmutableList.of(CLUSTER))
+        .put(Resources.ENDPOINT_TYPE_URL, VERSION, ImmutableList.of(ENDPOINT))
+        .put(Resources.LISTENER_TYPE_URL, VERSION, ImmutableList.of(LISTENER))
+        .put(Resources.ROUTE_TYPE_URL, VERSION, ImmutableList.of(ROUTE))
         .build();
   }
 
@@ -458,12 +631,12 @@ public class DiscoveryServerTest {
 
     private final boolean closeWatch;
     private final Map<String, Integer> counts;
-    private final LinkedListMultimap<String, Response> responses;
+    private final Table<String, String, Collection<? extends Message>> responses;
 
-    MockConfigWatcher(boolean closeWatch, Multimap<String, Response> responses) {
+    MockConfigWatcher(boolean closeWatch, Table<String, String, Collection<? extends Message>> responses) {
       this.closeWatch = closeWatch;
       this.counts = new HashMap<>();
-      this.responses = LinkedListMultimap.create(responses);
+      this.responses = HashBasedTable.create(responses);
     }
 
     @Override
@@ -472,8 +645,14 @@ public class DiscoveryServerTest {
 
       Watch watch = new Watch(request);
 
-      if (responses.get(request.getTypeUrl()).size() > 0) {
-        Response response = responses.get(request.getTypeUrl()).remove(0);
+      if (responses.row(request.getTypeUrl()).size() > 0) {
+        final Response response;
+
+        synchronized (responses) {
+          String version = responses.row(request.getTypeUrl()).keySet().iterator().next();
+          Collection<? extends Message> resources = responses.row(request.getTypeUrl()).remove(version);
+          response = Response.create(request, resources, version);
+        }
 
         EmitterProcessor<Response> emitter = (EmitterProcessor<Response>) watch.value();
 
@@ -488,55 +667,65 @@ public class DiscoveryServerTest {
 
   private static class MockDiscoveryServerCallbacks implements DiscoveryServerCallbacks {
 
-    private final CountDownLatch streamCloseLatch = new CountDownLatch(1);
-    private final CountDownLatch streamCloseWithErrorLatch = new CountDownLatch(1);
-    private final CountDownLatch streamOpenLatch = new CountDownLatch(1);
-    private final CountDownLatch streamRequestLatch = new CountDownLatch(1);
-    private final CountDownLatch streamResponseLatch = new CountDownLatch(1);
-
-    private final AtomicInteger streamClosedCount = new AtomicInteger();
-    private final AtomicInteger streamClosedWithErrorCount = new AtomicInteger();
-    private final AtomicInteger streamOpenedCount = new AtomicInteger();
+    private final AtomicInteger streamCloseCount = new AtomicInteger();
+    private final AtomicInteger streamCloseWithErrorCount = new AtomicInteger();
+    private final AtomicInteger streamOpenCount = new AtomicInteger();
     private final AtomicInteger streamRequestCount = new AtomicInteger();
     private final AtomicInteger streamResponseCount = new AtomicInteger();
 
-    private volatile String streamClosedTypeUrl = null;
-    private volatile String streamClosedWithErrorTypeUrl = null;
-    private volatile Throwable streamClosedWithErrorError = null;
-    private volatile String streamOpenedTypeUrl = null;
+    final Collection<String> assertionErrors = new LinkedList<>();
 
     @Override
     public void onStreamClose(long streamId, String typeUrl) {
-      streamClosedCount.getAndIncrement();
-      streamClosedTypeUrl = typeUrl;
-      streamCloseLatch.countDown();
+      streamCloseCount.getAndIncrement();
     }
 
     @Override
     public void onStreamCloseWithError(long streamId, String typeUrl, Throwable error) {
-      streamClosedWithErrorCount.getAndIncrement();
-      streamClosedWithErrorError = error;
-      streamClosedWithErrorTypeUrl = typeUrl;
-      streamCloseWithErrorLatch.countDown();
+      streamCloseWithErrorCount.getAndIncrement();
     }
 
     @Override
     public void onStreamOpen(long streamId, String typeUrl) {
-      streamOpenedCount.getAndIncrement();
-      streamOpenedTypeUrl = typeUrl;
-      streamOpenLatch.countDown();
+      streamOpenCount.getAndIncrement();
     }
 
     @Override
     public void onStreamRequest(long streamId, DiscoveryRequest request) {
       streamRequestCount.getAndIncrement();
-      streamRequestLatch.countDown();
+
+      if (request == null) {
+        this.assertionErrors.add("onStreamRequest#request => expected not null");
+      } else if (!request.getNode().equals(NODE)) {
+        this.assertionErrors.add(format(
+            "onStreamRequest#request => expected node = %s, got %s",
+            NODE,
+            request.getNode()));
+      }
     }
 
     @Override
     public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
       streamResponseCount.getAndIncrement();
-      streamResponseLatch.countDown();
+
+      if (request == null) {
+        this.assertionErrors.add("onStreamResponse#request => expected not null");
+      } else if (!request.getNode().equals(NODE)) {
+        this.assertionErrors.add(format(
+            "onStreamResponse#request => expected node = %s, got %s",
+            NODE,
+            request.getNode()));
+      }
+
+      if (response == null) {
+        this.assertionErrors.add("onStreamResponse#response => expected not null");
+      }
+    }
+
+    void assertThatNoErrors() {
+      if (!assertionErrors.isEmpty()) {
+        throw new AssertionError(String.join(", ", assertionErrors));
+      }
     }
   }
 
