@@ -37,7 +37,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   @GuardedBy("lock")
   private final Map<T, Snapshot> snapshots = new HashMap<>();
   @GuardedBy("lock")
-  private final Map<T, CacheStatusInfo> statuses = new HashMap<>();
+  private final Map<T, CacheStatusInfo<T>> statuses = new HashMap<>();
 
   @GuardedBy("lock")
   private long watchCount;
@@ -63,7 +63,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     writeLock.lock();
 
     try {
-      CacheStatusInfo status = statuses.computeIfAbsent(group, g -> new CacheStatusInfo(request.getNode()));
+      CacheStatusInfo<T> status = statuses.computeIfAbsent(group, g -> new CacheStatusInfo<>(group));
 
       status.setLastWatchRequestTime(System.currentTimeMillis());
 
@@ -121,7 +121,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       // Update the existing snapshot entry.
       snapshots.put(group, snapshot);
 
-      CacheStatusInfo status = statuses.get(group);
+      CacheStatusInfo<T> status = statuses.get(group);
 
       if (status == null) {
         return;

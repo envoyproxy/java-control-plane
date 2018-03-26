@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.common.collect.ImmutableSet;
-import envoy.api.v2.core.Base.Node;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -17,9 +16,9 @@ import javax.annotation.concurrent.ThreadSafe;
  * implementations.
  */
 @ThreadSafe
-public class CacheStatusInfo implements StatusInfo {
+public class CacheStatusInfo<T> implements StatusInfo<T> {
 
-  private final Node node;
+  private final T nodeGroup;
 
   @GuardedBy("lock")
   private final Map<Long, Watch> watches = new HashMap<>();
@@ -31,8 +30,8 @@ public class CacheStatusInfo implements StatusInfo {
   @GuardedBy("lock")
   private long lastWatchRequestTime;
 
-  CacheStatusInfo(Node node) {
-    this.node = node;
+  public CacheStatusInfo(T nodeGroup) {
+    this.nodeGroup = nodeGroup;
   }
 
   /**
@@ -53,8 +52,8 @@ public class CacheStatusInfo implements StatusInfo {
    * {@inheritDoc}
    */
   @Override
-  public Node node() {
-    return node;
+  public T nodeGroup() {
+    return nodeGroup;
   }
 
   /**
