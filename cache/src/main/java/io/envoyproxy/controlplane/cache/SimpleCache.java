@@ -208,6 +208,6 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         snapshotResources,
         version);
 
-    watch.valueEmitter().onNext(response);
+    watch.value().onNext(response);
   }
 }
