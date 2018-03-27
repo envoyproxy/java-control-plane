@@ -24,7 +24,7 @@ import java.util.Set;
 public abstract class Snapshot {
 
   /**
-   * Returns a new {@link Snapshot} instance.
+   * Returns a new {@link Snapshot} instance that is versioned uniformly across all resources.
    *
    * @param clusters the cluster resources in this snapshot
    * @param endpoints the endpoint resources in this snapshot
@@ -44,6 +44,35 @@ public abstract class Snapshot {
         SnapshotResources.create(endpoints, version),
         SnapshotResources.create(listeners, version),
         SnapshotResources.create(routes, version));
+  }
+
+  /**
+   * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
+   *
+   * @param clusters the cluster resources in this snapshot
+   * @param clustersVersion the version of the cluster resources
+   * @param endpoints the endpoint resources in this snapshot
+   * @param endpointsVersion the version of the endpoint resources
+   * @param listeners the listener resources in this snapshot
+   * @param listenersVersion the version of the listener resources
+   * @param routes the route resources in this snapshot
+   * @param routesVersion the version of the route resources
+   */
+  public static Snapshot create(
+      Iterable<Cluster> clusters,
+      String clustersVersion,
+      Iterable<ClusterLoadAssignment> endpoints,
+      String endpointsVersion,
+      Iterable<Listener> listeners,
+      String listenersVersion,
+      Iterable<RouteConfiguration> routes,
+      String routesVersion) {
+
+    return new AutoValue_Snapshot(
+        SnapshotResources.create(clusters, clustersVersion),
+        SnapshotResources.create(endpoints, endpointsVersion),
+        SnapshotResources.create(listeners, listenersVersion),
+        SnapshotResources.create(routes, routesVersion));
   }
 
   /**
