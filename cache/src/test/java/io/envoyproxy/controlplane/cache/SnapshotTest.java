@@ -34,7 +34,7 @@ public class SnapshotTest {
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
 
   @Test
-  public void createSetsResourcesCorrectly() {
+  public void createSingleVersionSetsResourcesCorrectly() {
     final String version = UUID.randomUUID().toString();
 
     Snapshot snapshot = Snapshot.create(
@@ -64,6 +64,41 @@ public class SnapshotTest {
     assertThat(snapshot.endpoints().version()).isEqualTo(version);
     assertThat(snapshot.listeners().version()).isEqualTo(version);
     assertThat(snapshot.routes().version()).isEqualTo(version);
+  }
+
+  @Test
+  public void createSeparateVersionsSetsResourcesCorrectly() {
+    final String clustersVersion = UUID.randomUUID().toString();
+    final String endpointsVersion = UUID.randomUUID().toString();
+    final String listenersVersion = UUID.randomUUID().toString();
+    final String routesVersion = UUID.randomUUID().toString();
+
+    Snapshot snapshot = Snapshot.create(
+        ImmutableList.of(CLUSTER), clustersVersion,
+        ImmutableList.of(ENDPOINT), endpointsVersion,
+        ImmutableList.of(LISTENER), listenersVersion,
+        ImmutableList.of(ROUTE), routesVersion);
+
+    assertThat(snapshot.clusters().resources())
+        .containsEntry(CLUSTER_NAME, CLUSTER)
+        .hasSize(1);
+
+    assertThat(snapshot.endpoints().resources())
+        .containsEntry(CLUSTER_NAME, ENDPOINT)
+        .hasSize(1);
+
+    assertThat(snapshot.listeners().resources())
+        .containsEntry(LISTENER_NAME, LISTENER)
+        .hasSize(1);
+
+    assertThat(snapshot.routes().resources())
+        .containsEntry(ROUTE_NAME, ROUTE)
+        .hasSize(1);
+
+    assertThat(snapshot.clusters().version()).isEqualTo(clustersVersion);
+    assertThat(snapshot.endpoints().version()).isEqualTo(endpointsVersion);
+    assertThat(snapshot.listeners().version()).isEqualTo(listenersVersion);
+    assertThat(snapshot.routes().version()).isEqualTo(routesVersion);
   }
 
   @Test
