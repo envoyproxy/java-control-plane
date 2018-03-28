@@ -14,17 +14,17 @@ import org.junit.Test;
 public class CacheStatusInfoTest {
 
   @Test
-  public void nodeReturnsExpectedInstance() {
+  public void nodeGroupReturnsExpectedGroup() {
     Node node = Node.newBuilder().setId(UUID.randomUUID().toString()).build();
 
-    CacheStatusInfo info = new CacheStatusInfo(node);
+    CacheStatusInfo<Node> info = new CacheStatusInfo<>(node);
 
-    assertThat(info.node()).isSameAs(node);
+    assertThat(info.nodeGroup()).isSameAs(node);
   }
 
   @Test
   public void lastWatchRequestTimeReturns0IfNotSet() {
-    CacheStatusInfo info = new CacheStatusInfo(Node.getDefaultInstance());
+    CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
     assertThat(info.lastWatchRequestTime()).isZero();
   }
@@ -33,7 +33,7 @@ public class CacheStatusInfoTest {
   public void lastWatchRequestTimeReturnsExpectedValueIfSet() {
     final long lastWatchRequestTime = ThreadLocalRandom.current().nextLong(10000, 50000);
 
-    CacheStatusInfo info = new CacheStatusInfo(Node.getDefaultInstance());
+    CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
     info.setLastWatchRequestTime(lastWatchRequestTime);
 
@@ -45,7 +45,7 @@ public class CacheStatusInfoTest {
     final long watchId1 = ThreadLocalRandom.current().nextLong(10000, 50000);
     final long watchId2 = ThreadLocalRandom.current().nextLong(50000, 100000);
 
-    CacheStatusInfo info = new CacheStatusInfo(Node.getDefaultInstance());
+    CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
     assertThat(info.numWatches()).isZero();
 
@@ -70,7 +70,7 @@ public class CacheStatusInfoTest {
     final long watchId1 = ThreadLocalRandom.current().nextLong(10000, 50000);
     final long watchId2 = ThreadLocalRandom.current().nextLong(50000, 100000);
 
-    CacheStatusInfo info = new CacheStatusInfo(Node.getDefaultInstance());
+    CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
     info.setWatch(watchId1, new Watch(DiscoveryRequest.getDefaultInstance()));
     info.setWatch(watchId2, new Watch(DiscoveryRequest.getDefaultInstance()));
@@ -88,7 +88,7 @@ public class CacheStatusInfoTest {
   public void testConcurrentSetWatchAndRemove() {
     final int watchCount = 50;
 
-    CacheStatusInfo info = new CacheStatusInfo(Node.getDefaultInstance());
+    CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
     Collection<Long> watchIds = LongStream.range(0, watchCount).boxed().collect(Collectors.toList());
 
