@@ -18,6 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.junit.Test;
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Mono;
 
 public class SimpleCacheTest {
@@ -79,7 +80,7 @@ public class SimpleCacheTest {
             .addResourceNames("none")
             .build());
 
-    assertThat(watch.valueEmitter().getPending()).isNotZero();
+    assertThat(((EmitterProcessor<Response>) watch.value()).getPending()).isNotZero();
   }
 
   @Test
@@ -201,12 +202,12 @@ public class SimpleCacheTest {
 
     assertThat(statusInfo.numWatches()).isZero();
 
-    watches.values().forEach(watch -> assertThat(watch.valueEmitter().isTerminated()).isTrue());
+    watches.values().forEach(watch -> assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isTrue());
   }
 
   private static void assertThatWatchIsOpenWithNoPendingResponses(Watch watch) {
-    assertThat(watch.valueEmitter().getPending()).isZero();
-    assertThat(watch.valueEmitter().isTerminated()).isFalse();
+    assertThat(((EmitterProcessor<Response>) watch.value()).getPending()).isZero();
+    assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isFalse();
   }
 
   private static void assertThatWatchReceivesSnapshot(Watch watch, Snapshot snapshot) {

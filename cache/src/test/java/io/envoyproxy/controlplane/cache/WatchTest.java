@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
+import reactor.core.publisher.EmitterProcessor;
 
 public class WatchTest {
 
@@ -12,11 +13,11 @@ public class WatchTest {
   public void cancelTerminatesResponseStream() {
     Watch watch = new Watch(DiscoveryRequest.getDefaultInstance());
 
-    assertThat(watch.valueEmitter().isTerminated()).isFalse();
+    assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isFalse();
 
     watch.cancel();
 
-    assertThat(watch.valueEmitter().isTerminated()).isTrue();
+    assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isTrue();
   }
 
   @Test
@@ -27,13 +28,13 @@ public class WatchTest {
 
     watch.setStop(count::getAndIncrement);
 
-    assertThat(watch.valueEmitter().isTerminated()).isFalse();
+    assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isFalse();
 
     watch.cancel();
     watch.cancel();
 
     assertThat(count).hasValue(1);
 
-    assertThat(watch.valueEmitter().isTerminated()).isTrue();
+    assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isTrue();
   }
 }
