@@ -618,6 +618,45 @@ public class DiscoveryServerTest {
     assertThat(callbacks.streamResponseCount).hasValue(4);
   }
 
+  @Test
+  public void testCallbacksOnError() throws InterruptedException {
+    final CountDownLatch streamCloseWithErrorLatch = new CountDownLatch(1);
+
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+      @Override
+      public void onStreamCloseWithError(long streamId, String typeUrl, Throwable error) {
+        super.onStreamCloseWithError(streamId, typeUrl, error);
+
+        streamCloseWithErrorLatch.countDown();
+      }
+    };
+
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
+
+    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+
+    StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
+
+    requestObserver.onError(new RuntimeException("send error"));
+
+    if (!streamCloseWithErrorLatch.await(1, TimeUnit.SECONDS)) {
+      fail("failed to execute onStreamCloseWithError callback before timeout");
+    }
+
+    callbacks.assertThatNoErrors();
+
+    assertThat(callbacks.streamCloseCount).hasValue(0);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(1);
+    assertThat(callbacks.streamOpenCount).hasValue(1);
+    assertThat(callbacks.streamRequestCount).hasValue(0);
+    assertThat(callbacks.streamResponseCount).hasValue(0);
+  }
+
   private static Table<String, String, Collection<? extends Message>> createResponses() {
     return ImmutableTable.<String, String, Collection<? extends Message>>builder()
         .put(Resources.CLUSTER_TYPE_URL, VERSION, ImmutableList.of(CLUSTER))
