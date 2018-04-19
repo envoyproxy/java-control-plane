@@ -38,10 +38,11 @@ import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionMana
 @VisibleForTesting
 public class TestResources {
 
-  private static final String LOCALHOST   = "127.0.0.1";
+  private static final String ANY_ADDRESS = "0.0.0.0";
+  private static final String LOCALHOST = "127.0.0.1";
 
   /**
-   * Returns a new test cluster.
+   * Returns a new test cluster using EDS.
    *
    * @param clusterName name of the new cluster
    */
@@ -57,6 +58,26 @@ public class TestResources {
             .setEdsConfig(edsSource)
             .setServiceName(clusterName))
         .setType(DiscoveryType.EDS)
+        .build();
+  }
+
+  /**
+   * Returns a new test cluster not using EDS.
+   *
+   * @param clusterName name of the new cluster
+   * @param address address to use for the cluster endpoint
+   * @param port port to use for the cluster endpoint
+   */
+  public static Cluster createCluster(String clusterName, String address, int port) {
+    return Cluster.newBuilder()
+        .setName(clusterName)
+        .setConnectTimeout(Durations.fromSeconds(5))
+        .setType(DiscoveryType.STRICT_DNS)
+        .addHosts(Address.newBuilder()
+            .setSocketAddress(SocketAddress.newBuilder()
+                .setAddress(address)
+                .setPortValue(port)
+                .setProtocolValue(Protocol.TCP_VALUE)))
         .build();
   }
 
@@ -106,7 +127,7 @@ public class TestResources {
         .setName(listenerName)
         .setAddress(Address.newBuilder()
             .setSocketAddress(SocketAddress.newBuilder()
-                .setAddress(LOCALHOST)
+                .setAddress(ANY_ADDRESS)
                 .setPortValue(port)
                 .setProtocol(Protocol.TCP)))
         .addFilterChains(FilterChain.newBuilder()
