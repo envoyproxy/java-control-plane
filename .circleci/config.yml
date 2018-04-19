@@ -38,7 +38,7 @@ jobs:
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               echo $GPG_KEY | base64 --decode > signing-key
-              gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --import signing-key
+              gpg --passphrase $GPG_PASSPHRASE --import signing-key
               shred signing-key
 
               if [[ -n "${RELEASE}" && -n "${NEXT}" ]]; then
