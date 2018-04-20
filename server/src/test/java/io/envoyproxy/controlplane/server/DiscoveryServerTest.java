@@ -52,6 +52,8 @@ import reactor.core.publisher.EmitterProcessor;
 
 public class DiscoveryServerTest {
 
+  private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
+
   private static final String CLUSTER_NAME  = "cluster0";
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME    = "route0";
@@ -68,7 +70,7 @@ public class DiscoveryServerTest {
 
   private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = TestResources.createListener(LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+  private static final Listener LISTENER = TestResources.createListener(ADS, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
 
   @Rule

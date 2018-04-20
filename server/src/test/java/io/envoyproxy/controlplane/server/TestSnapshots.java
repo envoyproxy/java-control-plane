@@ -10,6 +10,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 class TestSnapshots {
 
   static Snapshot createSnapshot(
+      boolean ads,
       String clusterName,
       String endpointAddress,
       int endpointPort,
@@ -19,7 +20,7 @@ class TestSnapshots {
       String version) {
 
     Cluster cluster = TestResources.createCluster(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListener(listenerName, listenerPort, routeName);
+    Listener listener = TestResources.createListener(ads, listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(

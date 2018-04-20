@@ -18,17 +18,17 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
 
-public class DiscoveryServerAdsIT {
+public class DiscoveryServerXdsIT {
 
-  private static final String CONFIG = "envoy/ads.config.yaml";
+  private static final String CONFIG = "envoy/xds.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
 
-  private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(1);
-  private static final CountDownLatch onStreamRequestLatch = new CountDownLatch(1);
-  private static final CountDownLatch onStreamResponseLatch = new CountDownLatch(1);
+  private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(2);
+  private static final CountDownLatch onStreamRequestLatch = new CountDownLatch(2);
+  private static final CountDownLatch onStreamResponseLatch = new CountDownLatch(2);
 
-  private static final NettyGrpcServerRule ADS = new NettyGrpcServerRule() {
+  private static final NettyGrpcServerRule XDS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
       final SimpleCache<String> cache = new SimpleCache<>(true, node -> GROUP);
@@ -52,17 +52,20 @@ public class DiscoveryServerAdsIT {
 
       cache.setSnapshot(
           GROUP,
-          createSnapshot(true, "upstream", "upstream", EchoContainer.PORT, "listener0", LISTENER_PORT, "route0", "1"));
+          createSnapshot(false, "upstream", "upstream", EchoContainer.PORT, "listener0", LISTENER_PORT, "route0", "1"));
 
       DiscoveryServer server = new DiscoveryServer(callbacks, cache);
 
-      builder.addService(server.getAggregatedDiscoveryServiceImpl());
+      builder.addService(server.getClusterDiscoveryServiceImpl());
+      builder.addService(server.getEndpointDiscoveryServiceImpl());
+      builder.addService(server.getListenerDiscoveryServiceImpl());
+      builder.addService(server.getRouteDiscoveryServiceImpl());
     }
   };
 
   private static final Network NETWORK = Network.newNetwork();
 
-  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort())
+  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> XDS.getServer().getPort())
       .withExposedPorts(LISTENER_PORT)
       .withNetwork(NETWORK);
 
@@ -72,19 +75,19 @@ public class DiscoveryServerAdsIT {
 
   @ClassRule
   public static final RuleChain RULES = RuleChain.outerRule(UPSTREAM)
-      .around(ADS)
+      .around(XDS)
       .around(ENVOY);
 
   @Test
   public void validateTestRequestToEchoServerViaEnvoy() throws InterruptedException {
     assertThat(onStreamOpenLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to open ADS stream");
+        .overridingErrorMessage("failed to open XDS streams");
 
     assertThat(onStreamRequestLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to receive ADS request");
+        .overridingErrorMessage("failed to receive XDS requests");
 
     assertThat(onStreamResponseLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to send ADS response");
+        .overridingErrorMessage("failed to send XDS responses");
 
     String baseUri = String.format("http://%s:%d", ENVOY.getContainerIpAddress(), ENVOY.getMappedPort(LISTENER_PORT));
 

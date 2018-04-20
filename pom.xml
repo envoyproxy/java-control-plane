@@ -11,6 +11,7 @@
         <module>api</module>
         <module>cache</module>
         <module>server</module>
+        <module>test</module>
     </modules>
 
     <properties>
@@ -42,9 +43,6 @@
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
-
-        <jacoco.report-dir>${project.build.directory}/coverage-reports</jacoco.report-dir>
-        <jacoco.report-dir.data-file>${jacoco.report-dir}/jacoco-merged.exec</jacoco.report-dir.data-file>
     </properties>
 
     <name>java-control-plane</name>
@@ -186,29 +184,12 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <destFile>${jacoco.report-dir.data-file}</destFile>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>jacoco-prepare-it-agent</id>
                         <goals>
                             <goal>prepare-agent-integration</goal>
                         </goals>
-                        <configuration>
-                            <destFile>${jacoco.report-dir.data-file}</destFile>
-                            <append>true</append>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>jacoco-report</id>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                        <configuration>
-                            <dataFile>${jacoco.report-dir.data-file}</dataFile>
-                            <outputDirectory>${jacoco.report-dir}</outputDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

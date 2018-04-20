@@ -16,6 +16,8 @@ import envoy.api.v2.core.AddressOuterClass.Address;
 import envoy.api.v2.core.AddressOuterClass.SocketAddress;
 import envoy.api.v2.core.AddressOuterClass.SocketAddress.Protocol;
 import envoy.api.v2.core.ConfigSourceOuterClass.AggregatedConfigSource;
+import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource;
+import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource.ApiType;
 import envoy.api.v2.core.ConfigSourceOuterClass.ConfigSource;
 import envoy.api.v2.endpoint.EndpointOuterClass.Endpoint;
 import envoy.api.v2.endpoint.EndpointOuterClass.LbEndpoint;
@@ -40,6 +42,7 @@ public class TestResources {
 
   private static final String ANY_ADDRESS = "0.0.0.0";
   private static final String LOCALHOST = "127.0.0.1";
+  private static final String XDS_CLUSTER = "xds_cluster";
 
   /**
    * Returns a new test cluster using EDS.
@@ -104,14 +107,21 @@ public class TestResources {
   /**
    * Returns a new test listener.
    *
+   * @param ads should RDS for the listener be configured to use XDS?
    * @param listenerName name of the new listener
    * @param port port to use for the listener
    * @param routeName name of the test route that is associated with this listener
    */
-  public static Listener createListener(String listenerName, int port, String routeName) {
-    ConfigSource rdsSource = ConfigSource.newBuilder()
-        .setAds(AggregatedConfigSource.getDefaultInstance())
-        .build();
+  public static Listener createListener(boolean ads, String listenerName, int port, String routeName) {
+    ConfigSource rdsSource = ads
+        ? ConfigSource.newBuilder()
+            .setAds(AggregatedConfigSource.getDefaultInstance())
+            .build()
+        : ConfigSource.newBuilder()
+            .setApiConfigSource(ApiConfigSource.newBuilder()
+                .setApiType(ApiType.GRPC)
+                .addClusterNames(XDS_CLUSTER))
+            .build();
 
     HttpConnectionManager manager = HttpConnectionManager.newBuilder()
         .setCodecType(CodecType.AUTO)
