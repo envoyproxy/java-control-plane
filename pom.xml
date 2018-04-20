@@ -44,7 +44,7 @@
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 
         <jacoco.report-dir>${project.build.directory}/coverage-reports</jacoco.report-dir>
-        <jacoco.report-dir.data-file>${jacoco.output}/jacoco-merged.exec</jacoco.report-dir.data-file>
+        <jacoco.report-dir.data-file>${jacoco.report-dir}/jacoco-merged.exec</jacoco.report-dir.data-file>
     </properties>
 
     <name>java-control-plane</name>
