@@ -31,7 +31,7 @@ public class DiscoveryServerAdsIT {
   private static final NettyGrpcServerRule ADS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final SimpleCache<String> cache = new SimpleCache<>(true, node -> GROUP);
+      final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
       final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
         @Override

@@ -14,7 +14,8 @@ public interface ConfigWatcher {
   /**
    * Returns a new configuration resource {@link Watch} for the given discovery request.
    *
+   * @param ads is the watch for an ADS request?
    * @param request the discovery request (node, names, etc.) to use to generate the watch
    */
-  Watch createWatch(DiscoveryRequest request);
+  Watch createWatch(boolean ads, DiscoveryRequest request);
 }

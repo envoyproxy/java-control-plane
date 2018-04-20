@@ -53,7 +53,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamAggregatedResources(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, ANY_TYPE_URL);
+        return createRequestHandler(responseObserver, true, ANY_TYPE_URL);
       }
     };
   }
@@ -67,7 +67,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamClusters(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, Resources.CLUSTER_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.CLUSTER_TYPE_URL);
       }
     };
   }
@@ -81,7 +81,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamEndpoints(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, Resources.ENDPOINT_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.ENDPOINT_TYPE_URL);
       }
     };
   }
@@ -95,7 +95,7 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamListeners(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, Resources.LISTENER_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.LISTENER_TYPE_URL);
       }
     };
   }
@@ -109,13 +109,14 @@ public class DiscoveryServer {
       public StreamObserver<DiscoveryRequest> streamRoutes(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, Resources.ROUTE_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.ROUTE_TYPE_URL);
       }
     };
   }
 
   private StreamObserver<DiscoveryRequest> createRequestHandler(
       StreamObserver<DiscoveryResponse> responseObserver,
+      boolean ads,
       String defaultTypeUrl) {
 
     long streamId = streamCount.getAndIncrement();
@@ -167,7 +168,7 @@ public class DiscoveryServer {
                 oldWatch.cancel();
               }
 
-              Watch newWatch = configWatcher.createWatch(request);
+              Watch newWatch = configWatcher.createWatch(ads, request);
 
               Flux.from(newWatch.value())
                   .doOnError(e -> responseObserver.onError(

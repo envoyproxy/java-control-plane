@@ -681,10 +681,10 @@ public class DiscoveryServerTest {
     }
 
     @Override
-    public Watch createWatch(DiscoveryRequest request) {
+    public Watch createWatch(boolean ads, DiscoveryRequest request) {
       counts.put(request.getTypeUrl(), counts.getOrDefault(request.getTypeUrl(), 0) + 1);
 
-      Watch watch = new Watch(request);
+      Watch watch = new Watch(ads, request);
 
       if (responses.row(request.getTypeUrl()).size() > 0) {
         final Response response;

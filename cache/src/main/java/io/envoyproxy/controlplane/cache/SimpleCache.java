@@ -27,7 +27,6 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
-  private final boolean ads;
   private final NodeGroup<T> groups;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -45,11 +44,9 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   /**
    * Constructs a simple cache.
    *
-   * @param ads if running in ADS-mode, responses are delayed until all resources are explicitly named
    * @param groups maps an envoy host to a node group
    */
-  public SimpleCache(boolean ads, NodeGroup<T> groups) {
-    this.ads = ads;
+  public SimpleCache(NodeGroup<T> groups) {
     this.groups = groups;
   }
 
@@ -57,7 +54,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
    * {@inheritDoc}
    */
   @Override
-  public Watch createWatch(DiscoveryRequest request) {
+  public Watch createWatch(boolean ads, DiscoveryRequest request) {
     T group = groups.hash(request.getNode());
 
     writeLock.lock();
@@ -70,7 +67,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Snapshot snapshot = snapshots.get(group);
       String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl());
 
-      Watch watch = new Watch(request);
+      Watch watch = new Watch(ads, request);
 
       // If the requested version is up-to-date or missing a response, leave an open watch.
       if (snapshot == null || request.getVersionInfo().equals(version)) {
@@ -178,18 +175,19 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   private void respond(Watch watch, Snapshot snapshot, T group) {
     Map<String, ? extends Message> snapshotResources = snapshot.resources(watch.request().getTypeUrl());
 
-    if (!watch.request().getResourceNamesList().isEmpty() && ads) {
+    if (!watch.request().getResourceNamesList().isEmpty() && watch.ads()) {
       Collection<String> missingNames = watch.request().getResourceNamesList().stream()
           .filter(name -> !snapshotResources.containsKey(name))
           .collect(Collectors.toList());
 
       if (!missingNames.isEmpty()) {
-        LOGGER.info("not responding in ADS mode for {} from node {} at version {} since [{}] not requested in [{}]",
+        LOGGER.info(
+            "not responding in ADS mode for {} from node {} at version {} for request [{}] since [{}] not in snapshot",
             watch.request().getTypeUrl(),
             group,
             snapshot.version(watch.request().getTypeUrl()),
-            String.join(", ", missingNames),
-            String.join(", ", watch.request().getResourceNamesList()));
+            String.join(", ", watch.request().getResourceNamesList()),
+            String.join(", ", missingNames));
 
         return;
       }

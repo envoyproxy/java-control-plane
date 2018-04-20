@@ -53,11 +53,12 @@ public class SimpleCacheTest {
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponseInAdsMode() {
-    SimpleCache<String> cache = new SimpleCache<>(true, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     Watch watch = cache.createWatch(
+        true,
         DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
@@ -69,11 +70,12 @@ public class SimpleCacheTest {
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithResponseInXdsMode() {
-    SimpleCache<String> cache = new SimpleCache<>(false, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     Watch watch = cache.createWatch(
+        false,
         DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
@@ -85,12 +87,13 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatch() {
-    SimpleCache<String> cache = new SimpleCache<>(ADS, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     for (String typeUrl : Resources.TYPE_URLS) {
       Watch watch = cache.createWatch(
+          ADS,
           DiscoveryRequest.newBuilder()
               .setNode(Node.getDefaultInstance())
               .setTypeUrl(typeUrl)
@@ -106,16 +109,18 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetAfterWatch() {
-    SimpleCache<String> cache = new SimpleCache<>(ADS, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     Map<String, Watch> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(DiscoveryRequest.newBuilder()
-                .setNode(Node.getDefaultInstance())
-                .setTypeUrl(typeUrl)
-                .addAllResourceNames(NAMES.get(typeUrl))
-                .build())));
+            typeUrl -> cache.createWatch(
+                ADS,
+                DiscoveryRequest.newBuilder()
+                    .setNode(Node.getDefaultInstance())
+                    .setTypeUrl(typeUrl)
+                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .build())));
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -126,19 +131,21 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithRequestVersion() {
-    SimpleCache<String> cache = new SimpleCache<>(ADS, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     Map<String, Watch> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(DiscoveryRequest.newBuilder()
-                .setNode(Node.getDefaultInstance())
-                .setTypeUrl(typeUrl)
-                .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                .addAllResourceNames(NAMES.get(typeUrl))
-                .build())));
+            typeUrl -> cache.createWatch(
+                ADS,
+                DiscoveryRequest.newBuilder()
+                    .setNode(Node.getDefaultInstance())
+                    .setTypeUrl(typeUrl)
+                    .setVersionInfo(SNAPSHOT1.version(typeUrl))
+                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .build())));
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
     for (String typeUrl : Resources.TYPE_URLS) {
@@ -154,19 +161,21 @@ public class SimpleCacheTest {
 
   @Test
   public void setSnapshotWithVersionMatchingRequestShouldLeaveWatchOpenWithoutAdditionalResponse() {
-    SimpleCache<String> cache = new SimpleCache<>(ADS, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     Map<String, Watch> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(DiscoveryRequest.newBuilder()
-                .setNode(Node.getDefaultInstance())
-                .setTypeUrl(typeUrl)
-                .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                .addAllResourceNames(NAMES.get(typeUrl))
-                .build())));
+            typeUrl -> cache.createWatch(
+                ADS,
+                DiscoveryRequest.newBuilder()
+                    .setNode(Node.getDefaultInstance())
+                    .setTypeUrl(typeUrl)
+                    .setVersionInfo(SNAPSHOT1.version(typeUrl))
+                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .build())));
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
     for (String typeUrl : Resources.TYPE_URLS) {
@@ -183,16 +192,18 @@ public class SimpleCacheTest {
 
   @Test
   public void watchesAreReleasedAfterCancel() {
-    SimpleCache<String> cache = new SimpleCache<>(ADS, new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     Map<String, Watch> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(DiscoveryRequest.newBuilder()
-                .setNode(Node.getDefaultInstance())
-                .setTypeUrl(typeUrl)
-                .addAllResourceNames(NAMES.get(typeUrl))
-                .build())));
+            typeUrl -> cache.createWatch(
+                ADS,
+                DiscoveryRequest.newBuilder()
+                    .setNode(Node.getDefaultInstance())
+                    .setTypeUrl(typeUrl)
+                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .build())));
 
     StatusInfo statusInfo = cache.statusInfo(SingleNodeGroup.GROUP);
 
