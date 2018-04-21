@@ -11,14 +11,23 @@ import reactor.core.publisher.EmitterProcessor;
  */
 public class Watch {
 
+  private final boolean ads;
   private final AtomicBoolean isCancelled = new AtomicBoolean();
   private final DiscoveryRequest request;
   private final EmitterProcessor<Response> value = EmitterProcessor.create();
 
   private Runnable stop;
 
-  public Watch(DiscoveryRequest request) {
+  public Watch(boolean ads, DiscoveryRequest request) {
+    this.ads = ads;
     this.request = request;
+  }
+
+  /**
+   * Returns boolean indicating whether or not the watch is for an ADS request.
+   */
+  public boolean ads() {
+    return ads;
   }
 
   /**

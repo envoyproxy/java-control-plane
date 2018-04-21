@@ -42,6 +42,7 @@ public class CacheStatusInfoTest {
 
   @Test
   public void numWatchesReturnsExpectedSize() {
+    final boolean ads = ThreadLocalRandom.current().nextBoolean();
     final long watchId1 = ThreadLocalRandom.current().nextLong(10000, 50000);
     final long watchId2 = ThreadLocalRandom.current().nextLong(50000, 100000);
 
@@ -49,12 +50,12 @@ public class CacheStatusInfoTest {
 
     assertThat(info.numWatches()).isZero();
 
-    info.setWatch(watchId1, new Watch(DiscoveryRequest.getDefaultInstance()));
+    info.setWatch(watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance()));
 
     assertThat(info.numWatches()).isEqualTo(1);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1);
 
-    info.setWatch(watchId2, new Watch(DiscoveryRequest.getDefaultInstance()));
+    info.setWatch(watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance()));
 
     assertThat(info.numWatches()).isEqualTo(2);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1, watchId2);
@@ -67,13 +68,14 @@ public class CacheStatusInfoTest {
 
   @Test
   public void watchesRemoveIfRemovesExpectedWatches() {
+    final boolean ads = ThreadLocalRandom.current().nextBoolean();
     final long watchId1 = ThreadLocalRandom.current().nextLong(10000, 50000);
     final long watchId2 = ThreadLocalRandom.current().nextLong(50000, 100000);
 
     CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
-    info.setWatch(watchId1, new Watch(DiscoveryRequest.getDefaultInstance()));
-    info.setWatch(watchId2, new Watch(DiscoveryRequest.getDefaultInstance()));
+    info.setWatch(watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance()));
+    info.setWatch(watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance()));
 
     assertThat(info.numWatches()).isEqualTo(2);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1, watchId2);
@@ -86,6 +88,7 @@ public class CacheStatusInfoTest {
 
   @Test
   public void testConcurrentSetWatchAndRemove() {
+    final boolean ads = ThreadLocalRandom.current().nextBoolean();
     final int watchCount = 50;
 
     CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
@@ -93,7 +96,7 @@ public class CacheStatusInfoTest {
     Collection<Long> watchIds = LongStream.range(0, watchCount).boxed().collect(Collectors.toList());
 
     watchIds.parallelStream().forEach(watchId -> {
-      Watch watch = new Watch(DiscoveryRequest.getDefaultInstance());
+      Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance());
 
       info.setWatch(watchId, watch);
     });
