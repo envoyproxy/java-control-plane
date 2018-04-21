@@ -29,9 +29,9 @@ pushd "${tmpdir}" >/dev/null
 
 rm -rf "${protodir}"
 
-curl -sL https://github.com/envoyproxy/data-plane-api/archive/${DATA_PLANE_API_SHA}.tar.gz | tar xz --include="*.proto"
+curl -sL https://github.com/envoyproxy/envoy/archive/${ENVOY_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/envoy"
-cp -r data-plane-api-*/envoy/* "${protodir}/envoy"
+cp -r envoy-*/api/envoy/* "${protodir}/envoy"
 
 curl -sL https://github.com/gogo/protobuf/archive/${GOGOPROTO_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/gogoproto"
