@@ -10,4 +10,12 @@ public interface SnapshotCache<T> extends Cache<T> {
    * @param snapshot a versioned collection of node config data
    */
   void setSnapshot(T group, Snapshot snapshot);
+
+  /**
+   * Returns the most recently set {@link Snapshot} for the given node group.
+   *
+   * @param group group identifier
+   * @return latest snapshot
+   */
+  Snapshot getSnapshot(T group);
 }

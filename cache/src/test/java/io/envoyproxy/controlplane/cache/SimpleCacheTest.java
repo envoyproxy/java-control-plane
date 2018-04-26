@@ -216,6 +216,15 @@ public class SimpleCacheTest {
     watches.values().forEach(watch -> assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isTrue());
   }
 
+  @Test
+  public void getSnapshot() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    assertThat(cache.getSnapshot(SingleNodeGroup.GROUP)).isEqualTo(SNAPSHOT1);
+  }
+
   private static void assertThatWatchIsOpenWithNoPendingResponses(Watch watch) {
     assertThat(((EmitterProcessor<Response>) watch.value()).getPending()).isZero();
     assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isFalse();
