@@ -188,7 +188,10 @@ public class DiscoveryServer {
 
       @Override
       public void onError(Throwable t) {
-        LOGGER.error("[{}] stream closed with error", streamId, t);
+        if (!Status.fromThrowable(t).equals(Status.CANCELLED)) {
+          LOGGER.error("[{}] stream closed with error", streamId, t);
+        }
+
         callbacks.onStreamCloseWithError(streamId, defaultTypeUrl, t);
         responseObserver.onError(Status.fromThrowable(t).asException());
         cancel();
