@@ -110,6 +110,19 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   /**
    * {@inheritDoc}
    */
+  @Override public Snapshot getSnapshot(T group) {
+    readLock.lock();
+
+    try {
+      return snapshots.get(group);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setSnapshot(T group, Snapshot snapshot) {
     writeLock.lock();
@@ -144,30 +157,6 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       });
     } finally {
       writeLock.unlock();
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override public Snapshot getSnapshot(T group) {
-    readLock.lock();
-
-    try {
-      Snapshot snapshot = snapshots.get(group);
-
-      // Return a copy of the collections to prevent external modification of the actual snapshot
-      return Snapshot.create(
-          snapshot.clusters().resources().values(),
-          snapshot.clusters().version(),
-          snapshot.endpoints().resources().values(),
-          snapshot.endpoints().version(),
-          snapshot.listeners().resources().values(),
-          snapshot.listeners().version(),
-          snapshot.routes().resources().values(),
-          snapshot.routes().version());
-    } finally {
-      readLock.unlock();
     }
   }
 
