@@ -110,6 +110,19 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   /**
    * {@inheritDoc}
    */
+  @Override public Snapshot getSnapshot(T group) {
+    readLock.lock();
+
+    try {
+      return snapshots.get(group);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setSnapshot(T group, Snapshot snapshot) {
     writeLock.lock();
