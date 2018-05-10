@@ -225,6 +225,20 @@ public class SimpleCacheTest {
     assertThat(cache.getSnapshot(SingleNodeGroup.GROUP)).isEqualTo(SNAPSHOT1);
   }
 
+  @Test
+  public void groups() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    assertThat(cache.groups()).isEmpty();
+
+    cache.createWatch(ADS, DiscoveryRequest.newBuilder()
+        .setNode(Node.getDefaultInstance())
+        .setTypeUrl("")
+        .build());
+
+    assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
+  }
+
   private static void assertThatWatchIsOpenWithNoPendingResponses(Watch watch) {
     assertThat(((EmitterProcessor<Response>) watch.value()).getPending()).isZero();
     assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isFalse();

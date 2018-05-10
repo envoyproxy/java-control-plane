@@ -1,6 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
 import envoy.api.v2.core.Base.Node;
+import java.util.Collection;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
@@ -8,6 +9,12 @@ import javax.annotation.concurrent.ThreadSafe;
  */
 @ThreadSafe
 public interface Cache<T> extends ConfigWatcher {
+
+  /**
+   * Returns all known {@link Node} groups.
+   *
+   */
+  Collection<T> groups();
 
   /**
    * Returns the current {@link StatusInfo} for the given {@link Node} group.
