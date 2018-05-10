@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.Message;
 import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.Collection;
@@ -140,6 +141,19 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
     try {
       return snapshots.get(group);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override public Collection<T> groups() {
+    readLock.lock();
+
+    try {
+      return ImmutableSet.copyOf(statuses.keySet());
     } finally {
       readLock.unlock();
     }
