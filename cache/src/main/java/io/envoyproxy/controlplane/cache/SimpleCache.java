@@ -54,6 +54,31 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   /**
    * {@inheritDoc}
    */
+  @Override public boolean clearSnapshot(T group) {
+    writeLock.lock();
+
+    try {
+      CacheStatusInfo<T> status = statuses.get(group);
+
+      // If we don't know about this group, do nothing.
+      if (status != null && status.numWatches() > 0) {
+        LOGGER.warn("tried to clear snapshot for group with existing watches, group={}", group);
+
+        return false;
+      }
+
+      statuses.remove(group);
+      snapshots.remove(group);
+
+      return true;
+    } finally {
+      writeLock.unlock();
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Watch createWatch(boolean ads, DiscoveryRequest request) {
     T group = groups.hash(request.getNode());

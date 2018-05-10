@@ -226,6 +226,41 @@ public class SimpleCacheTest {
   }
 
   @Test
+  public void clearSnapshot() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isTrue();
+
+    assertThat(cache.getSnapshot(SingleNodeGroup.GROUP)).isNull();
+  }
+
+  @Test
+  public void clearSnapshotWithWatches() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    final Watch watch = cache.createWatch(ADS, DiscoveryRequest.newBuilder()
+        .setNode(Node.getDefaultInstance())
+        .setTypeUrl("")
+        .build());
+
+    // clearSnapshot should fail and the snapshot should be left untouched
+    assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
+    assertThat(cache.getSnapshot(SingleNodeGroup.GROUP)).isEqualTo(SNAPSHOT1);
+    assertThat(cache.statusInfo(SingleNodeGroup.GROUP)).isNotNull();
+
+    watch.cancel();
+
+    // now that the watch is gone we should be able to clear it
+    assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isTrue();
+    assertThat(cache.getSnapshot(SingleNodeGroup.GROUP)).isNull();
+    assertThat(cache.statusInfo(SingleNodeGroup.GROUP)).isNull();
+  }
+
+  @Test
   public void groups() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
