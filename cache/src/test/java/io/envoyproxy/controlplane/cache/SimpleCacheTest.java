@@ -242,7 +242,7 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    Watch watch = cache.createWatch(ADS, DiscoveryRequest.newBuilder()
+    final Watch watch = cache.createWatch(ADS, DiscoveryRequest.newBuilder()
         .setNode(Node.getDefaultInstance())
         .setTypeUrl("")
         .build());
