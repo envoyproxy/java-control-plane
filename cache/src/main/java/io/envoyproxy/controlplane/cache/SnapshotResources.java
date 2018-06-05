@@ -4,6 +4,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Message;
 import java.util.Map;
+import java.util.stream.Collector;
 import java.util.stream.StreamSupport;
 
 @AutoValue
@@ -19,7 +20,12 @@ public abstract class SnapshotResources<T extends Message> {
   public static <T extends Message> SnapshotResources<T> create(Iterable<T> resources, String version) {
     return new AutoValue_SnapshotResources<>(
         StreamSupport.stream(resources.spliterator(), false)
-            .collect(ImmutableMap.toImmutableMap(Resources::getResourceName, r -> r)),
+            .collect(
+                Collector.of(
+                    ImmutableMap.Builder<String, T>::new,
+                    (b, e) -> b.put(Resources.getResourceName(e), e),
+                    (b1, b2) -> b1.putAll(b2.build()),
+                    ImmutableMap.Builder::build)),
         version);
   }
 
