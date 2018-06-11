@@ -25,6 +25,7 @@ public class SimpleCacheTest {
 
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
   private static final String CLUSTER_NAME = "cluster0";
+  private static final String SECONDARY_CLUSTER_NAME = "cluster1";
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
 
@@ -41,6 +42,15 @@ public class SimpleCacheTest {
   private static final Snapshot SNAPSHOT2 = Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
+      ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
+      ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      VERSION2);
+
+  private static final Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = Snapshot.create(
+      ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build(),
+          Cluster.newBuilder().setName(SECONDARY_CLUSTER_NAME).build()),
+      ImmutableList.of(ClusterLoadAssignment.newBuilder().setClusterName(CLUSTER_NAME).build(),
+          ClusterLoadAssignment.newBuilder().setClusterName(SECONDARY_CLUSTER_NAME).build()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
       VERSION2);
@@ -156,6 +166,36 @@ public class SimpleCacheTest {
 
     for (String typeUrl : Resources.TYPE_URLS) {
       assertThatWatchReceivesSnapshot(watches.get(typeUrl), SNAPSHOT2);
+    }
+  }
+
+  @Test
+  public void successfullyWatchAllResourceTypeWithSetBeforeWatchWithRequestVersionIgnoringResourceHints() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup(), true);
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+        .collect(Collectors.toMap(
+            typeUrl -> typeUrl,
+            typeUrl -> cache.createWatch(
+                ADS,
+                DiscoveryRequest.newBuilder()
+                    .setNode(Node.getDefaultInstance())
+                    .setTypeUrl(typeUrl)
+                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .setVersionInfo(SNAPSHOT1.version(typeUrl))
+                    .build())));
+
+    // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
+    for (String typeUrl : Resources.TYPE_URLS) {
+      assertThatWatchIsOpenWithNoPendingResponses(watches.get(typeUrl));
+    }
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, MULTIPLE_RESOURCES_SNAPSHOT2);
+
+    for (String typeUrl : Resources.TYPE_URLS) {
+      assertThatWatchReceivesSnapshot(watches.get(typeUrl), MULTIPLE_RESOURCES_SNAPSHOT2);
     }
   }
 

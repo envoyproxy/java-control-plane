@@ -29,6 +29,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
   private final NodeGroup<T> groups;
+  private final boolean ignoreResourceHints;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
@@ -48,7 +49,18 @@ public class SimpleCache<T> implements SnapshotCache<T> {
    * @param groups maps an envoy host to a node group
    */
   public SimpleCache(NodeGroup<T> groups) {
+    this(groups, false);
+  }
+
+  /**
+   * Constructs a simple cache.
+   *
+   * @param groups maps an envoy host to a node group
+   * @param ignoreResourceHints whether to filter response based on resource hints
+   */
+  public SimpleCache(NodeGroup<T> groups, boolean ignoreResourceHints) {
     this.groups = groups;
+    this.ignoreResourceHints = ignoreResourceHints;
   }
 
   /**
@@ -214,6 +226,10 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   }
 
   private Response createResponse(DiscoveryRequest request, Map<String, ? extends Message> resources, String version) {
+    if (ignoreResourceHints) {
+      return Response.create(request, resources.values(), version);
+    }
+
     Collection<? extends Message> filtered = request.getResourceNamesList().isEmpty()
         ? resources.values()
         : request.getResourceNamesList().stream()
