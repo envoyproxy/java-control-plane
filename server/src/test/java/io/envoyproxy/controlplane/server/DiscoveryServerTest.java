@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -681,7 +682,7 @@ public class DiscoveryServerTest {
     }
 
     @Override
-    public Watch createWatch(boolean ads, DiscoveryRequest request) {
+    public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResources) {
       counts.put(request.getTypeUrl(), counts.getOrDefault(request.getTypeUrl(), 0) + 1);
 
       Watch watch = new Watch(ads, request);

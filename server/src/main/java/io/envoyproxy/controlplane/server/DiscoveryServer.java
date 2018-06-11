@@ -16,7 +16,9 @@ import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -127,8 +129,12 @@ public class DiscoveryServer {
 
     return new StreamObserver<DiscoveryRequest>() {
 
-      private final Map<String, Watch> watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-      private final Map<String, String> nonces = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      private final Map<String, Watch> watches =
+          new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      private final Map<String, DiscoveryResponse> latestResponse =
+          new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      private final Map<String, Set<String>> ackedResources =
+          new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
 
       private AtomicLong streamNonce = new AtomicLong();
 
@@ -160,15 +166,26 @@ public class DiscoveryServer {
         callbacks.onStreamRequest(streamId, request);
 
         for (String typeUrl : Resources.TYPE_URLS) {
-          String resourceNonce = nonces.get(typeUrl);
+          DiscoveryResponse response = latestResponse.get(typeUrl);
+          String resourceNonce = response == null ? null : response.getNonce();
 
-          if (requestTypeUrl.equals(typeUrl) && (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce))) {
+          if (requestTypeUrl.equals(typeUrl) && (isNullOrEmpty(resourceNonce)
+              || resourceNonce.equals(nonce))) {
+            if (!request.hasErrorDetail() && response != null) {
+              Set<String> ackedResourcesForType = response.getResourcesList()
+                  .stream()
+                  .map(Resources::getResourceName)
+                  .collect(Collectors.toSet());
+              ackedResources.put(typeUrl, ackedResourcesForType);
+            }
+
             watches.compute(typeUrl, (t, oldWatch) -> {
               if (oldWatch != null) {
                 oldWatch.cancel();
               }
 
-              Watch newWatch = configWatcher.createWatch(ads, request);
+              Watch newWatch = configWatcher.createWatch(ads, request,
+                  ackedResources.getOrDefault(typeUrl, Collections.emptySet()));
 
               Flux.from(newWatch.value())
                   .doOnError(e -> responseObserver.onError(
@@ -176,7 +193,7 @@ public class DiscoveryServer {
                           .withCause(e)
                           .withDescription(String.format("[%d] %s watch failed", streamId, typeUrl))
                           .asException()))
-                  .subscribe(r -> nonces.put(typeUrl, send(r, typeUrl)));
+                  .subscribe(r -> latestResponse.put(typeUrl, send(r, typeUrl)));
 
               return newWatch;
             });
@@ -209,7 +226,7 @@ public class DiscoveryServer {
         watches.values().forEach(Watch::cancel);
       }
 
-      private String send(Response response, String typeUrl) {
+      private DiscoveryResponse send(Response response, String typeUrl) {
         String nonce = Long.toString(streamNonce.getAndIncrement());
 
         DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder()
@@ -229,7 +246,7 @@ public class DiscoveryServer {
           responseObserver.onNext(discoveryResponse);
         }
 
-        return nonce;
+        return discoveryResponse;
       }
     };
   }
