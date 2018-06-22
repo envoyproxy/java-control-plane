@@ -129,12 +129,10 @@ public class DiscoveryServer {
 
     return new StreamObserver<DiscoveryRequest>() {
 
-      private final Map<String, Watch> watches =
-          new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      private final Map<String, Watch> watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
       private final Map<String, DiscoveryResponse> latestResponse =
           new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-      private final Map<String, Set<String>> ackedResources =
-          new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      private final Map<String, Set<String>> ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
 
       private AtomicLong streamNonce = new AtomicLong();
 

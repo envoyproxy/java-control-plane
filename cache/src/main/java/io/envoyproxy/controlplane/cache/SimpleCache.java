@@ -98,22 +98,24 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
       Watch watch = new Watch(ads, request);
 
-      HashSet<String> requestedResources = new HashSet<>(request.getResourceNamesList());
-      // If the request is asking for resources we haven't sent to the proxy yet, see if we have
-      // additional resources
-      if (snapshot != null && !knownResourceNames.equals(requestedResources)) {
-        Sets.SetView<String> newResourceHints =
-            Sets.difference(requestedResources, knownResourceNames);
+      if (snapshot != null) {
+        HashSet<String> requestedResources = new HashSet<>(request.getResourceNamesList());
+        // If the request is asking for resources we haven't sent to the proxy yet, see if we have
+        // additional resources
+        if (!knownResourceNames.equals(requestedResources)) {
+          Sets.SetView<String> newResourceHints =
+              Sets.difference(requestedResources, knownResourceNames);
 
-        // If any of the newly requested resources are in the snapshot respond immediately. If not
-        // we'll fall back to version comparisons.
-        if (snapshot.resources(request.getTypeUrl())
-            .keySet()
-            .stream()
-            .anyMatch(newResourceHints::contains)) {
-          respond(watch, snapshot, group);
+          // If any of the newly requested resources are in the snapshot respond immediately. If not
+          // we'll fall back to version comparisons.
+          if (snapshot.resources(request.getTypeUrl())
+              .keySet()
+              .stream()
+              .anyMatch(newResourceHints::contains)) {
+            respond(watch, snapshot, group);
 
-          return watch;
+            return watch;
+          }
         }
       }
 

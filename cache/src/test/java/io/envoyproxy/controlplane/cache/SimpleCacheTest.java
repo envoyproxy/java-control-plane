@@ -3,7 +3,6 @@ package io.envoyproxy.controlplane.cache;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Message;
 import envoy.api.v2.Cds.Cluster;
 import envoy.api.v2.Discovery.DiscoveryRequest;
@@ -12,7 +11,6 @@ import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
 import envoy.api.v2.core.Base.Node;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -55,20 +53,6 @@ public class SimpleCacheTest {
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
       VERSION2);
-
-  private static final Map<String, Collection<String>> NAMES = ImmutableMap.of(
-      Resources.CLUSTER_TYPE_URL, ImmutableList.of(CLUSTER_NAME),
-      Resources.ENDPOINT_TYPE_URL, ImmutableList.of(),
-      Resources.LISTENER_TYPE_URL, ImmutableList.of(LISTENER_NAME),
-      Resources.ROUTE_TYPE_URL, ImmutableList.of(ROUTE_NAME));
-
-  private static final Map<String, Collection<String>> NAMES_MULTIPLE_RESOURCES_SNAPSHOT =
-      ImmutableMap.of(
-          Resources.CLUSTER_TYPE_URL, ImmutableList.of(CLUSTER_NAME, SECONDARY_CLUSTER_NAME),
-          Resources.ENDPOINT_TYPE_URL, ImmutableList.of(CLUSTER_NAME, SECONDARY_CLUSTER_NAME),
-          Resources.LISTENER_TYPE_URL, ImmutableList.of(LISTENER_NAME),
-          Resources.ROUTE_TYPE_URL, ImmutableList.of(ROUTE_NAME)
-      );
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponseInAdsMode() {
@@ -118,13 +102,13 @@ public class SimpleCacheTest {
           DiscoveryRequest.newBuilder()
               .setNode(Node.getDefaultInstance())
               .setTypeUrl(typeUrl)
-              .addAllResourceNames(NAMES.get(typeUrl))
+              .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
               .build(),
           Collections.emptySet());
 
       assertThat(watch.request().getTypeUrl()).isEqualTo(typeUrl);
       assertThat(watch.request().getResourceNamesList()).containsExactlyElementsOf(
-          NAMES.get(typeUrl));
+          SNAPSHOT1.resources(typeUrl).keySet());
 
       assertThatWatchReceivesSnapshot(watch, SNAPSHOT1);
     }
@@ -142,7 +126,7 @@ public class SimpleCacheTest {
                 DiscoveryRequest.newBuilder()
                     .setNode(Node.getDefaultInstance())
                     .setTypeUrl(typeUrl)
-                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
                     .build(),
                 Collections.emptySet())));
 
@@ -168,7 +152,7 @@ public class SimpleCacheTest {
                     .setNode(Node.getDefaultInstance())
                     .setTypeUrl(typeUrl)
                     .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
                     .build(),
                 SNAPSHOT2.resources(typeUrl).keySet())));
 
@@ -185,13 +169,16 @@ public class SimpleCacheTest {
   }
 
   @Test
-  public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestnVersionNewResourceHints() {
+  public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHints() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, MULTIPLE_RESOURCES_SNAPSHOT2);
 
     // Set a watch for the current snapshot with the same version but with resource hints present
     // in the snapshot that the watch creator does not currently know about.
+    //
+    // Note how we're requesting the resources from MULTIPLE_RESOURCE_SNAPSHOT2 while claiming we
+    // only know about the ones from SNAPSHOT2
     Map<String, Watch> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
@@ -201,7 +188,7 @@ public class SimpleCacheTest {
                     .setNode(Node.getDefaultInstance())
                     .setTypeUrl(typeUrl)
                     .setVersionInfo(MULTIPLE_RESOURCES_SNAPSHOT2.version(typeUrl))
-                    .addAllResourceNames(NAMES_MULTIPLE_RESOURCES_SNAPSHOT.get(typeUrl))
+                    .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
                     .build(),
                 SNAPSHOT2.resources(typeUrl).keySet())));
 
@@ -219,13 +206,18 @@ public class SimpleCacheTest {
   }
 
   @Test
-  public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestnVersionNewResourceHintsNoChange() {
+  public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHintsNoChange() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT2);
 
     // Set a watch for the current snapshot for the same version but with new resource hints not
     // present in the snapshot that the watch creator does not know about.
+    //
+    // Note that we're requesting the additional resources found in MULTIPLE_RESOURCE_SNAPSHOT2
+    // while we only know about the resources found in SNAPSHOT2. Since SNAPSHOT2 is the current
+    // snapshot, we have nothing to respond with for the new resources so we should not trigger
+    // the watch.
     Map<String, Watch> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
@@ -235,7 +227,7 @@ public class SimpleCacheTest {
                     .setNode(Node.getDefaultInstance())
                     .setTypeUrl(typeUrl)
                     .setVersionInfo(SNAPSHOT2.version(typeUrl))
-                    .addAllResourceNames(NAMES_MULTIPLE_RESOURCES_SNAPSHOT.get(typeUrl))
+                    .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
                     .build(),
                 SNAPSHOT2.resources(typeUrl).keySet())));
 
@@ -260,7 +252,7 @@ public class SimpleCacheTest {
                     .setNode(Node.getDefaultInstance())
                     .setTypeUrl(typeUrl)
                     .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
                     .build(),
                 SNAPSHOT1.resources(typeUrl).keySet())));
 
@@ -289,7 +281,7 @@ public class SimpleCacheTest {
                 DiscoveryRequest.newBuilder()
                     .setNode(Node.getDefaultInstance())
                     .setTypeUrl(typeUrl)
-                    .addAllResourceNames(NAMES.get(typeUrl))
+                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
                     .build(),
                 Collections.emptySet())));
 
