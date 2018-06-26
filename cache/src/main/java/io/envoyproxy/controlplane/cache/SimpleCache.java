@@ -110,15 +110,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
         status.setWatch(watchId, watch);
 
-        watch.setStop(() -> {
-          writeLock.lock();
-
-          try {
-            status.removeWatch(watchId);
-          } finally {
-            writeLock.unlock();
-          }
-        });
+        watch.setStop(() -> status.removeWatch(watchId));
 
         return watch;
       }
