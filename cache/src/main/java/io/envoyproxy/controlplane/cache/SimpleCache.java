@@ -1,12 +1,15 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
 import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -80,7 +83,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
    * {@inheritDoc}
    */
   @Override
-  public Watch createWatch(boolean ads, DiscoveryRequest request) {
+  public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResourceNames) {
     T group = groups.hash(request.getNode());
 
     writeLock.lock();
@@ -94,6 +97,27 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl());
 
       Watch watch = new Watch(ads, request);
+
+      if (snapshot != null) {
+        HashSet<String> requestedResources = new HashSet<>(request.getResourceNamesList());
+        // If the request is asking for resources we haven't sent to the proxy yet, see if we have
+        // additional resources
+        if (!knownResourceNames.equals(requestedResources)) {
+          Sets.SetView<String> newResourceHints =
+              Sets.difference(requestedResources, knownResourceNames);
+
+          // If any of the newly requested resources are in the snapshot respond immediately. If not
+          // we'll fall back to version comparisons.
+          if (snapshot.resources(request.getTypeUrl())
+              .keySet()
+              .stream()
+              .anyMatch(newResourceHints::contains)) {
+            respond(watch, snapshot, group);
+
+            return watch;
+          }
+        }
+      }
 
       // If the requested version is up-to-date or missing a response, leave an open watch.
       if (snapshot == null || request.getVersionInfo().equals(version)) {
