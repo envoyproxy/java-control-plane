@@ -207,17 +207,24 @@ public class DiscoveryServer {
           LOGGER.error("[{}] stream closed with error", streamId, t);
         }
 
-        callbacks.onStreamCloseWithError(streamId, defaultTypeUrl, t);
-        responseObserver.onError(Status.fromThrowable(t).asException());
-        cancel();
+        try {
+          callbacks.onStreamCloseWithError(streamId, defaultTypeUrl, t);
+          responseObserver.onError(Status.fromThrowable(t).asException());
+        } finally {
+          cancel();
+        }
       }
 
       @Override
       public void onCompleted() {
         LOGGER.info("[{}] stream closed", streamId);
-        callbacks.onStreamClose(streamId, defaultTypeUrl);
-        responseObserver.onCompleted();
-        cancel();
+
+        try {
+          callbacks.onStreamClose(streamId, defaultTypeUrl);
+          responseObserver.onCompleted();
+        } finally {
+          cancel();
+        }
       }
 
       private void cancel() {
