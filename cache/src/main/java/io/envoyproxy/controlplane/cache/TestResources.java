@@ -19,6 +19,8 @@ import envoy.api.v2.core.ConfigSourceOuterClass.AggregatedConfigSource;
 import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource;
 import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource.ApiType;
 import envoy.api.v2.core.ConfigSourceOuterClass.ConfigSource;
+import envoy.api.v2.core.GrpcServiceOuterClass.GrpcService;
+import envoy.api.v2.core.GrpcServiceOuterClass.GrpcService.EnvoyGrpc;
 import envoy.api.v2.endpoint.EndpointOuterClass.Endpoint;
 import envoy.api.v2.endpoint.EndpointOuterClass.LbEndpoint;
 import envoy.api.v2.endpoint.EndpointOuterClass.LocalityLbEndpoints;
@@ -120,7 +122,9 @@ public class TestResources {
         : ConfigSource.newBuilder()
             .setApiConfigSource(ApiConfigSource.newBuilder()
                 .setApiType(ApiType.GRPC)
-                .addClusterNames(XDS_CLUSTER))
+                .addGrpcServices(GrpcService.newBuilder()
+                    .setEnvoyGrpc(EnvoyGrpc.newBuilder()
+                        .setClusterName(XDS_CLUSTER))))
             .build();
 
     HttpConnectionManager manager = HttpConnectionManager.newBuilder()
