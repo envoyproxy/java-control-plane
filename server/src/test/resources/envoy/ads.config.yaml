@@ -5,8 +5,9 @@ admin:
 dynamic_resources:
   ads_config:
     api_type: GRPC
-    cluster_names:
-    - ads_cluster
+    grpc_services:
+      envoy_grpc:
+        cluster_name: ads_cluster
   cds_config:
     ads: {}
   lds_config:
