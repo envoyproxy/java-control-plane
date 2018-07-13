@@ -1,10 +1,12 @@
 package io.envoyproxy.controlplane.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import com.google.type.Color;
 import envoy.api.v2.Cds.Cluster;
@@ -51,6 +53,13 @@ public class ResourcesTest {
     Message message = Color.newBuilder().build();
 
     assertThat(Resources.getResourceName(message)).isEmpty();
+  }
+
+  @Test
+  public void getResourceNameAnyThrowsOnBadClass() {
+    assertThatThrownBy(() -> Resources.getResourceName(Any.newBuilder().setTypeUrl("garbage").build()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessageContaining("cannot unpack");
   }
 
   @Test

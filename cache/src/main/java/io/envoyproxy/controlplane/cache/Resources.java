@@ -3,8 +3,11 @@ package io.envoyproxy.controlplane.cache;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager.RouteSpecifierCase.RDS;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.Struct;
@@ -19,6 +22,7 @@ import envoy.api.v2.listener.Listener.FilterChain;
 import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +47,13 @@ public class Resources {
       LISTENER_TYPE_URL,
       ROUTE_TYPE_URL);
 
+  public static final Map<String, Class<? extends Message>> RESOURCE_TYPE_BY_URL = ImmutableMap.of(
+      CLUSTER_TYPE_URL, Cluster.class,
+      ENDPOINT_TYPE_URL, ClusterLoadAssignment.class,
+      LISTENER_TYPE_URL, Listener.class,
+      ROUTE_TYPE_URL, RouteConfiguration.class
+      );
+
   /**
    * Returns the name of the given resource message.
    *
@@ -66,6 +77,23 @@ public class Resources {
     }
 
     return "";
+  }
+
+  /**
+   * Returns the name of the given resource message.
+   *
+   * @param anyResource the resource message
+   * @throws RuntimeException if the passed Any doesn't correspond to an xDS resource
+   */
+  public static String getResourceName(Any anyResource) {
+    Class<? extends Message> clazz = RESOURCE_TYPE_BY_URL.get(anyResource.getTypeUrl());
+    Preconditions.checkNotNull(clazz, "cannot unpack non-xDS message type");
+
+    try {
+      return getResourceName(anyResource.unpack(clazz));
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**

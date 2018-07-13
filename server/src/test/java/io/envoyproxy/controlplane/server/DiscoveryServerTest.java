@@ -46,6 +46,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import org.assertj.core.api.Condition;
 import org.junit.Rule;
 import org.junit.Test;
@@ -385,8 +387,8 @@ public class DiscoveryServerTest {
   public void testCallbacksAggregateHandler() throws InterruptedException {
     final CountDownLatch streamCloseLatch = new CountDownLatch(1);
     final CountDownLatch streamOpenLatch = new CountDownLatch(1);
-    final CountDownLatch streamRequestLatch = new CountDownLatch(4);
-    final CountDownLatch streamResponseLatch = new CountDownLatch(4);
+    final AtomicReference<CountDownLatch> streamRequestLatch = new AtomicReference<>(new CountDownLatch(4));
+    final AtomicReference<CountDownLatch> streamResponseLatch = new AtomicReference<>(new CountDownLatch(4));
 
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
@@ -421,14 +423,14 @@ public class DiscoveryServerTest {
       public void onStreamRequest(long streamId, DiscoveryRequest request) {
         super.onStreamRequest(streamId, request);
 
-        streamRequestLatch.countDown();
+        streamRequestLatch.get().countDown();
       }
 
       @Override
       public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
         super.onStreamResponse(streamId, request, response);
 
-        streamResponseLatch.countDown();
+        streamResponseLatch.get().countDown();
       }
     };
 
@@ -469,12 +471,54 @@ public class DiscoveryServerTest {
         .addResourceNames(ROUTE_NAME)
         .build());
 
-    if (!streamRequestLatch.await(1, TimeUnit.SECONDS)) {
+    if (!streamRequestLatch.get().await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamRequest callback before timeout");
     }
 
-    if (!streamResponseLatch.await(1, TimeUnit.SECONDS)) {
+    if (!streamResponseLatch.get().await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamResponse callback before timeout");
+    }
+
+    // Send another round of requests. These should not trigger any responses.
+    streamResponseLatch.set(new CountDownLatch(1));
+    streamRequestLatch.set(new CountDownLatch(4));
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("0")
+        .setVersionInfo(VERSION)
+        .setTypeUrl(Resources.LISTENER_TYPE_URL)
+        .build());
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("1")
+        .setTypeUrl(Resources.CLUSTER_TYPE_URL)
+        .setVersionInfo(VERSION)
+        .build());
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("2")
+        .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+        .addResourceNames(CLUSTER_NAME)
+        .setVersionInfo(VERSION)
+        .build());
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("3")
+        .setTypeUrl(Resources.ROUTE_TYPE_URL)
+        .addResourceNames(ROUTE_NAME)
+        .setVersionInfo(VERSION)
+        .build());
+
+    if (!streamRequestLatch.get().await(1, TimeUnit.SECONDS)) {
+      fail("failed to execute onStreamRequest callback before timeout");
+    }
+
+    if (streamResponseLatch.get().await(1, TimeUnit.SECONDS)) {
+      fail("unexpected onStreamResponse callback");
     }
 
     requestObserver.onCompleted();
@@ -488,7 +532,7 @@ public class DiscoveryServerTest {
     assertThat(callbacks.streamCloseCount).hasValue(1);
     assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
     assertThat(callbacks.streamOpenCount).hasValue(1);
-    assertThat(callbacks.streamRequestCount).hasValue(4);
+    assertThat(callbacks.streamRequestCount).hasValue(8);
     assertThat(callbacks.streamResponseCount).hasValue(4);
   }
 
@@ -674,6 +718,7 @@ public class DiscoveryServerTest {
     private final boolean closeWatch;
     private final Map<String, Integer> counts;
     private final Table<String, String, Collection<? extends Message>> responses;
+    private final Map<String, Set<String>> expectedKnownResources = new ConcurrentHashMap<>();
 
     MockConfigWatcher(boolean closeWatch, Table<String, String, Collection<? extends Message>> responses) {
       this.closeWatch = closeWatch;
@@ -692,15 +737,24 @@ public class DiscoveryServerTest {
 
         synchronized (responses) {
           String version = responses.row(request.getTypeUrl()).keySet().iterator().next();
-          Collection<? extends Message> resources = responses.row(request.getTypeUrl()).remove(version);
+          Collection<? extends Message> resources =
+              responses.row(request.getTypeUrl()).remove(version);
           response = Response.create(request, resources, version);
         }
 
         EmitterProcessor<Response> emitter = (EmitterProcessor<Response>) watch.value();
 
+        expectedKnownResources.put(request.getTypeUrl(), response.resources().stream()
+            .map(Resources::getResourceName)
+            .collect(Collectors.toSet()));
         emitter.onNext(response);
       } else if (closeWatch) {
         watch.cancel();
+      } else {
+        Set<String> expectedKnown = expectedKnownResources.get(request.getTypeUrl());
+        if (expectedKnown != null && !expectedKnown.equals(knownResources)) {
+          fail("unexpected known resources after sending all responses");
+        }
       }
 
       return watch;
