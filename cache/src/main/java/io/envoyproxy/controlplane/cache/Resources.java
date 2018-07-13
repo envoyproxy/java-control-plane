@@ -3,6 +3,7 @@ package io.envoyproxy.controlplane.cache;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager.RouteSpecifierCase.RDS;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -85,8 +86,11 @@ public class Resources {
    * @throws RuntimeException if the passed Any doesn't correspond to an xDS resource
    */
   public static String getResourceName(Any anyResource) {
+    Class<? extends Message> clazz = RESOURCE_TYPE_BY_URL.get(anyResource.getTypeUrl());
+    Preconditions.checkNotNull(clazz, "cannot unpack non-xDS message type");
+
     try {
-      return getResourceName(anyResource.unpack(RESOURCE_TYPE_BY_URL.get(anyResource.getTypeUrl())));
+      return getResourceName(anyResource.unpack(clazz));
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException(e);
     }
