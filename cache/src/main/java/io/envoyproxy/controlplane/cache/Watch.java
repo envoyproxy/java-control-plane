@@ -2,8 +2,7 @@ package io.envoyproxy.controlplane.cache;
 
 import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.reactivestreams.Processor;
-import reactor.core.publisher.EmitterProcessor;
+import java.util.function.Consumer;
 
 /**
  * {@code Watch} is a dedicated stream of configuration resources produced by the configuration cache and consumed by
@@ -14,13 +13,21 @@ public class Watch {
   private final boolean ads;
   private final AtomicBoolean isCancelled = new AtomicBoolean();
   private final DiscoveryRequest request;
-  private final EmitterProcessor<Response> value = EmitterProcessor.create();
+  private final Consumer<Response> responseConsumer;
 
   private Runnable stop;
 
-  public Watch(boolean ads, DiscoveryRequest request) {
+  /**
+   * Construct a watch.
+   *
+   * @param ads is this watch for an ADS request?
+   * @param request the original request for the watch
+   * @param responseConsumer handler for outgoing response messages
+   */
+  public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer) {
     this.ads = ads;
     this.request = request;
+    this.responseConsumer = responseConsumer;
   }
 
   /**
@@ -36,20 +43,17 @@ public class Watch {
    */
   public void cancel() {
     if (isCancelled.compareAndSet(false, true)) {
-      try {
-        value().onComplete();
-      } catch (Exception e) {
-        // If the underlying exception was an IllegalStateException then we assume that means the stream was already
-        // closed elsewhere and ignore it, otherwise we re-throw.
-        if (!(e.getCause() instanceof IllegalStateException)) {
-          throw e;
-        }
-      }
-
       if (stop != null) {
         stop.run();
       }
     }
+  }
+
+  /**
+   * Returns boolean indicating whether or not the watch has been cancelled.
+   */
+  public boolean isCancelled() {
+    return isCancelled.get();
   }
 
   /**
@@ -60,17 +64,22 @@ public class Watch {
   }
 
   /**
+   * Sends the given response to the watch's response handler.
+   *
+   * @param response the response to be handled
+   */
+  public void respond(Response response) {
+    // TODO: Should trying to respond after cancellation be an error state?
+    if (!isCancelled()) {
+      responseConsumer.accept(response);
+    }
+  }
+
+  /**
    * Sets the callback method to be executed when the watch is cancelled. Even if cancel is executed multiple times, it
    * ensures that this stop callback is only executed once.
    */
   public void setStop(Runnable stop) {
     this.stop = stop;
-  }
-
-  /**
-   * Returns the stream of response values.
-   */
-  public Processor<Response, Response> value() {
-    return value;
   }
 }

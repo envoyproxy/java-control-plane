@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 
 public class DiscoveryServer {
 
@@ -182,18 +181,11 @@ public class DiscoveryServer {
                 oldWatch.cancel();
               }
 
-              Watch newWatch = configWatcher.createWatch(ads, request,
-                  ackedResources.getOrDefault(typeUrl, Collections.emptySet()));
-
-              Flux.from(newWatch.value())
-                  .doOnError(e -> responseObserver.onError(
-                      Status.UNAVAILABLE
-                          .withCause(e)
-                          .withDescription(String.format("[%d] %s watch failed", streamId, typeUrl))
-                          .asException()))
-                  .subscribe(r -> latestResponse.put(typeUrl, send(r, typeUrl)));
-
-              return newWatch;
+              return configWatcher.createWatch(
+                  ads,
+                  request,
+                  ackedResources.getOrDefault(typeUrl, Collections.emptySet()),
+                  r -> latestResponse.put(typeUrl, send(r, typeUrl)));
             });
 
             return;
@@ -245,11 +237,7 @@ public class DiscoveryServer {
 
         callbacks.onStreamResponse(streamId, response.request(), discoveryResponse);
 
-        // The watch value streams are being observed on multiple threads, so we need to synchronize
-        // here because StreamObserver instances are not thread-safe.
-        synchronized (responseObserver) {
-          responseObserver.onNext(discoveryResponse);
-        }
+        responseObserver.onNext(discoveryResponse);
 
         return discoveryResponse;
       }

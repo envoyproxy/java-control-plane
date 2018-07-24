@@ -47,11 +47,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.assertj.core.api.Condition;
 import org.junit.Rule;
 import org.junit.Test;
-import reactor.core.publisher.EmitterProcessor;
 
 public class DiscoveryServerTest {
 
@@ -727,27 +727,32 @@ public class DiscoveryServerTest {
     }
 
     @Override
-    public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResources) {
+    public Watch createWatch(
+        boolean ads,
+        DiscoveryRequest request,
+        Set<String> knownResources,
+        Consumer<Response> responseConsumer) {
+
       counts.put(request.getTypeUrl(), counts.getOrDefault(request.getTypeUrl(), 0) + 1);
 
-      Watch watch = new Watch(ads, request);
+      Watch watch = new Watch(ads, request, responseConsumer);
 
       if (responses.row(request.getTypeUrl()).size() > 0) {
         final Response response;
 
         synchronized (responses) {
           String version = responses.row(request.getTypeUrl()).keySet().iterator().next();
-          Collection<? extends Message> resources =
-              responses.row(request.getTypeUrl()).remove(version);
+          Collection<? extends Message> resources = responses.row(request.getTypeUrl()).remove(version);
           response = Response.create(request, resources, version);
         }
 
-        EmitterProcessor<Response> emitter = (EmitterProcessor<Response>) watch.value();
+        expectedKnownResources.put(
+            request.getTypeUrl(),
+            response.resources().stream()
+                .map(Resources::getResourceName)
+                .collect(Collectors.toSet()));
 
-        expectedKnownResources.put(request.getTypeUrl(), response.resources().stream()
-            .map(Resources::getResourceName)
-            .collect(Collectors.toSet()));
-        emitter.onNext(response);
+        watch.respond(response);
       } else if (closeWatch) {
         watch.cancel();
       } else {

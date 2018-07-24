@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
@@ -83,7 +84,12 @@ public class SimpleCache<T> implements SnapshotCache<T> {
    * {@inheritDoc}
    */
   @Override
-  public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResourceNames) {
+  public Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer) {
+
     T group = groups.hash(request.getNode());
 
     writeLock.lock();
@@ -96,18 +102,17 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Snapshot snapshot = snapshots.get(group);
       String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl());
 
-      Watch watch = new Watch(ads, request);
+      Watch watch = new Watch(ads, request, responseConsumer);
 
       if (snapshot != null) {
         HashSet<String> requestedResources = new HashSet<>(request.getResourceNamesList());
-        // If the request is asking for resources we haven't sent to the proxy yet, see if we have
-        // additional resources
-        if (!knownResourceNames.equals(requestedResources)) {
-          Sets.SetView<String> newResourceHints =
-              Sets.difference(requestedResources, knownResourceNames);
 
-          // If any of the newly requested resources are in the snapshot respond immediately. If not
-          // we'll fall back to version comparisons.
+        // If the request is asking for resources we haven't sent to the proxy yet, see if we have additional resources.
+        if (!knownResourceNames.equals(requestedResources)) {
+          Sets.SetView<String> newResourceHints = Sets.difference(requestedResources, knownResourceNames);
+
+          // If any of the newly requested resources are in the snapshot respond immediately. If not we'll fall back to
+          // version comparisons.
           if (snapshot.resources(request.getTypeUrl())
               .keySet()
               .stream()
@@ -274,6 +279,6 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         snapshotResources,
         version);
 
-    watch.value().onNext(response);
+    watch.respond(response);
   }
 }
