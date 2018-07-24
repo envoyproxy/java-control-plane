@@ -67,12 +67,14 @@ public class Watch {
    * Sends the given response to the watch's response handler.
    *
    * @param response the response to be handled
+   * @throws WatchCancelledException if the watch has already been cancelled
    */
-  public void respond(Response response) {
-    // TODO: Should trying to respond after cancellation be an error state?
-    if (!isCancelled()) {
-      responseConsumer.accept(response);
+  public void respond(Response response) throws WatchCancelledException {
+    if (isCancelled()) {
+      throw new WatchCancelledException();
     }
+
+    responseConsumer.accept(response);
   }
 
   /**

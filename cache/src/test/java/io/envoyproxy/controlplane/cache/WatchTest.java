@@ -1,6 +1,8 @@
 package io.envoyproxy.controlplane.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.google.common.collect.ImmutableList;
 import envoy.api.v2.Discovery.DiscoveryRequest;
@@ -78,12 +80,16 @@ public class WatchTest {
 
     Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), responses::add);
 
-    watch.respond(response1);
-    watch.respond(response2);
+    try {
+      watch.respond(response1);
+      watch.respond(response2);
+    } catch (WatchCancelledException e) {
+      fail("watch should not be cancelled", e);
+    }
 
     watch.cancel();
 
-    watch.respond(response3);
+    assertThatThrownBy(() -> watch.respond(response3)).isInstanceOf(WatchCancelledException.class);
 
     assertThat(responses).containsExactly(response1, response2);
   }

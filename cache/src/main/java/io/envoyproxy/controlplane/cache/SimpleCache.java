@@ -279,6 +279,15 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         snapshotResources,
         version);
 
-    watch.respond(response);
+    try {
+      watch.respond(response);
+    } catch (WatchCancelledException e) {
+      LOGGER.error(
+          "failed to respond for {} from node {} at version {} with version {} because watch was already cancelled",
+          watch.request().getTypeUrl(),
+          group,
+          watch.request().getVersionInfo(),
+          version);
+    }
   }
 }

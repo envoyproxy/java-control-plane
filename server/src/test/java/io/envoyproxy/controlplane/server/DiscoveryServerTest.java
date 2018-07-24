@@ -2,7 +2,7 @@ package io.envoyproxy.controlplane.server;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
@@ -32,6 +32,7 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
+import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcServerRule;
@@ -752,7 +753,11 @@ public class DiscoveryServerTest {
                 .map(Resources::getResourceName)
                 .collect(Collectors.toSet()));
 
-        watch.respond(response);
+        try {
+          watch.respond(response);
+        } catch (WatchCancelledException e) {
+          fail("watch should not be cancelled", e);
+        }
       } else if (closeWatch) {
         watch.cancel();
       } else {
