@@ -10,15 +10,14 @@ import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
 import envoy.api.v2.core.Base.Node;
-import java.time.Duration;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.Test;
-import reactor.core.publisher.EmitterProcessor;
-import reactor.core.publisher.Mono;
 
 public class SimpleCacheTest {
 
@@ -60,6 +59,8 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
+    ResponseTracker responseTracker = new ResponseTracker();
+
     Watch watch = cache.createWatch(
         true,
         DiscoveryRequest.newBuilder()
@@ -67,9 +68,10 @@ public class SimpleCacheTest {
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
             .build(),
-        Collections.emptySet());
+        Collections.emptySet(),
+        responseTracker);
 
-    assertThatWatchIsOpenWithNoPendingResponses(watch);
+    assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
   }
 
   @Test
@@ -78,6 +80,8 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
+    ResponseTracker responseTracker = new ResponseTracker();
+
     Watch watch = cache.createWatch(
         false,
         DiscoveryRequest.newBuilder()
@@ -85,9 +89,11 @@ public class SimpleCacheTest {
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
             .build(),
-        Collections.emptySet());
+        Collections.emptySet(),
+        responseTracker);
 
-    assertThat(((EmitterProcessor<Response>) watch.value()).getPending()).isNotZero();
+    assertThat(watch.isCancelled()).isFalse();
+    assertThat(responseTracker.responses).isNotEmpty();
   }
 
   @Test
@@ -97,6 +103,8 @@ public class SimpleCacheTest {
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     for (String typeUrl : Resources.TYPE_URLS) {
+      ResponseTracker responseTracker = new ResponseTracker();
+
       Watch watch = cache.createWatch(
           ADS,
           DiscoveryRequest.newBuilder()
@@ -104,13 +112,14 @@ public class SimpleCacheTest {
               .setTypeUrl(typeUrl)
               .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
               .build(),
-          Collections.emptySet());
+          Collections.emptySet(),
+          responseTracker);
 
       assertThat(watch.request().getTypeUrl()).isEqualTo(typeUrl);
       assertThat(watch.request().getResourceNamesList()).containsExactlyElementsOf(
           SNAPSHOT1.resources(typeUrl).keySet());
 
-      assertThatWatchReceivesSnapshot(watch, SNAPSHOT1);
+      assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
     }
   }
 
@@ -118,17 +127,24 @@ public class SimpleCacheTest {
   public void successfullyWatchAllResourceTypesWithSetAfterWatch() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
-    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(
-                ADS,
-                DiscoveryRequest.newBuilder()
-                    .setNode(Node.getDefaultInstance())
-                    .setTypeUrl(typeUrl)
-                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                    .build(),
-                Collections.emptySet())));
+            typeUrl -> {
+              ResponseTracker responseTracker = new ResponseTracker();
+
+              Watch watch = cache.createWatch(
+                  ADS,
+                  DiscoveryRequest.newBuilder()
+                      .setNode(Node.getDefaultInstance())
+                      .setTypeUrl(typeUrl)
+                      .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
+                      .build(),
+                  Collections.emptySet(),
+                  responseTracker);
+
+              return new WatchAndTracker(watch, responseTracker);
+            }));
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -143,22 +159,29 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(
-                ADS,
-                DiscoveryRequest.newBuilder()
-                    .setNode(Node.getDefaultInstance())
-                    .setTypeUrl(typeUrl)
-                    .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                    .build(),
-                SNAPSHOT2.resources(typeUrl).keySet())));
+            typeUrl -> {
+              ResponseTracker responseTracker = new ResponseTracker();
+
+              Watch watch = cache.createWatch(
+                  ADS,
+                  DiscoveryRequest.newBuilder()
+                      .setNode(Node.getDefaultInstance())
+                      .setTypeUrl(typeUrl)
+                      .setVersionInfo(SNAPSHOT1.version(typeUrl))
+                      .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
+                      .build(),
+                  SNAPSHOT2.resources(typeUrl).keySet(),
+                  responseTracker);
+
+              return new WatchAndTracker(watch, responseTracker);
+            }));
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
     for (String typeUrl : Resources.TYPE_URLS) {
-      assertThatWatchIsOpenWithNoPendingResponses(watches.get(typeUrl));
+      assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT2);
@@ -179,29 +202,34 @@ public class SimpleCacheTest {
     //
     // Note how we're requesting the resources from MULTIPLE_RESOURCE_SNAPSHOT2 while claiming we
     // only know about the ones from SNAPSHOT2
-    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(
-                ADS,
-                DiscoveryRequest.newBuilder()
-                    .setNode(Node.getDefaultInstance())
-                    .setTypeUrl(typeUrl)
-                    .setVersionInfo(MULTIPLE_RESOURCES_SNAPSHOT2.version(typeUrl))
-                    .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
-                    .build(),
-                SNAPSHOT2.resources(typeUrl).keySet())));
+            typeUrl -> {
+              ResponseTracker responseTracker = new ResponseTracker();
+
+              Watch watch = cache.createWatch(
+                  ADS,
+                  DiscoveryRequest.newBuilder()
+                      .setNode(Node.getDefaultInstance())
+                      .setTypeUrl(typeUrl)
+                      .setVersionInfo(MULTIPLE_RESOURCES_SNAPSHOT2.version(typeUrl))
+                      .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
+                      .build(),
+                  SNAPSHOT2.resources(typeUrl).keySet(),
+                  responseTracker);
+
+              return new WatchAndTracker(watch, responseTracker);
+            }));
 
     // The snapshot version matches for all resources, but for eds and cds there are new resources present
     // for the same version, so we expect the watches to trigger.
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.CLUSTER_TYPE_URL),
-        MULTIPLE_RESOURCES_SNAPSHOT2);
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.ENDPOINT_TYPE_URL),
-        MULTIPLE_RESOURCES_SNAPSHOT2);
+    assertThatWatchReceivesSnapshot(watches.remove(Resources.CLUSTER_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
+    assertThatWatchReceivesSnapshot(watches.remove(Resources.ENDPOINT_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
 
     // Remaining watches should not trigger
-    for (Watch watch : watches.values()) {
-      assertThatWatchIsOpenWithNoPendingResponses(watch);
+    for (WatchAndTracker watchAndTracker : watches.values()) {
+      assertThatWatchIsOpenWithNoResponses(watchAndTracker);
     }
   }
 
@@ -218,22 +246,29 @@ public class SimpleCacheTest {
     // while we only know about the resources found in SNAPSHOT2. Since SNAPSHOT2 is the current
     // snapshot, we have nothing to respond with for the new resources so we should not trigger
     // the watch.
-    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(
-                ADS,
-                DiscoveryRequest.newBuilder()
-                    .setNode(Node.getDefaultInstance())
-                    .setTypeUrl(typeUrl)
-                    .setVersionInfo(SNAPSHOT2.version(typeUrl))
-                    .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
-                    .build(),
-                SNAPSHOT2.resources(typeUrl).keySet())));
+            typeUrl -> {
+              ResponseTracker responseTracker = new ResponseTracker();
+
+              Watch watch = cache.createWatch(
+                  ADS,
+                  DiscoveryRequest.newBuilder()
+                      .setNode(Node.getDefaultInstance())
+                      .setTypeUrl(typeUrl)
+                      .setVersionInfo(SNAPSHOT2.version(typeUrl))
+                      .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
+                      .build(),
+                  SNAPSHOT2.resources(typeUrl).keySet(),
+                  responseTracker);
+
+              return new WatchAndTracker(watch, responseTracker);
+            }));
 
     // No watches should trigger since no new information will be returned
-    for (Watch watch : watches.values()) {
-      assertThatWatchIsOpenWithNoPendingResponses(watch);
+    for (WatchAndTracker watchAndTracker : watches.values()) {
+      assertThatWatchIsOpenWithNoResponses(watchAndTracker);
     }
   }
 
@@ -243,29 +278,36 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(
-                ADS,
-                DiscoveryRequest.newBuilder()
-                    .setNode(Node.getDefaultInstance())
-                    .setTypeUrl(typeUrl)
-                    .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                    .build(),
-                SNAPSHOT1.resources(typeUrl).keySet())));
+            typeUrl -> {
+              ResponseTracker responseTracker = new ResponseTracker();
+
+              Watch watch = cache.createWatch(
+                  ADS,
+                  DiscoveryRequest.newBuilder()
+                      .setNode(Node.getDefaultInstance())
+                      .setTypeUrl(typeUrl)
+                      .setVersionInfo(SNAPSHOT1.version(typeUrl))
+                      .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
+                      .build(),
+                  SNAPSHOT1.resources(typeUrl).keySet(),
+                  responseTracker);
+
+              return new WatchAndTracker(watch, responseTracker);
+            }));
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
     for (String typeUrl : Resources.TYPE_URLS) {
-      assertThatWatchIsOpenWithNoPendingResponses(watches.get(typeUrl));
+      assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     // The request version still matches the current snapshot version, so the watches shouldn't receive any responses.
     for (String typeUrl : Resources.TYPE_URLS) {
-      assertThatWatchIsOpenWithNoPendingResponses(watches.get(typeUrl));
+      assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
   }
 
@@ -273,27 +315,34 @@ public class SimpleCacheTest {
   public void watchesAreReleasedAfterCancel() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
-    Map<String, Watch> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
-            typeUrl -> cache.createWatch(
-                ADS,
-                DiscoveryRequest.newBuilder()
-                    .setNode(Node.getDefaultInstance())
-                    .setTypeUrl(typeUrl)
-                    .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                    .build(),
-                Collections.emptySet())));
+            typeUrl -> {
+              ResponseTracker responseTracker = new ResponseTracker();
+
+              Watch watch = cache.createWatch(
+                  ADS,
+                  DiscoveryRequest.newBuilder()
+                      .setNode(Node.getDefaultInstance())
+                      .setTypeUrl(typeUrl)
+                      .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
+                      .build(),
+                  Collections.emptySet(),
+                  responseTracker);
+
+              return new WatchAndTracker(watch, responseTracker);
+            }));
 
     StatusInfo statusInfo = cache.statusInfo(SingleNodeGroup.GROUP);
 
     assertThat(statusInfo.numWatches()).isEqualTo(watches.size());
 
-    watches.values().forEach(Watch::cancel);
+    watches.values().forEach(w -> w.watch.cancel());
 
     assertThat(statusInfo.numWatches()).isZero();
 
-    watches.values().forEach(watch -> assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isTrue());
+    watches.values().forEach(w -> assertThat(w.watch.isCancelled()).isTrue());
   }
 
   @Test
@@ -326,7 +375,8 @@ public class SimpleCacheTest {
             .setNode(Node.getDefaultInstance())
             .setTypeUrl("")
             .build(),
-        Collections.emptySet());
+        Collections.emptySet(),
+        r -> { });
 
     // clearSnapshot should fail and the snapshot should be left untouched
     assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
@@ -351,23 +401,36 @@ public class SimpleCacheTest {
             .setNode(Node.getDefaultInstance())
             .setTypeUrl("")
             .build(),
-        Collections.emptySet());
+        Collections.emptySet(),
+        r -> { });
 
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
   }
 
-  private static void assertThatWatchIsOpenWithNoPendingResponses(Watch watch) {
-    assertThat(((EmitterProcessor<Response>) watch.value()).getPending()).isZero();
-    assertThat(((EmitterProcessor<Response>) watch.value()).isTerminated()).isFalse();
+  private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
+    assertThat(watchAndTracker.watch.isCancelled()).isFalse();
+    assertThat(watchAndTracker.tracker.responses).isEmpty();
   }
 
-  private static void assertThatWatchReceivesSnapshot(Watch watch, Snapshot snapshot) {
-    Response response = Mono.from(watch.value()).block(Duration.ofMillis(250));
+  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
+    assertThat(watchAndTracker.tracker.responses).isNotEmpty();
+
+    Response response = watchAndTracker.tracker.responses.getFirst();
 
     assertThat(response).isNotNull();
-    assertThat(response.version()).isEqualTo(snapshot.version(watch.request().getTypeUrl()));
+    assertThat(response.version()).isEqualTo(snapshot.version(watchAndTracker.watch.request().getTypeUrl()));
     assertThat(response.resources().toArray(new Message[0]))
-        .containsExactlyElementsOf(snapshot.resources(watch.request().getTypeUrl()).values());
+        .containsExactlyElementsOf(snapshot.resources(watchAndTracker.watch.request().getTypeUrl()).values());
+  }
+
+  private static class ResponseTracker implements Consumer<Response> {
+
+    private final LinkedList<Response> responses = new LinkedList<>();
+
+    @Override
+    public void accept(Response response) {
+      responses.add(response);
+    }
   }
 
   private static class SingleNodeGroup implements NodeGroup<String> {
@@ -381,6 +444,17 @@ public class SimpleCacheTest {
       }
 
       return GROUP;
+    }
+  }
+
+  private static class WatchAndTracker {
+
+    final Watch watch;
+    final ResponseTracker tracker;
+
+    WatchAndTracker(Watch watch, ResponseTracker tracker) {
+      this.watch = watch;
+      this.tracker = tracker;
     }
   }
 }

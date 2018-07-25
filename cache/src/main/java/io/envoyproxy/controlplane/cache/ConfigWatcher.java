@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache;
 
 import envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
@@ -18,6 +19,11 @@ public interface ConfigWatcher {
    * @param ads is the watch for an ADS request?
    * @param request the discovery request (node, names, etc.) to use to generate the watch
    * @param knownResourceNames resources that are already known to the caller
+   * @param responseConsumer the response handler, used to process outgoing response messages
    */
-  Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResourceNames);
+  Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer);
 }
