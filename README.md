@@ -20,3 +20,13 @@ mvn clean package
 
 More thorough usage examples are still TODO, but there is a basic test implementation in
 [TestMain](server/src/test/java/io/envoyproxy/controlplane/server/TestMain.java).
+
+#### Bring api up-to-date with data-plane-api
+To bring this repository's protobuf files up-to-date with the source
+of truth protobuf files in in envoyproxy/data-plane-api, do the
+following:
+
+1. update [tools/API_SHAS](tools/API_SHAS) (instructions are in the
+   file) and then
+2. run [tools/update-api.sh](tools/update-api.sh) from the `tools`
+   directory.
