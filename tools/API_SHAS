@@ -1,11 +1,11 @@
 # Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
-ENVOY_SHA="5f8b25ee0f543aeaf6356b3f97c86af56d6b0181"
+ENVOY_SHA="0c4c00e16a2905c34f94dbd81b3c5978aa4d7e01"
 
 # dependencies (source: https://github.com/envoyproxy/envoy/blob/<DATA_PLANE_API_SHA>/api/bazel/repositories.bzl)
-GOGOPROTO_SHA="1adfc126b41513cc696b209667c8656ea7aac67c"
-GOOGLEAPIS_SHA="d642131a6e6582fc226caf9893cb7fe7885b3411"
-OPENCENSUS_SHA="ab82e5fdec8267dc2a726544b10af97675970847"
-PGV_GIT_SHA="9f600c2cd2d7031fdc8e25e1c9f5ad81c8cab4fe"
-PROMETHEUS_SHA="99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c"
+GOGOPROTO_SHA="1adfc126b41513cc696b209667c8656ea7aac67c" # v1.0.0
+GOOGLEAPIS_SHA="d642131a6e6582fc226caf9893cb7fe7885b3411" # May 23, 2018
+OPENCENSUS_SHA="ab82e5fdec8267dc2a726544b10af97675970847" # May 23, 2018
+PGV_GIT_SHA="9f600c2cd2d7031fdc8e25e1c9f5ad81c8cab4fe" # Apr 24, 2018
+PROMETHEUS_SHA="99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c" # Nov 17, 2017
