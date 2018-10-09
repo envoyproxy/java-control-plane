@@ -185,7 +185,7 @@ public class DiscoveryServer {
                   ads,
                   request,
                   ackedResources.getOrDefault(typeUrl, Collections.emptySet()),
-                  r -> latestResponse.put(typeUrl, send(r, typeUrl)));
+                  r -> send(r, typeUrl));
             });
 
             return;
@@ -223,7 +223,7 @@ public class DiscoveryServer {
         watches.values().forEach(Watch::cancel);
       }
 
-      private DiscoveryResponse send(Response response, String typeUrl) {
+      private void send(Response response, String typeUrl) {
         String nonce = Long.toString(streamNonce.getAndIncrement());
 
         DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder()
@@ -237,9 +237,11 @@ public class DiscoveryServer {
 
         callbacks.onStreamResponse(streamId, response.request(), discoveryResponse);
 
+        // Store the latest response *before* we send the response. This ensures that by the time the request
+        // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions
+        // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
+        latestResponse.put(typeUrl, discoveryResponse);
         responseObserver.onNext(discoveryResponse);
-
-        return discoveryResponse;
       }
     };
   }
