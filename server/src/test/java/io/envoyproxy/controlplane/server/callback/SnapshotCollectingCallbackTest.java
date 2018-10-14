@@ -76,4 +76,10 @@ public class SnapshotCollectingCallbackTest {
     assertThat(latch.await(100,TimeUnit.MILLISECONDS)).isTrue();
     assertThat(collectedGroups).containsExactly("group");
   }
+
+  @Test
+  public void testCloseBeforeRequest() {
+    callback.onStreamClose(0, "");
+    assertThat(collectedGroups).isEmpty();
+  }
 }
