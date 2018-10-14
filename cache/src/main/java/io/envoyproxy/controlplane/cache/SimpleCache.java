@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -42,6 +44,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   private final Map<T, Snapshot> snapshots = new HashMap<>();
   @GuardedBy("lock")
   private final Map<T, CacheStatusInfo<T>> statuses = new HashMap<>();
+  @GuardedBy("lock")
+  private final Map<T, ExecutorService> executors = new HashMap<>();
 
   @GuardedBy("lock")
   private long watchCount;
@@ -73,6 +77,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
       statuses.remove(group);
       snapshots.remove(group);
+      executors.remove(group);
 
       return true;
     } finally {
@@ -102,7 +107,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Snapshot snapshot = snapshots.get(group);
       String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl());
 
-      Watch watch = new Watch(ads, request, responseConsumer);
+      Watch watch = new Watch(ads, request, responseConsumer, executors.computeIfAbsent(group, key -> Executors
+          .newSingleThreadExecutor()));
 
       if (snapshot != null) {
         HashSet<String> requestedResources = new HashSet<>(request.getResourceNamesList());

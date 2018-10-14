@@ -1,6 +1,8 @@
 package io.envoyproxy.controlplane.cache;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import envoy.api.v2.Discovery.DiscoveryRequest;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -14,6 +16,7 @@ public class Watch {
   private final AtomicBoolean isCancelled = new AtomicBoolean();
   private final DiscoveryRequest request;
   private final Consumer<Response> responseConsumer;
+  private final Executor executor;
 
   private Runnable stop;
 
@@ -23,11 +26,27 @@ public class Watch {
    * @param ads is this watch for an ADS request?
    * @param request the original request for the watch
    * @param responseConsumer handler for outgoing response messages
+   * @param executor executor to execute callback with
+   *
    */
-  public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer) {
+  public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer,
+      Executor executor) {
     this.ads = ads;
     this.request = request;
     this.responseConsumer = responseConsumer;
+    this.executor = executor;
+  }
+
+  /**
+   * Construct a watch.
+   *
+   * @param ads is this watch for an ADS request?
+   * @param request the original request for the watch
+   * @param responseConsumer handler for outgoing response messages
+   *
+   */
+  public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer) {
+    this(ads, request, responseConsumer, MoreExecutors.directExecutor());
   }
 
   /**
@@ -74,7 +93,7 @@ public class Watch {
       throw new WatchCancelledException();
     }
 
-    responseConsumer.accept(response);
+    executor.execute(() -> responseConsumer.accept(response));
   }
 
   /**
