@@ -13,6 +13,7 @@ import envoy.api.v2.Cds.Cluster;
 import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -73,6 +74,16 @@ public abstract class Snapshot {
         SnapshotResources.create(endpoints, endpointsVersion),
         SnapshotResources.create(listeners, listenersVersion),
         SnapshotResources.create(routes, routesVersion));
+  }
+
+  /**
+   * Creates an empty snapshot with the given version.
+   *
+   * @param version the version of the snapshot resources
+   */
+  public static Snapshot createEmpty(String version) {
+    return create(Collections.emptySet(), Collections.emptySet(),
+        Collections.emptySet(), Collections.emptySet(), version);
   }
 
   /**
