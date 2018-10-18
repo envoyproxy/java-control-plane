@@ -45,6 +45,11 @@ public class DiscoveryServer {
     this(Collections.singletonList(callbacks), configWatcher);
   }
 
+  /**
+   * Creates the server.
+   * @param callbacks server callbacks
+   * @param configWatcher source of configuration updates
+   */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher) {
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
