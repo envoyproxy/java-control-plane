@@ -14,6 +14,7 @@ import envoy.api.v2.Cds.Cluster;
 import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
+import envoy.api.v2.auth.Cert.Secret;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -25,6 +26,7 @@ public class SnapshotTest {
   private static final String CLUSTER_NAME = "cluster0";
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
+  private static final String SECRET_NAME = "secret0";
 
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
@@ -33,6 +35,7 @@ public class SnapshotTest {
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener LISTENER = TestResources.createListener(ADS, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
+  private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -43,6 +46,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
         version);
 
     assertThat(snapshot.clusters().resources())
@@ -73,12 +77,15 @@ public class SnapshotTest {
     final String endpointsVersion = UUID.randomUUID().toString();
     final String listenersVersion = UUID.randomUUID().toString();
     final String routesVersion = UUID.randomUUID().toString();
+    final String secretsVersion = UUID.randomUUID().toString();
 
     Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER), clustersVersion,
         ImmutableList.of(ENDPOINT), endpointsVersion,
         ImmutableList.of(LISTENER), listenersVersion,
-        ImmutableList.of(ROUTE), routesVersion);
+        ImmutableList.of(ROUTE), routesVersion,
+        ImmutableList.of(SECRET), secretsVersion
+        );
 
     assertThat(snapshot.clusters().resources())
         .containsEntry(CLUSTER_NAME, CLUSTER)
@@ -110,6 +117,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
     // We have to do some lame casting to appease java's compiler, otherwise it fails to compile due to limitations with
@@ -145,6 +153,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
         version);
 
     assertThat(snapshot.version(CLUSTER_TYPE_URL)).isEqualTo(version);
@@ -164,6 +173,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
     snapshot.ensureConsistent();
@@ -176,6 +186,7 @@ public class SnapshotTest {
         ImmutableList.of(),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot1::ensureConsistent)
@@ -191,6 +202,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(),
+        ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot2::ensureConsistent)
@@ -212,6 +224,7 @@ public class SnapshotTest {
         ImmutableList.of(TestResources.createEndpoint(otherClusterName, ENDPOINT_PORT)),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot1::ensureConsistent)
@@ -228,6 +241,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(TestResources.createRoute(otherRouteName, CLUSTER_NAME)),
+        ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot2::ensureConsistent)
