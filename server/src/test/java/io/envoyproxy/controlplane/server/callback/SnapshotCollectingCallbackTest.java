@@ -27,7 +27,7 @@ public class SnapshotCollectingCallbackTest {
   private SimpleCache<String> cache;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     collectedGroups.clear();
     cache = new SimpleCache<>(NODE_GROUP);
     cache.setSnapshot("group", Snapshot.createEmpty(""));
@@ -41,39 +41,46 @@ public class SnapshotCollectingCallbackTest {
     callback.onStreamRequest(1, Discovery.DiscoveryRequest.getDefaultInstance());
 
     // We have 2 references to the snapshot, this should do nothing.
-    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMinutes(5)));
+    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(5)));
     assertThat(collectedGroups).isEmpty();
 
     callback.onStreamClose(0, "");
 
     // We have 1 reference to the snapshot, this should do nothing.
-    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMinutes(5)));
+    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(5)));
     assertThat(collectedGroups).isEmpty();
 
     callback.onStreamCloseWithError(1, "", new RuntimeException());
 
     // We have 0 references to the snapshot, but 1 < 3 so it's too early to collect the snapshot.
-    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMinutes(1)));
+    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(1)));
     assertThat(collectedGroups).isEmpty();
 
     // We have 0 references to the snapshot, and 5 > 3 so we clear out the snapshot.
-    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMinutes(5)));
+    callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(5)));
     assertThat(collectedGroups).containsExactly("group");
   }
 
   @Test
   public void testAsyncCollection() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(1);
+    CountDownLatch snapshotCollectedLatch = new CountDownLatch(1);
+    CountDownLatch deleteUnreferencedLatch = new CountDownLatch(1);
+
     // Create a cache with 0 expiry delay, which means the snapshot should get collected immediately.
-    callback = new SnapshotCollectingCallback<>(cache, NODE_GROUP, CLOCK,
-        ImmutableSet.of(collectedGroups::add, group -> latch.countDown()), -3, 1);
+    callback = new SnapshotCollectingCallback<String>(cache, NODE_GROUP, CLOCK,
+        ImmutableSet.of(collectedGroups::add, group -> snapshotCollectedLatch.countDown()), -3, 1) {
+      @Override synchronized void deleteUnreferenced(Clock clock) {
+        super.deleteUnreferenced(clock);
+        deleteUnreferencedLatch.countDown();;
+      }
+    };
 
     callback.onStreamRequest(0, Discovery.DiscoveryRequest.getDefaultInstance());
-    Thread.sleep(100);
+    assertThat(deleteUnreferencedLatch.await(100, TimeUnit.MILLISECONDS)).isTrue();
     assertThat(collectedGroups).isEmpty();
 
     callback.onStreamClose(0, "");
-    assertThat(latch.await(100,TimeUnit.MILLISECONDS)).isTrue();
+    assertThat(snapshotCollectedLatch.await(100,TimeUnit.MILLISECONDS)).isTrue();
     assertThat(collectedGroups).containsExactly("group");
   }
 
