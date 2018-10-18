@@ -24,9 +24,12 @@ import envoy.api.v2.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceStub;
 import envoy.api.v2.Rds.RouteConfiguration;
 import envoy.api.v2.RouteDiscoveryServiceGrpc;
 import envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceStub;
+import envoy.api.v2.auth.Cert.Secret;
 import envoy.api.v2.core.Base.Node;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
+import envoy.service.discovery.v2.SecretDiscoveryServiceGrpc;
+import envoy.service.discovery.v2.SecretDiscoveryServiceGrpc.SecretDiscoveryServiceStub;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
@@ -61,6 +64,7 @@ public class DiscoveryServerTest {
   private static final String CLUSTER_NAME  = "cluster0";
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME    = "route0";
+  private static final String SECRET_NAME   = "secret0";
 
   private static final int ENDPOINT_PORT = Ports.getAvailablePort();
   private static final int LISTENER_PORT = Ports.getAvailablePort();
@@ -76,6 +80,7 @@ public class DiscoveryServerTest {
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener LISTENER = TestResources.createListener(ADS, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
+  private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
   @Rule
   public final GrpcServerRule grpcServer = new GrpcServerRule().directExecutor();
@@ -115,6 +120,12 @@ public class DiscoveryServerTest {
         .addResourceNames(ROUTE_NAME)
         .build());
 
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.SECRET_TYPE_URL)
+        .addResourceNames(SECRET_NAME)
+        .build());
+
     requestObserver.onCompleted();
 
     if (!responseObserver.completedLatch.await(1, TimeUnit.SECONDS) || responseObserver.error.get()) {
@@ -145,11 +156,13 @@ public class DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
 
     ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -173,6 +186,10 @@ public class DiscoveryServerTest {
         case Resources.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
           discoveryRequestBuilder.addResourceNames(ROUTE_NAME);
+          break;
+        case Resources.SECRET_TYPE_URL:
+          requestObserver = secretStub.streamSecrets(responseObserver);
+          discoveryRequestBuilder.addResourceNames(SECRET_NAME);
           break;
         default:
           fail("Unsupported resource type: " + typeUrl);
@@ -340,11 +357,13 @@ public class DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
 
     ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -363,6 +382,9 @@ public class DiscoveryServerTest {
           break;
         case Resources.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
+          break;
+        case Resources.SECRET_TYPE_URL:
+          requestObserver = secretStub.streamSecrets(responseObserver);
           break;
         default:
           fail("Unsupported resource type: " + typeUrl);
@@ -388,8 +410,10 @@ public class DiscoveryServerTest {
   public void testCallbacksAggregateHandler() throws InterruptedException {
     final CountDownLatch streamCloseLatch = new CountDownLatch(1);
     final CountDownLatch streamOpenLatch = new CountDownLatch(1);
-    final AtomicReference<CountDownLatch> streamRequestLatch = new AtomicReference<>(new CountDownLatch(4));
-    final AtomicReference<CountDownLatch> streamResponseLatch = new AtomicReference<>(new CountDownLatch(4));
+    final AtomicReference<CountDownLatch> streamRequestLatch =
+        new AtomicReference<>(new CountDownLatch(Resources.TYPE_URLS.size()));
+    final AtomicReference<CountDownLatch> streamResponseLatch =
+        new AtomicReference<>(new CountDownLatch(Resources.TYPE_URLS.size()));
 
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
@@ -472,6 +496,12 @@ public class DiscoveryServerTest {
         .addResourceNames(ROUTE_NAME)
         .build());
 
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.SECRET_TYPE_URL)
+        .addResourceNames(SECRET_NAME)
+        .build());
+
     if (!streamRequestLatch.get().await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamRequest callback before timeout");
     }
@@ -482,7 +512,7 @@ public class DiscoveryServerTest {
 
     // Send another round of requests. These should not trigger any responses.
     streamResponseLatch.set(new CountDownLatch(1));
-    streamRequestLatch.set(new CountDownLatch(4));
+    streamRequestLatch.set(new CountDownLatch(Resources.TYPE_URLS.size()));
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
@@ -514,6 +544,14 @@ public class DiscoveryServerTest {
         .setVersionInfo(VERSION)
         .build());
 
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("4")
+        .setTypeUrl(Resources.SECRET_TYPE_URL)
+        .addResourceNames(SECRET_NAME)
+        .setVersionInfo(VERSION)
+        .build());
+
     if (!streamRequestLatch.get().await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamRequest callback before timeout");
     }
@@ -533,8 +571,8 @@ public class DiscoveryServerTest {
     assertThat(callbacks.streamCloseCount).hasValue(1);
     assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
     assertThat(callbacks.streamOpenCount).hasValue(1);
-    assertThat(callbacks.streamRequestCount).hasValue(8);
-    assertThat(callbacks.streamResponseCount).hasValue(4);
+    assertThat(callbacks.streamRequestCount).hasValue(Resources.TYPE_URLS.size() * 2);
+    assertThat(callbacks.streamResponseCount).hasValue(Resources.TYPE_URLS.size());
   }
 
   @Test
@@ -603,11 +641,13 @@ public class DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
 
     ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    SecretDiscoveryServiceStub   secretStub    = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -626,6 +666,9 @@ public class DiscoveryServerTest {
           break;
         case Resources.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
+          break;
+        case Resources.SECRET_TYPE_URL:
+          requestObserver = secretStub.streamSecrets(responseObserver);
           break;
         default:
           fail("Unsupported resource type: " + typeUrl);
@@ -659,11 +702,11 @@ public class DiscoveryServerTest {
 
     callbacks.assertThatNoErrors();
 
-    assertThat(callbacks.streamCloseCount).hasValue(4);
+    assertThat(callbacks.streamCloseCount).hasValue(5);
     assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
-    assertThat(callbacks.streamOpenCount).hasValue(4);
-    assertThat(callbacks.streamRequestCount).hasValue(4);
-    assertThat(callbacks.streamResponseCount).hasValue(4);
+    assertThat(callbacks.streamOpenCount).hasValue(5);
+    assertThat(callbacks.streamRequestCount).hasValue(5);
+    assertThat(callbacks.streamResponseCount).hasValue(5);
   }
 
   @Test
@@ -711,6 +754,7 @@ public class DiscoveryServerTest {
         .put(Resources.ENDPOINT_TYPE_URL, VERSION, ImmutableList.of(ENDPOINT))
         .put(Resources.LISTENER_TYPE_URL, VERSION, ImmutableList.of(LISTENER))
         .put(Resources.ROUTE_TYPE_URL, VERSION, ImmutableList.of(ROUTE))
+        .put(Resources.SECRET_TYPE_URL, VERSION, ImmutableList.of(SECRET))
         .build();
   }
 

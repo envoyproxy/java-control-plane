@@ -17,6 +17,7 @@ import envoy.api.v2.Cds.Cluster.DiscoveryType;
 import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
+import envoy.api.v2.auth.Cert.Secret;
 import envoy.api.v2.listener.Listener.Filter;
 import envoy.api.v2.listener.Listener.FilterChain;
 import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager;
@@ -40,18 +41,21 @@ public class Resources {
   public static final String ENDPOINT_TYPE_URL = TYPE_URL_PREFIX + "ClusterLoadAssignment";
   public static final String LISTENER_TYPE_URL = TYPE_URL_PREFIX + "Listener";
   public static final String ROUTE_TYPE_URL = TYPE_URL_PREFIX + "RouteConfiguration";
+  public static final String SECRET_TYPE_URL = TYPE_URL_PREFIX + "auth.Secret";
 
   public static final List<String> TYPE_URLS = ImmutableList.of(
       CLUSTER_TYPE_URL,
       ENDPOINT_TYPE_URL,
       LISTENER_TYPE_URL,
-      ROUTE_TYPE_URL);
+      ROUTE_TYPE_URL,
+      SECRET_TYPE_URL);
 
   public static final Map<String, Class<? extends Message>> RESOURCE_TYPE_BY_URL = ImmutableMap.of(
       CLUSTER_TYPE_URL, Cluster.class,
       ENDPOINT_TYPE_URL, ClusterLoadAssignment.class,
       LISTENER_TYPE_URL, Listener.class,
-      ROUTE_TYPE_URL, RouteConfiguration.class
+      ROUTE_TYPE_URL, RouteConfiguration.class,
+      SECRET_TYPE_URL, Secret.class
       );
 
   /**
@@ -74,6 +78,10 @@ public class Resources {
 
     if (resource instanceof RouteConfiguration) {
       return ((RouteConfiguration) resource).getName();
+    }
+
+    if (resource instanceof Secret) {
+      return ((Secret) resource).getName();
     }
 
     return "";

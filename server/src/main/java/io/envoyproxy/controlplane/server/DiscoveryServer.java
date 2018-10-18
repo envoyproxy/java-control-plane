@@ -10,6 +10,7 @@ import envoy.api.v2.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBas
 import envoy.api.v2.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
 import envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
+import envoy.service.discovery.v2.SecretDiscoveryServiceGrpc;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
@@ -111,6 +112,18 @@ public class DiscoveryServer {
           StreamObserver<DiscoveryResponse> responseObserver) {
 
         return createRequestHandler(responseObserver, false, Resources.ROUTE_TYPE_URL);
+      }
+    };
+  }
+
+  /**
+   * Returns a SDS implementation that uses this server's {@link ConfigWatcher}.
+   */
+  public SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase getSecretDiscoveryServiceImpl() {
+    return new SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase() {
+      @Override public StreamObserver<DiscoveryRequest> streamSecrets(
+          StreamObserver<DiscoveryResponse> responseObserver) {
+        return createRequestHandler(responseObserver, false, Resources.SECRET_TYPE_URL);
       }
     };
   }

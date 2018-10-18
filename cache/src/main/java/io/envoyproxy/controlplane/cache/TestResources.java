@@ -12,9 +12,12 @@ import envoy.api.v2.Cds.Cluster.EdsClusterConfig;
 import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
+import envoy.api.v2.auth.Cert;
+import envoy.api.v2.auth.Cert.TlsCertificate;
 import envoy.api.v2.core.AddressOuterClass.Address;
 import envoy.api.v2.core.AddressOuterClass.SocketAddress;
 import envoy.api.v2.core.AddressOuterClass.SocketAddress.Protocol;
+import envoy.api.v2.core.Base.DataSource;
 import envoy.api.v2.core.ConfigSourceOuterClass.AggregatedConfigSource;
 import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource;
 import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource.ApiType;
@@ -168,6 +171,20 @@ public class TestResources {
                     .setPrefix("/"))
                 .setRoute(RouteAction.newBuilder()
                     .setCluster(clusterName))))
+        .build();
+  }
+
+  /**
+   * Returns a new test secret.
+   *
+   * @param secretName name of the new secret
+   */
+  public static Cert.Secret createSecret(String secretName) {
+    return Cert.Secret.newBuilder()
+        .setName(secretName)
+        .setTlsCertificate(TlsCertificate.newBuilder()
+            .setPrivateKey(DataSource.newBuilder()
+                .setInlineString("secret!")))
         .build();
   }
 
