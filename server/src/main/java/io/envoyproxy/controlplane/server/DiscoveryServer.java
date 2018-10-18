@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.server;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.Any;
 import envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
 import envoy.api.v2.Discovery.DiscoveryRequest;
@@ -45,6 +46,9 @@ public class DiscoveryServer {
   }
 
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher) {
+    Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
+    Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
+
     this.callbacks = callbacks;
     this.configWatcher = configWatcher;
   }
