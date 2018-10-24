@@ -39,6 +39,7 @@ public class TestMain {
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
+            ImmutableList.of(),
             "1"));
 
     DiscoveryServer discoveryServer = new DiscoveryServer(cache);
@@ -71,6 +72,7 @@ public class TestMain {
                     .addHosts(Address.newBuilder()
                         .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1235)))
                     .build()),
+            ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),

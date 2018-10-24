@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.server;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.Any;
 import envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
 import envoy.api.v2.Discovery.DiscoveryRequest;
@@ -10,6 +11,7 @@ import envoy.api.v2.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBas
 import envoy.api.v2.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
 import envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
 import envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
+import envoy.service.discovery.v2.SecretDiscoveryServiceGrpc;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
@@ -17,6 +19,7 @@ import io.envoyproxy.controlplane.cache.Watch;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,22 +30,33 @@ import org.slf4j.LoggerFactory;
 
 public class DiscoveryServer {
 
-  private static final DiscoveryServerCallbacks DEFAULT_CALLBACKS = new DiscoveryServerCallbacks() { };
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
   static final String ANY_TYPE_URL = "";
 
-  private final DiscoveryServerCallbacks callbacks;
+  private final List<DiscoveryServerCallbacks> callbacks;
   private final ConfigWatcher configWatcher;
   private final AtomicLong streamCount = new AtomicLong();
 
-  public DiscoveryServer(DiscoveryServerCallbacks callbacks, ConfigWatcher configWatcher) {
-    this.callbacks = callbacks;
-    this.configWatcher = configWatcher;
+  public DiscoveryServer(ConfigWatcher configWatcher) {
+    this(Collections.emptyList(), configWatcher);
   }
 
-  public DiscoveryServer(ConfigWatcher configWatcher) {
-    this(DEFAULT_CALLBACKS, configWatcher);
+  public DiscoveryServer(DiscoveryServerCallbacks callbacks, ConfigWatcher configWatcher) {
+    this(Collections.singletonList(callbacks), configWatcher);
+  }
+
+  /**
+   * Creates the server.
+   * @param callbacks server callbacks
+   * @param configWatcher source of configuration updates
+   */
+  public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher) {
+    Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
+    Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
+
+    this.callbacks = callbacks;
+    this.configWatcher = configWatcher;
   }
 
   /**
@@ -115,6 +129,18 @@ public class DiscoveryServer {
     };
   }
 
+  /**
+   * Returns a SDS implementation that uses this server's {@link ConfigWatcher}.
+   */
+  public SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase getSecretDiscoveryServiceImpl() {
+    return new SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase() {
+      @Override public StreamObserver<DiscoveryRequest> streamSecrets(
+          StreamObserver<DiscoveryResponse> responseObserver) {
+        return createRequestHandler(responseObserver, false, Resources.SECRET_TYPE_URL);
+      }
+    };
+  }
+
   private StreamObserver<DiscoveryRequest> createRequestHandler(
       StreamObserver<DiscoveryResponse> responseObserver,
       boolean ads,
@@ -124,7 +150,7 @@ public class DiscoveryServer {
 
     LOGGER.info("[{}] open stream from {}", streamId, defaultTypeUrl);
 
-    callbacks.onStreamOpen(streamId, defaultTypeUrl);
+    callbacks.forEach(cb -> cb.onStreamOpen(streamId, defaultTypeUrl));
 
     return new StreamObserver<DiscoveryRequest>() {
 
@@ -160,7 +186,7 @@ public class DiscoveryServer {
             nonce,
             request.getVersionInfo());
 
-        callbacks.onStreamRequest(streamId, request);
+        callbacks.forEach(cb -> cb.onStreamRequest(streamId, request));
 
         for (String typeUrl : Resources.TYPE_URLS) {
           DiscoveryResponse response = latestResponse.get(typeUrl);
@@ -200,7 +226,7 @@ public class DiscoveryServer {
         }
 
         try {
-          callbacks.onStreamCloseWithError(streamId, defaultTypeUrl, t);
+          callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
           responseObserver.onError(Status.fromThrowable(t).asException());
         } finally {
           cancel();
@@ -212,7 +238,7 @@ public class DiscoveryServer {
         LOGGER.info("[{}] stream closed", streamId);
 
         try {
-          callbacks.onStreamClose(streamId, defaultTypeUrl);
+          callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
           responseObserver.onCompleted();
         } finally {
           cancel();
@@ -235,7 +261,7 @@ public class DiscoveryServer {
 
         LOGGER.info("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
 
-        callbacks.onStreamResponse(streamId, response.request(), discoveryResponse);
+        callbacks.forEach(cb -> cb.onStreamResponse(streamId, response.request(), discoveryResponse));
 
         // Store the latest response *before* we send the response. This ensures that by the time the request
         // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions

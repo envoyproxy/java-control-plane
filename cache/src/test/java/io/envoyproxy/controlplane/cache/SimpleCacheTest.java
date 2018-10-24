@@ -9,6 +9,7 @@ import envoy.api.v2.Discovery.DiscoveryRequest;
 import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
+import envoy.api.v2.auth.Cert.Secret;
 import envoy.api.v2.core.Base.Node;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -26,6 +27,7 @@ public class SimpleCacheTest {
   private static final String SECONDARY_CLUSTER_NAME = "cluster1";
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
+  private static final String SECRET_NAME = "secret0";
 
   private static final String VERSION1 = UUID.randomUUID().toString();
   private static final String VERSION2 = UUID.randomUUID().toString();
@@ -35,6 +37,7 @@ public class SimpleCacheTest {
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(Secret.newBuilder().setName(ROUTE_NAME).build()),
       VERSION1);
 
   private static final Snapshot SNAPSHOT2 = Snapshot.create(
@@ -42,6 +45,7 @@ public class SimpleCacheTest {
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(Secret.newBuilder().setName(ROUTE_NAME).build()),
       VERSION2);
 
   private static final Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = Snapshot.create(
@@ -51,6 +55,7 @@ public class SimpleCacheTest {
           ClusterLoadAssignment.newBuilder().setClusterName(SECONDARY_CLUSTER_NAME).build()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(Secret.newBuilder().setName(ROUTE_NAME).build()),
       VERSION2);
 
   @Test

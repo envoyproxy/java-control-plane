@@ -28,6 +28,7 @@ class TestSnapshots {
         ImmutableList.of(),
         ImmutableList.of(listener),
         ImmutableList.of(route),
+        ImmutableList.of(),
         version);
   }
 

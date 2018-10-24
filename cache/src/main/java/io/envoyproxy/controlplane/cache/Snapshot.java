@@ -4,6 +4,7 @@ import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.ENDPOINT_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.LISTENER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.SECRET_TYPE_URL;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
@@ -14,6 +15,7 @@ import envoy.api.v2.Eds.ClusterLoadAssignment;
 import envoy.api.v2.Lds.Listener;
 import envoy.api.v2.Rds.RouteConfiguration;
 import java.util.Collections;
+import envoy.api.v2.auth.Cert.Secret;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,13 +40,15 @@ public abstract class Snapshot {
       Iterable<ClusterLoadAssignment> endpoints,
       Iterable<Listener> listeners,
       Iterable<RouteConfiguration> routes,
+      Iterable<Secret> secrets,
       String version) {
 
     return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, version),
         SnapshotResources.create(endpoints, version),
         SnapshotResources.create(listeners, version),
-        SnapshotResources.create(routes, version));
+        SnapshotResources.create(routes, version),
+        SnapshotResources.create(secrets, version));
   }
 
   /**
@@ -67,13 +71,17 @@ public abstract class Snapshot {
       Iterable<Listener> listeners,
       String listenersVersion,
       Iterable<RouteConfiguration> routes,
-      String routesVersion) {
+      String routesVersion,
+      Iterable<Secret> secrets,
+      String secretsVersion) {
 
+    // TODO(snowp): add a builder alternative
     return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, clustersVersion),
         SnapshotResources.create(endpoints, endpointsVersion),
         SnapshotResources.create(listeners, listenersVersion),
-        SnapshotResources.create(routes, routesVersion));
+        SnapshotResources.create(routes, routesVersion),
+        SnapshotResources.create(secrets, secretsVersion));
   }
 
   /**
@@ -105,6 +113,11 @@ public abstract class Snapshot {
    * Returns all route items in the RDS payload.
    */
   public abstract SnapshotResources<RouteConfiguration> routes();
+
+  /**
+   * Returns all secret items in the SDS payload.
+   */
+  public abstract SnapshotResources<Secret> secrets();
 
   /**
    * Asserts that all dependent resources are included in the snapshot. All EDS resources are listed by name in CDS
@@ -144,6 +157,8 @@ public abstract class Snapshot {
         return listeners().resources();
       case ROUTE_TYPE_URL:
         return routes().resources();
+      case SECRET_TYPE_URL:
+        return secrets().resources();
       default:
         return ImmutableMap.of();
     }
@@ -168,6 +183,8 @@ public abstract class Snapshot {
         return listeners().version();
       case ROUTE_TYPE_URL:
         return routes().version();
+      case SECRET_TYPE_URL:
+        return secrets().version();
       default:
         return "";
     }
