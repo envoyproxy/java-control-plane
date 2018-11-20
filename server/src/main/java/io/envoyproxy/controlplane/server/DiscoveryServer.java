@@ -221,7 +221,7 @@ public class DiscoveryServer {
 
       @Override
       public void onError(Throwable t) {
-        if (!Status.fromThrowable(t).equals(Status.CANCELLED)) {
+        if (!Status.fromThrowable(t).getCode().equals(Status.CANCELLED.getCode())) {
           LOGGER.error("[{}] stream closed with error", streamId, t);
         }
 
