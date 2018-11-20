@@ -37,6 +37,7 @@ import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcServerRule;
 
@@ -752,23 +753,49 @@ public class DiscoveryServerTest {
   }
 
   @Test
-  public void callbackOnError_doesNotLogError_whenCancelled() {
+  public void callbackOnError_logsError_onException() {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
     DiscoveryServer server = new DiscoveryServer(configWatcher);
 
-    grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
-
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase service =
+        server.getAggregatedDiscoveryServiceImpl();
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
-
-    StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
+    StreamObserver<DiscoveryRequest> requestObserver = service.streamAggregatedResources(responseObserver);
 
     try {
       ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
       System.setErr(new PrintStream(stdErr));
 
-      requestObserver.onError(new RuntimeException("send error"));
+      requestObserver.onError(new StatusRuntimeException(Status.INTERNAL
+          .withDescription("internal error")
+          .withCause(new RuntimeException("some error"))));
+
+      assertThat(stdErr.toString()).contains("ERROR ");
+      assertThat(stdErr.toString()).contains("io.grpc.StatusRuntimeException: INTERNAL: internal error");
+    } finally {
+      System.setErr(System.err);
+    }
+  }
+
+  @Test
+  public void callbackOnError_doesNotLogError_whenCancelled() {
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    DiscoveryServer server = new DiscoveryServer(configWatcher);
+
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase service =
+        server.getAggregatedDiscoveryServiceImpl();
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+    StreamObserver<DiscoveryRequest> requestObserver = service.streamAggregatedResources(responseObserver);
+
+    try {
+      ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
+      System.setErr(new PrintStream(stdErr));
+
+      requestObserver.onError(new StatusRuntimeException(Status.CANCELLED
+          .withDescription("internal error")
+          .withCause(new RuntimeException("some error"))));
 
       assertThat(stdErr.toString()).doesNotContain("ERROR ");
       assertThat(stdErr.toString()).doesNotContain("io.grpc.StatusRuntimeException: CANCELLED:");
