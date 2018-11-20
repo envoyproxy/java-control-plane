@@ -39,6 +39,9 @@ import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcServerRule;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -746,6 +749,32 @@ public class DiscoveryServerTest {
     assertThat(callbacks.streamOpenCount).hasValue(1);
     assertThat(callbacks.streamRequestCount).hasValue(0);
     assertThat(callbacks.streamResponseCount).hasValue(0);
+  }
+
+  @Test
+  public void callbackOnError_doesNotLogError_whenCancelled() {
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    DiscoveryServer server = new DiscoveryServer(configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
+
+    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+
+    StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
+
+    try {
+      ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
+      System.setErr(new PrintStream(stdErr));
+
+      requestObserver.onError(new RuntimeException("send error"));
+
+      assertThat(stdErr.toString()).doesNotContain("ERROR ");
+      assertThat(stdErr.toString()).doesNotContain("io.grpc.StatusRuntimeException: CANCELLED:");
+    } finally {
+      System.setErr(System.err);
+    }
   }
 
   private static Table<String, String, Collection<? extends Message>> createResponses() {
