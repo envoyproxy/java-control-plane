@@ -804,6 +804,67 @@ public class DiscoveryServerTest {
     }
   }
 
+  @Test
+  public void testCallbacksOnCancelled() throws InterruptedException, ClassNotFoundException {
+    final CountDownLatch streamCloseWithErrorLatch = new CountDownLatch(1);
+    final CountDownLatch watchCreated = new CountDownLatch(1);
+    AtomicReference<Watch> watch = new AtomicReference<>();
+
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+      @Override
+      public void onStreamCloseWithError(long streamId, String typeUrl, Throwable error) {
+        // watch should already be closed by the time we report a stream close error
+        assertThat(watch.get().isCancelled()).isTrue();
+        super.onStreamCloseWithError(streamId, typeUrl, error);
+        streamCloseWithErrorLatch.countDown();
+      }
+    };
+
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses()) {
+      @Override
+      public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResources,
+                               Consumer<Response> responseConsumer) {
+        watchCreated.countDown();
+        watch.set(super.createWatch(ads, request, knownResources, responseConsumer));
+        return watch.get();
+      }
+    };
+    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
+
+    ClusterDiscoveryServiceStub stub = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+
+    StreamObserver<DiscoveryRequest> requestObserver = stub.streamClusters(responseObserver);
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("1")
+        .setTypeUrl(Resources.CLUSTER_TYPE_URL)
+        .setVersionInfo(VERSION)
+        .build());
+
+    if (!watchCreated.await(1, TimeUnit.SECONDS)) {
+      fail("failed to execute watchCreated callback before timeout");
+    }
+
+    requestObserver.onError(Status.CANCELLED.asException());
+
+    if (!streamCloseWithErrorLatch.await(1, TimeUnit.SECONDS)) {
+      fail("failed to execute onStreamCloseWithError callback before timeout");
+    }
+
+    callbacks.assertThatNoErrors();
+
+    assertThat(callbacks.streamCloseCount).hasValue(0);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(1);
+    assertThat(callbacks.streamOpenCount).hasValue(1);
+    assertThat(callbacks.streamRequestCount).hasValue(1);
+    assertThat(callbacks.streamResponseCount).hasValue(1);
+  }
+
   private static Table<String, String, Collection<? extends Message>> createResponses() {
     return ImmutableTable.<String, String, Collection<? extends Message>>builder()
         .put(Resources.CLUSTER_TYPE_URL, VERSION, ImmutableList.of(CLUSTER))
