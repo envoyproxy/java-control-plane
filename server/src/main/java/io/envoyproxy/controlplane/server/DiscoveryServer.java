@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ public class DiscoveryServer {
 
   private final List<DiscoveryServerCallbacks> callbacks;
   private final ConfigWatcher configWatcher;
+  private final ExecutorGroup executorGroup;
   private final AtomicLong streamCount = new AtomicLong();
 
   public DiscoveryServer(ConfigWatcher configWatcher) {
@@ -54,11 +56,24 @@ public class DiscoveryServer {
    * @param configWatcher source of configuration updates
    */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher) {
+    this(callbacks, configWatcher, new DefaultExecutorGroup());
+  }
+
+  /**
+   * Creates the server.
+   * @param callbacks server callbacks
+   * @param configWatcher source of configuration updates
+   * @param executorGroup executor group to use for responding stream requests
+   */
+  public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher,
+                         ExecutorGroup executorGroup) {
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
+    Preconditions.checkNotNull(executorGroup, "executorGroup cannot be null");
 
     this.callbacks = callbacks;
     this.configWatcher = configWatcher;
+    this.executorGroup = executorGroup;
   }
 
   /**
@@ -149,13 +164,14 @@ public class DiscoveryServer {
       String defaultTypeUrl) {
 
     long streamId = streamCount.getAndIncrement();
+    Executor executor = executorGroup.next();
 
     LOGGER.info("[{}] open stream from {}", streamId, defaultTypeUrl);
 
     callbacks.forEach(cb -> cb.onStreamOpen(streamId, defaultTypeUrl));
 
     final DiscoveryRequestStreamObserver requestStreamObserver =
-        new DiscoveryRequestStreamObserver(defaultTypeUrl, responseObserver, streamId, ads);
+        new DiscoveryRequestStreamObserver(defaultTypeUrl, responseObserver, streamId, ads, executor);
 
     if (responseObserver instanceof ServerCallStreamObserver) {
       ((ServerCallStreamObserver) responseObserver).setOnCancelHandler(requestStreamObserver::onCancelled);
@@ -173,11 +189,12 @@ public class DiscoveryServer {
     private final StreamObserver<DiscoveryResponse> responseObserver;
     private final long streamId;
     private final boolean ads;
+    private final Executor executor;
 
     private AtomicLong streamNonce;
 
     public DiscoveryRequestStreamObserver(String defaultTypeUrl, StreamObserver<DiscoveryResponse> responseObserver,
-                                          long streamId, boolean ads) {
+                                          long streamId, boolean ads, Executor executor) {
       this.defaultTypeUrl = defaultTypeUrl;
       this.responseObserver = responseObserver;
       this.streamId = streamId;
@@ -186,6 +203,7 @@ public class DiscoveryServer {
       latestResponse = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
       ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
       streamNonce = new AtomicLong();
+      this.executor = executor;
     }
 
     @Override
@@ -238,7 +256,7 @@ public class DiscoveryServer {
                 ads,
                 request,
                 ackedResources.getOrDefault(typeUrl, Collections.emptySet()),
-                r -> send(r, typeUrl));
+                r -> executor.execute(() -> send(r, typeUrl)));
           });
 
           return;
