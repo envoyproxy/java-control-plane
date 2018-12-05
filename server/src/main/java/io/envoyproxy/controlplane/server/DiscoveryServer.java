@@ -65,7 +65,8 @@ public class DiscoveryServer {
    * @param configWatcher source of configuration updates
    * @param executorGroup executor group to use for responding stream requests
    */
-  public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher,
+  public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
+                         ConfigWatcher configWatcher,
                          ExecutorGroup executorGroup) {
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
@@ -193,8 +194,11 @@ public class DiscoveryServer {
 
     private AtomicLong streamNonce;
 
-    public DiscoveryRequestStreamObserver(String defaultTypeUrl, StreamObserver<DiscoveryResponse> responseObserver,
-                                          long streamId, boolean ads, Executor executor) {
+    public DiscoveryRequestStreamObserver(String defaultTypeUrl,
+                                          StreamObserver<DiscoveryResponse> responseObserver,
+                                          long streamId,
+                                          boolean ads,
+                                          Executor executor) {
       this.defaultTypeUrl = defaultTypeUrl;
       this.responseObserver = responseObserver;
       this.streamId = streamId;

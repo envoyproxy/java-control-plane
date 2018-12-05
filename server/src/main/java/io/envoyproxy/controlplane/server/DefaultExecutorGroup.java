@@ -6,15 +6,13 @@ import java.util.concurrent.Executor;
 
 /**
  * Default implementation of {@link ExecutorGroup} which
- * always returns {@link com.google.common.util.concurrent.MoreExecutors#directExecutor()}.
+ * always returns {@link MoreExecutors#directExecutor}.
  */
 public class DefaultExecutorGroup implements ExecutorGroup {
   /**
-   * Creates a new instance.
+   * Returns the next {@link Executor} to use, which in this case is
+   * always {@link MoreExecutors#directExecutor}.
    */
-  public DefaultExecutorGroup() {
-  }
-
   @Override
   public Executor next() {
     return MoreExecutors.directExecutor();

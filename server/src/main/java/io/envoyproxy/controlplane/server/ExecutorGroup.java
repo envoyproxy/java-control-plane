@@ -8,8 +8,7 @@ import java.util.concurrent.Executor;
  */
 public interface ExecutorGroup {
   /**
-   * Return the next {@link Executor} to use.
-   *
+   * Returns the next {@link Executor} to use.
    */
   Executor next();
 }
