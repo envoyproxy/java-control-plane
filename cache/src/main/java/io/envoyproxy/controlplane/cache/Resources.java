@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager.RouteSpecifierCase.RDS;
+import static io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager.RouteSpecifierCase.RDS;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -12,15 +12,15 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.Struct;
 import com.google.protobuf.util.JsonFormat;
-import envoy.api.v2.Cds.Cluster;
-import envoy.api.v2.Cds.Cluster.DiscoveryType;
-import envoy.api.v2.Eds.ClusterLoadAssignment;
-import envoy.api.v2.Lds.Listener;
-import envoy.api.v2.Rds.RouteConfiguration;
-import envoy.api.v2.auth.Cert.Secret;
-import envoy.api.v2.listener.Listener.Filter;
-import envoy.api.v2.listener.Listener.FilterChain;
-import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager;
+import io.envoyproxy.envoy.api.v2.Cluster;
+import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
+import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
+import io.envoyproxy.envoy.api.v2.Listener;
+import io.envoyproxy.envoy.api.v2.RouteConfiguration;
+import io.envoyproxy.envoy.api.v2.auth.Secret;
+import io.envoyproxy.envoy.api.v2.listener.Filter;
+import io.envoyproxy.envoy.api.v2.listener.FilterChain;
+import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
