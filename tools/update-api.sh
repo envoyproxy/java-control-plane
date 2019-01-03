@@ -48,7 +48,7 @@ mkdir -p "${protodir}/validate"
 cp -r protoc-gen-validate-*/validate/* "${protodir}/validate"
 
 curl -sL https://github.com/census-instrumentation/opencensus-proto/archive/${OPENCENSUS_SHA}.tar.gz | tar xz --include="*.proto"
-cp opencensus-proto-*/opencensus/proto/trace/trace.proto "${protodir}"
+cp opencensus-proto-*/src/opencensus/proto/trace/v1/trace.proto "${protodir}"
 
 curl -sL https://github.com/prometheus/client_model/archive/${PROMETHEUS_SHA}.tar.gz | tar xz --include="*.proto"
 cp client_model-*/metrics.proto "${protodir}"

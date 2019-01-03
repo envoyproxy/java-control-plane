@@ -14,16 +14,16 @@
 
 syntax = "proto3";
 
-package opencensus.proto.trace;
+package opencensus.proto.trace.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
 option java_multiple_files = true;
-option java_package = "io.opencensus.proto.trace";
+option java_package = "io.opencensus.proto.trace.v1";
 option java_outer_classname = "TraceProto";
 
-option go_package = "traceproto";
+option go_package = "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1";
 
 // A span represents a single operation within a trace. Spans can be
 // nested to form a trace tree. Often, a trace contains a root span
@@ -32,7 +32,7 @@ option go_package = "traceproto";
 // or none at all. Spans do not need to be contiguous - there may be
 // gaps or overlaps between spans in a trace.
 //
-// The next id is 15.
+// The next id is 16.
 // TODO(bdrutu): Add an example.
 message Span {
   // A unique identifier for a trace. All spans from the same trace share
@@ -46,6 +46,30 @@ message Span {
   //
   // This field is required.
   bytes span_id = 2;
+
+  // This field conveys information about request position in multiple distributed tracing graphs.
+  // It is a list of Tracestate.Entry with a maximum of 32 members in the list.
+  //
+  // See the https://github.com/w3c/distributed-tracing for more details about this field.
+  message Tracestate {
+    message Entry {
+      // The key must begin with a lowercase letter, and can only contain
+      // lowercase letters 'a'-'z', digits '0'-'9', underscores '_', dashes
+      // '-', asterisks '*', and forward slashes '/'.
+      string key = 1;
+
+      // The value is opaque string up to 256 characters printable ASCII
+      // RFC0020 characters (i.e., the range 0x20 to 0x7E) except ',' and '='.
+      // Note that this also excludes tabs, newlines, carriage returns, etc.
+      string value = 2;
+    }
+
+    // A list of entries that represent the Tracestate.
+    repeated Entry entries = 1;
+  }
+
+  // The Tracestate on the span.
+  Tracestate tracestate = 15;
 
   // The `span_id` of this span's parent span. If this is a root span, then this
   // field must be empty. The ID is an 8-byte array.
@@ -231,7 +255,7 @@ message Span {
     int32 dropped_links_count = 2;
   }
 
-  // The inclued links.
+  // The included links.
   Links links = 10;
 
   // An optional final status for this span.
@@ -270,6 +294,8 @@ message AttributeValue {
     int64 int_value = 2;
     // A Boolean value represented by `true` or `false`.
     bool bool_value = 3;
+    // A double value.
+    double double_value = 4;
   }
 }
 
