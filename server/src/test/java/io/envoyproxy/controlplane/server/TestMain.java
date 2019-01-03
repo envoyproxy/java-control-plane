@@ -2,12 +2,12 @@ package io.envoyproxy.controlplane.server;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Duration;
-import envoy.api.v2.Cds.Cluster;
-import envoy.api.v2.Cds.Cluster.DiscoveryType;
-import envoy.api.v2.core.AddressOuterClass.Address;
-import envoy.api.v2.core.AddressOuterClass.SocketAddress;
 import io.envoyproxy.controlplane.cache.SimpleCache;
 import io.envoyproxy.controlplane.cache.Snapshot;
+import io.envoyproxy.envoy.api.v2.Cluster;
+import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
+import io.envoyproxy.envoy.api.v2.core.Address;
+import io.envoyproxy.envoy.api.v2.core.SocketAddress;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;

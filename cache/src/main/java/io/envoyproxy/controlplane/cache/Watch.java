@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
-import envoy.api.v2.Discovery.DiscoveryRequest;
+import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 

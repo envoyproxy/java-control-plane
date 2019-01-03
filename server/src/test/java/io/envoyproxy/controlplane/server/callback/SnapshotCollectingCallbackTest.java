@@ -3,10 +3,10 @@ package io.envoyproxy.controlplane.server.callback;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableSet;
-import envoy.api.v2.Discovery;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.SimpleCache;
 import io.envoyproxy.controlplane.cache.Snapshot;
+import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -37,8 +37,8 @@ public class SnapshotCollectingCallbackTest {
 
   @Test
   public void testSingleSnapshot() {
-    callback.onStreamRequest(0, Discovery.DiscoveryRequest.getDefaultInstance());
-    callback.onStreamRequest(1, Discovery.DiscoveryRequest.getDefaultInstance());
+    callback.onStreamRequest(0, DiscoveryRequest.getDefaultInstance());
+    callback.onStreamRequest(1, DiscoveryRequest.getDefaultInstance());
 
     // We have 2 references to the snapshot, this should do nothing.
     callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(5)));
@@ -75,7 +75,7 @@ public class SnapshotCollectingCallbackTest {
       }
     };
 
-    callback.onStreamRequest(0, Discovery.DiscoveryRequest.getDefaultInstance());
+    callback.onStreamRequest(0, DiscoveryRequest.getDefaultInstance());
     assertThat(deleteUnreferencedLatch.await(100, TimeUnit.MILLISECONDS)).isTrue();
     assertThat(collectedGroups).isEmpty();
 

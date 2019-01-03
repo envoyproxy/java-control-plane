@@ -2,11 +2,11 @@ package io.envoyproxy.controlplane.server.callback;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import envoy.api.v2.Discovery;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Snapshot;
 import io.envoyproxy.controlplane.cache.SnapshotCache;
 import io.envoyproxy.controlplane.server.DiscoveryServerCallbacks;
+import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -79,7 +79,7 @@ public class SnapshotCollectingCallback<T> implements DiscoveryServerCallbacks {
   }
 
   @Override
-  public synchronized void onStreamRequest(long streamId, Discovery.DiscoveryRequest request) {
+  public synchronized void onStreamRequest(long streamId, DiscoveryRequest request) {
     T groupIdentifier = nodeGroup.hash(request.getNode());
 
     SnapshotState snapshotState =

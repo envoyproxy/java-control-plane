@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
-import envoy.api.v2.core.Base.Node;
+import io.envoyproxy.envoy.api.v2.core.Node;
 
 /**
  * {@code StatusInfo} tracks the state for remote envoy nodes.

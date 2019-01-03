@@ -1,10 +1,10 @@
 package io.envoyproxy.controlplane.server;
 
-import envoy.api.v2.Cds.Cluster;
-import envoy.api.v2.Lds.Listener;
-import envoy.api.v2.Rds.RouteConfiguration;
 import io.envoyproxy.controlplane.cache.Snapshot;
 import io.envoyproxy.controlplane.cache.TestResources;
+import io.envoyproxy.envoy.api.v2.Cluster;
+import io.envoyproxy.envoy.api.v2.Listener;
+import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 class TestSnapshots {

@@ -3,7 +3,7 @@ package io.envoyproxy.controlplane.cache;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
-import envoy.api.v2.Discovery.DiscoveryRequest;
+import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;

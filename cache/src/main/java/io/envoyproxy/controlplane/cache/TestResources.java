@@ -6,37 +6,37 @@ import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.Struct;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.JsonFormat;
-import envoy.api.v2.Cds.Cluster;
-import envoy.api.v2.Cds.Cluster.DiscoveryType;
-import envoy.api.v2.Cds.Cluster.EdsClusterConfig;
-import envoy.api.v2.Eds.ClusterLoadAssignment;
-import envoy.api.v2.Lds.Listener;
-import envoy.api.v2.Rds.RouteConfiguration;
-import envoy.api.v2.auth.Cert;
-import envoy.api.v2.auth.Cert.TlsCertificate;
-import envoy.api.v2.core.AddressOuterClass.Address;
-import envoy.api.v2.core.AddressOuterClass.SocketAddress;
-import envoy.api.v2.core.AddressOuterClass.SocketAddress.Protocol;
-import envoy.api.v2.core.Base.DataSource;
-import envoy.api.v2.core.ConfigSourceOuterClass.AggregatedConfigSource;
-import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource;
-import envoy.api.v2.core.ConfigSourceOuterClass.ApiConfigSource.ApiType;
-import envoy.api.v2.core.ConfigSourceOuterClass.ConfigSource;
-import envoy.api.v2.core.GrpcServiceOuterClass.GrpcService;
-import envoy.api.v2.core.GrpcServiceOuterClass.GrpcService.EnvoyGrpc;
-import envoy.api.v2.endpoint.EndpointOuterClass.Endpoint;
-import envoy.api.v2.endpoint.EndpointOuterClass.LbEndpoint;
-import envoy.api.v2.endpoint.EndpointOuterClass.LocalityLbEndpoints;
-import envoy.api.v2.listener.Listener.Filter;
-import envoy.api.v2.listener.Listener.FilterChain;
-import envoy.api.v2.route.RouteOuterClass.Route;
-import envoy.api.v2.route.RouteOuterClass.RouteAction;
-import envoy.api.v2.route.RouteOuterClass.RouteMatch;
-import envoy.api.v2.route.RouteOuterClass.VirtualHost;
-import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager;
-import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpConnectionManager.CodecType;
-import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.HttpFilter;
-import envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManagerOuterClass.Rds;
+import io.envoyproxy.envoy.api.v2.Cluster;
+import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
+import io.envoyproxy.envoy.api.v2.Cluster.EdsClusterConfig;
+import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
+import io.envoyproxy.envoy.api.v2.Listener;
+import io.envoyproxy.envoy.api.v2.RouteConfiguration;
+import io.envoyproxy.envoy.api.v2.auth.Secret;
+import io.envoyproxy.envoy.api.v2.auth.TlsCertificate;
+import io.envoyproxy.envoy.api.v2.core.Address;
+import io.envoyproxy.envoy.api.v2.core.AggregatedConfigSource;
+import io.envoyproxy.envoy.api.v2.core.ApiConfigSource;
+import io.envoyproxy.envoy.api.v2.core.ApiConfigSource.ApiType;
+import io.envoyproxy.envoy.api.v2.core.ConfigSource;
+import io.envoyproxy.envoy.api.v2.core.DataSource;
+import io.envoyproxy.envoy.api.v2.core.GrpcService;
+import io.envoyproxy.envoy.api.v2.core.GrpcService.EnvoyGrpc;
+import io.envoyproxy.envoy.api.v2.core.SocketAddress;
+import io.envoyproxy.envoy.api.v2.core.SocketAddress.Protocol;
+import io.envoyproxy.envoy.api.v2.endpoint.Endpoint;
+import io.envoyproxy.envoy.api.v2.endpoint.LbEndpoint;
+import io.envoyproxy.envoy.api.v2.endpoint.LocalityLbEndpoints;
+import io.envoyproxy.envoy.api.v2.listener.Filter;
+import io.envoyproxy.envoy.api.v2.listener.FilterChain;
+import io.envoyproxy.envoy.api.v2.route.Route;
+import io.envoyproxy.envoy.api.v2.route.RouteAction;
+import io.envoyproxy.envoy.api.v2.route.RouteMatch;
+import io.envoyproxy.envoy.api.v2.route.VirtualHost;
+import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager;
+import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager.CodecType;
+import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpFilter;
+import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.Rds;
 
 /**
  * {@code TestResources} provides helper methods for generating resource messages for testing. It is not intended to be
@@ -179,8 +179,8 @@ public class TestResources {
    *
    * @param secretName name of the new secret
    */
-  public static Cert.Secret createSecret(String secretName) {
-    return Cert.Secret.newBuilder()
+  public static Secret createSecret(String secretName) {
+    return Secret.newBuilder()
         .setName(secretName)
         .setTlsCertificate(TlsCertificate.newBuilder()
             .setPrivateKey(DataSource.newBuilder()
