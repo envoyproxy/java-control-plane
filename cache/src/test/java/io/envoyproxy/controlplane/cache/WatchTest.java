@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 import com.google.common.collect.ImmutableList;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
+import io.envoyproxy.envoy.api.v2.Discovery.DiscoveryRequest;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
