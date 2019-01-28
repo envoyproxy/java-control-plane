@@ -16,6 +16,7 @@ import io.envoyproxy.envoy.api.v2.Lds.Listener;
 import io.envoyproxy.envoy.api.v2.Rds.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.auth.Cert.Secret;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -79,6 +80,38 @@ public abstract class Snapshot {
     return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, clustersVersion),
         SnapshotResources.create(endpoints, endpointsVersion),
+        SnapshotResources.create(listeners, listenersVersion),
+        SnapshotResources.create(routes, routesVersion),
+        SnapshotResources.create(secrets, secretsVersion));
+  }
+
+  /**
+   * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
+   *
+   * @param clusters the cluster resources in this snapshot
+   * @param clustersVersion the version of the cluster resources
+   * @param endpoints the endpoint resources in this snapshot
+   * @param endpointVersions versions for cluster names
+   * @param listeners the listener resources in this snapshot
+   * @param listenersVersion the version of the listener resources
+   * @param routes the route resources in this snapshot
+   * @param routesVersion the version of the route resources
+   */
+  public static Snapshot create(
+      Iterable<Cluster> clusters,
+      String clustersVersion,
+      Iterable<ClusterLoadAssignment> endpoints,
+      Map<String, String> endpointVersions,
+      Iterable<Listener> listeners,
+      String listenersVersion,
+      Iterable<RouteConfiguration> routes,
+      String routesVersion,
+      Iterable<Secret> secrets,
+      String secretsVersion) {
+
+    return new AutoValue_Snapshot(
+        SnapshotResources.create(clusters, clustersVersion),
+        SnapshotResources.create(endpoints, clustersVersion, endpointVersions),
         SnapshotResources.create(listeners, listenersVersion),
         SnapshotResources.create(routes, routesVersion),
         SnapshotResources.create(secrets, secretsVersion));
@@ -170,21 +203,31 @@ public abstract class Snapshot {
    * @param typeUrl the URL for the requested resource type
    */
   public String version(String typeUrl) {
+    return version(typeUrl, Collections.emptyList());
+  }
+
+  /**
+   * Returns the version in this snapshot for the given resource type.
+   *
+   * @param typeUrl the URL for the requested resource type
+   * @param resourceNames list of resource names
+   */
+  public String version(String typeUrl, List<String> resourceNames) {
     if (Strings.isNullOrEmpty(typeUrl)) {
       return "";
     }
 
     switch (typeUrl) {
       case CLUSTER_TYPE_URL:
-        return clusters().version();
+        return clusters().version(resourceNames);
       case ENDPOINT_TYPE_URL:
-        return endpoints().version();
+        return endpoints().version(resourceNames);
       case LISTENER_TYPE_URL:
-        return listeners().version();
+        return listeners().version(resourceNames);
       case ROUTE_TYPE_URL:
-        return routes().version();
+        return routes().version(resourceNames);
       case SECRET_TYPE_URL:
-        return secrets().version();
+        return secrets().version(resourceNames);
       default:
         return "";
     }
