@@ -13,6 +13,6 @@ echo "${CONFIG}" | sed -e "s/HOST_IP/${HOST_IP}/g" -e "s/HOST_PORT/${HOST_PORT}/
 cat "${CONFIG_FILE}"
 
 shift 2
-/usr/local/bin/envoy --drain-time-s 1 --v2-config-only -c "${CONFIG_FILE}" "$@"
+/usr/local/bin/envoy --drain-time-s 1 -c "${CONFIG_FILE}" "$@"
 
 rm -rf "${CONFIG_DIR}"
