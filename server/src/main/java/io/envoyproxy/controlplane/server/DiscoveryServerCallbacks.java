@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
-import io.envoyproxy.envoy.api.v2.Discovery.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.Discovery.DiscoveryResponse;
+import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
+import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 
 /**
  * {@code DiscoveryServerCallbacks} defines the callbacks that are exposed by the {@link DiscoveryServer}. The callbacks

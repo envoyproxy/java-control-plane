@@ -3,7 +3,7 @@ package io.envoyproxy.controlplane.cache;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
-import io.envoyproxy.envoy.api.v2.Cds.Cluster;
+import io.envoyproxy.envoy.api.v2.Cluster;
 import java.util.UUID;
 import org.junit.Test;
 
