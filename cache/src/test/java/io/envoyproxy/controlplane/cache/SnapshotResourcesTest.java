@@ -42,7 +42,12 @@ public class SnapshotResourcesTest {
     );
 
     SnapshotResources<Cluster> snapshot = SnapshotResources.create(
-        ImmutableList.of(CLUSTER0, CLUSTER1), aggregateVersion, versions
+        ImmutableList.of(CLUSTER0, CLUSTER1), resourceNames -> {
+          if (resourceNames.size() != 1 || !versions.containsKey(resourceNames.get(0))) {
+            return aggregateVersion;
+          }
+          return versions.get(resourceNames.get(0));
+        }
     );
 
     // when no resources name provided, the aggregated version should be returned

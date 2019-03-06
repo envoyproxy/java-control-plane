@@ -10,10 +10,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Message;
-import io.envoyproxy.envoy.api.v2.Cluster;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
-import io.envoyproxy.envoy.api.v2.Listener;
-import io.envoyproxy.envoy.api.v2.RouteConfiguration;
+import io.envoyproxy.envoy.api.v2.*;
 import io.envoyproxy.envoy.api.v2.auth.Secret;
 import java.util.Collections;
 import java.util.List;
@@ -89,32 +86,34 @@ public abstract class Snapshot {
    * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
    *
    * @param clusters the cluster resources in this snapshot
-   * @param clustersVersion the version of the cluster resources
+   * @param clusterVersionResolver version resolver of the clusters in this snapshot
    * @param endpoints the endpoint resources in this snapshot
-   * @param endpointVersions versions for cluster names
+   * @param endpointVersionResolver version resolver of the endpoints in this snapshot
    * @param listeners the listener resources in this snapshot
-   * @param listenersVersion the version of the listener resources
+   * @param listenerVersionResolver version resolver of listeners in this snapshot
    * @param routes the route resources in this snapshot
-   * @param routesVersion the version of the route resources
+   * @param routeVersionResolver version resolver of the routes in this snapshot
+   * @param secrets the secret resources in this snapshot
+   * @param secretVersionResolver version resolver of the secrets in this snapshot
    */
   public static Snapshot create(
       Iterable<Cluster> clusters,
-      String clustersVersion,
+      ResourceVersionResolver clusterVersionResolver,
       Iterable<ClusterLoadAssignment> endpoints,
-      Map<String, String> endpointVersions,
+      ResourceVersionResolver endpointVersionResolver,
       Iterable<Listener> listeners,
-      String listenersVersion,
+      ResourceVersionResolver listenerVersionResolver,
       Iterable<RouteConfiguration> routes,
-      String routesVersion,
+      ResourceVersionResolver routeVersionResolver,
       Iterable<Secret> secrets,
-      String secretsVersion) {
+      ResourceVersionResolver secretVersionResolver) {
 
     return new AutoValue_Snapshot(
-        SnapshotResources.create(clusters, clustersVersion),
-        SnapshotResources.create(endpoints, clustersVersion, endpointVersions),
-        SnapshotResources.create(listeners, listenersVersion),
-        SnapshotResources.create(routes, routesVersion),
-        SnapshotResources.create(secrets, secretsVersion));
+        SnapshotResources.create(clusters, clusterVersionResolver),
+        SnapshotResources.create(endpoints, endpointVersionResolver),
+        SnapshotResources.create(listeners, listenerVersionResolver),
+        SnapshotResources.create(routes, routeVersionResolver),
+        SnapshotResources.create(secrets, secretVersionResolver));
   }
 
   /**
