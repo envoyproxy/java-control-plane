@@ -196,25 +196,30 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       if (status == null) {
         return;
       }
+      for (String typeUrl : Resources.TYPE_URLS) {
+        status.watchesRemoveIf((id, watch) -> {
+          if (!watch.request().getTypeUrl().equals(typeUrl)) {
+            return false;
+          }
 
-      status.watchesRemoveIf((id, watch) -> {
-        String version = snapshot.version(watch.request().getTypeUrl());
+          String version = snapshot.version(watch.request().getTypeUrl());
 
-        if (!watch.request().getVersionInfo().equals(version)) {
-          LOGGER.info("responding to open watch {}[{}] with new version {}",
-              id,
-              String.join(", ", watch.request().getResourceNamesList()),
-              version);
+          if (!watch.request().getVersionInfo().equals(version)) {
+            LOGGER.info("responding to open watch {}[{}] with new version {}",
+                id,
+                String.join(", ", watch.request().getResourceNamesList()),
+                version);
 
-          respond(watch, snapshot, group);
+            respond(watch, snapshot, group);
 
-          // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
-          return true;
-        }
+            // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
+            return true;
+          }
 
-        // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
-        return false;
-      });
+          // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
+          return false;
+        });
+      }
     } finally {
       writeLock.unlock();
     }
