@@ -122,16 +122,16 @@ public class SnapshotTest {
     );
 
     Snapshot snapshot = Snapshot.create(
-        ImmutableList.of(CLUSTER), clustersVersion,
+        ImmutableList.of(CLUSTER), r -> clustersVersion,
         ImmutableList.of(ENDPOINT), resourceNames -> {
           if (resourceNames.size() != 1 || !endpointVersions.containsKey(resourceNames.get(0))) {
             return clustersVersion;
           }
           return endpointVersions.get(resourceNames.get(0));
         },
-        ImmutableList.of(LISTENER), listenersVersion,
-        ImmutableList.of(ROUTE), routesVersion,
-        ImmutableList.of(SECRET), secretsVersion
+        ImmutableList.of(LISTENER), r -> listenersVersion,
+        ImmutableList.of(ROUTE), r -> routesVersion,
+        ImmutableList.of(SECRET), r -> secretsVersion
     );
 
     assertThat(snapshot.clusters().resources())
