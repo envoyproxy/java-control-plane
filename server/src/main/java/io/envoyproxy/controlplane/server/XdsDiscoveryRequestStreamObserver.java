@@ -63,10 +63,7 @@ public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
 
   @Override
   void computeWatch(String typeUrl, Supplier<Watch> watchCreator) {
-    if (watch != null) {
-      watch.cancel();
-    }
-
+    cancel();
     watch = watchCreator.get();
   }
 }
