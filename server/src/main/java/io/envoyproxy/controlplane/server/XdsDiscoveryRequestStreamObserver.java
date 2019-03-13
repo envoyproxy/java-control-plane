@@ -4,7 +4,6 @@ import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
-
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Executor;

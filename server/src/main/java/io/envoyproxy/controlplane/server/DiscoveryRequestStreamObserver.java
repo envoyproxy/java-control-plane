@@ -1,5 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import com.google.protobuf.Any;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
@@ -10,9 +12,6 @@ import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -20,8 +19,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DiscoveryRequestStreamObserver implements StreamObserver<DiscoveryRequest> {
   private static final AtomicLongFieldUpdater<DiscoveryRequestStreamObserver> streamNonceUpdater =
@@ -38,7 +37,11 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   private volatile long streamNonce;
   private volatile int isClosing;
 
-  DiscoveryRequestStreamObserver(String defaultTypeUrl, StreamObserver<DiscoveryResponse> responseObserver, long streamId, Executor executor, DiscoveryServer discoveryServer) {
+  DiscoveryRequestStreamObserver(String defaultTypeUrl,
+                                 StreamObserver<DiscoveryResponse> responseObserver,
+                                 long streamId,
+                                 Executor executor,
+                                 DiscoveryServer discoveryServer) {
     this.defaultTypeUrl = defaultTypeUrl;
     this.responseObserver = responseObserver;
     this.streamId = streamId;

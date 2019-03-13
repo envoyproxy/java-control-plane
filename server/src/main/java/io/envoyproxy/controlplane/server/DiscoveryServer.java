@@ -169,9 +169,20 @@ public class DiscoveryServer {
 
     final DiscoveryRequestStreamObserver requestStreamObserver;
     if (ads) {
-      requestStreamObserver = new AdsDiscoveryRequestStreamObserver(defaultTypeUrl, responseObserver, streamId, executor, this);
+      requestStreamObserver = new AdsDiscoveryRequestStreamObserver(
+          responseObserver,
+          streamId,
+          executor,
+          this
+      );
     } else {
-      requestStreamObserver = new XdsDiscoveryRequestStreamObserver(defaultTypeUrl, responseObserver, streamId, executor, this);
+      requestStreamObserver = new XdsDiscoveryRequestStreamObserver(
+          defaultTypeUrl,
+          responseObserver,
+          streamId,
+          executor,
+          this
+      );
     }
 
     if (responseObserver instanceof ServerCallStreamObserver) {
