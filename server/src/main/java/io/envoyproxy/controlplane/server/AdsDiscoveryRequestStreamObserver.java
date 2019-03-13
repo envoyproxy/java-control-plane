@@ -19,12 +19,11 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   private final ConcurrentMap<String, DiscoveryResponse> latestResponse;
   private final ConcurrentMap<String, Set<String>> ackedResources;
 
-  AdsDiscoveryRequestStreamObserver(String defaultTypeUrl,
-                                    StreamObserver<DiscoveryResponse> responseObserver,
+  AdsDiscoveryRequestStreamObserver(StreamObserver<DiscoveryResponse> responseObserver,
                                     long streamId,
                                     Executor executor,
                                     DiscoveryServer discoveryServer) {
-    super(defaultTypeUrl, responseObserver, streamId, executor, discoveryServer);
+    super(ANY_TYPE_URL, responseObserver, streamId, executor, discoveryServer);
     this.watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
     this.latestResponse = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
     this.ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
@@ -34,17 +33,13 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   public void onNext(DiscoveryRequest request) {
     String requestTypeUrl = request.getTypeUrl();
 
-    if (defaultTypeUrl.equals(ANY_TYPE_URL)) {
-      if (requestTypeUrl.isEmpty()) {
-        responseObserver.onError(
-            Status.UNKNOWN
-                .withDescription(String.format("[%d] type URL is required for ADS", streamId))
-                .asRuntimeException());
+    if (requestTypeUrl.isEmpty()) {
+      responseObserver.onError(
+          Status.UNKNOWN
+              .withDescription(String.format("[%d] type URL is required for ADS", streamId))
+              .asRuntimeException());
 
-        return;
-      }
-    } else if (requestTypeUrl.isEmpty()) {
-      requestTypeUrl = defaultTypeUrl;
+      return;
     }
 
     processRequest(requestTypeUrl, request);
