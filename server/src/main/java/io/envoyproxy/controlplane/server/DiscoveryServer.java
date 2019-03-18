@@ -8,6 +8,8 @@ import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.Watch;
+import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
+import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
@@ -20,6 +22,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +45,7 @@ public class DiscoveryServer {
   private final ConfigWatcher configWatcher;
   private final ExecutorGroup executorGroup;
   private final AtomicLong streamCount = new AtomicLong();
+  private final ProtoResourcesSerializer protoResourcesSerializer;
 
   public DiscoveryServer(ConfigWatcher configWatcher) {
     this(Collections.emptyList(), configWatcher);
@@ -56,7 +61,7 @@ public class DiscoveryServer {
    * @param configWatcher source of configuration updates
    */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher) {
-    this(callbacks, configWatcher, new DefaultExecutorGroup());
+    this(callbacks, configWatcher, new DefaultExecutorGroup(), new DefaultProtoResourcesSerializer());
   }
 
   /**
@@ -64,17 +69,21 @@ public class DiscoveryServer {
    * @param callbacks server callbacks
    * @param configWatcher source of configuration updates
    * @param executorGroup executor group to use for responding stream requests
+   * @param protoResourcesSerializer serializer of proto buffer messages
    */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
                          ConfigWatcher configWatcher,
-                         ExecutorGroup executorGroup) {
+                         ExecutorGroup executorGroup,
+                         ProtoResourcesSerializer protoResourcesSerializer) {
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
     Preconditions.checkNotNull(executorGroup, "executorGroup cannot be null");
+    Preconditions.checkNotNull(protoResourcesSerializer, "protoResourcesSerializer cannot be null");
 
     this.callbacks = callbacks;
     this.configWatcher = configWatcher;
     this.executorGroup = executorGroup;
+    this.protoResourcesSerializer = protoResourcesSerializer;
   }
 
   /**
@@ -306,9 +315,10 @@ public class DiscoveryServer {
     private void send(Response response, String typeUrl) {
       String nonce = Long.toString(streamNonce.getAndIncrement());
 
+      Collection<Any> resources = protoResourcesSerializer.serialize(response.resources());
       DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder()
           .setVersionInfo(response.version())
-          .addAllResources(response.resources().stream().map(Any::pack).collect(Collectors.toList()))
+          .addAllResources(resources)
           .setTypeUrl(typeUrl)
           .setNonce(nonce)
           .build();
