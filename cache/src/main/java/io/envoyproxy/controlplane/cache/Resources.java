@@ -146,6 +146,7 @@ public class Resources {
             try {
               HttpConnectionManager.Builder config = HttpConnectionManager.newBuilder();
 
+              // TODO: Filter#getConfig() is deprecated, migrate to use Filter#getTypedConfig().
               structAsMessage(filter.getConfig(), config);
 
               if (config.getRouteSpecifierCase() == RDS && !isNullOrEmpty(config.getRds().getRouteConfigName())) {
