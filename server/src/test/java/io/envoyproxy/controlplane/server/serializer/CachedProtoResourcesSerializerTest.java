@@ -15,7 +15,18 @@ public class CachedProtoResourcesSerializerTest {
 
   @Test
   public void shouldKeepCachedProtoWhenSerializingSameMessage() {
-    // given
+    ClusterLoadAssignment endpoint = ClusterLoadAssignment.newBuilder()
+        .setClusterName("service1")
+        .build();
+
+    Any serializedEndpoint = serializer.serialize(endpoint);
+    Any serializedSameEndpoint = serializer.serialize(endpoint);
+
+    assertThat(serializedEndpoint).isSameAs(serializedSameEndpoint);
+  }
+
+  @Test
+  public void shouldKeepCachedProtoWhenSerializingSameMessages() {
     List<ClusterLoadAssignment> endpoints = Lists.newArrayList(
         ClusterLoadAssignment.newBuilder()
             .setClusterName("service1")
@@ -25,11 +36,13 @@ public class CachedProtoResourcesSerializerTest {
             .build()
     );
 
-    // when
     Collection<Any> serializedEndpoints = serializer.serialize(endpoints);
     Collection<Any> serializedSameEndpoints = serializer.serialize(endpoints);
 
-    // then
-    assertThat(serializedEndpoints).isSameAs(serializedSameEndpoints);
+    assertThat(serializedEndpoints).isEqualTo(serializedSameEndpoints);
+    assertThat(serializedEndpoints).isNotSameAs(serializedSameEndpoints);
+    assertThat(serializedEndpoints) // elements are the same instances
+        .usingElementComparator((x, y) -> x == y ? 0 : 1)
+        .hasSameElementsAs(serializedSameEndpoints);
   }
 }
