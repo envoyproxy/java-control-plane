@@ -9,6 +9,9 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.server.exception.RequestException;
+import io.envoyproxy.controlplane.server.limits.FlowControl;
+import io.envoyproxy.controlplane.server.limits.NoOpRequestLimiter;
+import io.envoyproxy.controlplane.server.limits.RequestLimiter;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
@@ -47,6 +50,12 @@ public class DiscoveryServer {
   private final ExecutorGroup executorGroup;
   private final AtomicLong streamCount = new AtomicLong();
   private final ProtoResourcesSerializer protoResourcesSerializer;
+  private final RequestLimiter requestLimiter;
+  private final FlowControl.Factory<DiscoveryResponse> flowControlFactory;
+
+  public static DiscoveryServer.Builder watching(ConfigWatcher watcher) {
+    return new Builder(watcher);
+  }
 
   public DiscoveryServer(ConfigWatcher configWatcher) {
     this(Collections.emptyList(), configWatcher);
@@ -76,6 +85,23 @@ public class DiscoveryServer {
                          ConfigWatcher configWatcher,
                          ExecutorGroup executorGroup,
                          ProtoResourcesSerializer protoResourcesSerializer) {
+    this(callbacks, configWatcher, executorGroup, protoResourcesSerializer,
+        FlowControl.noOpFactory(), new NoOpRequestLimiter());
+  }
+
+  /**
+   * Creates the server.
+   * @param callbacks server callbacks
+   * @param configWatcher source of configuration updates
+   * @param executorGroup executor group to use for responding stream requests
+   * @param protoResourcesSerializer serializer of proto buffer messages
+   */
+  public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
+                         ConfigWatcher configWatcher,
+                         ExecutorGroup executorGroup,
+                         ProtoResourcesSerializer protoResourcesSerializer,
+                         FlowControl.Factory<DiscoveryResponse> flowControlFactory,
+                         RequestLimiter requestLimiter) {
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
     Preconditions.checkNotNull(executorGroup, "executorGroup cannot be null");
@@ -85,6 +111,8 @@ public class DiscoveryServer {
     this.configWatcher = configWatcher;
     this.executorGroup = executorGroup;
     this.protoResourcesSerializer = protoResourcesSerializer;
+    this.flowControlFactory = flowControlFactory;
+    this.requestLimiter = requestLimiter;
   }
 
   /**
@@ -202,14 +230,16 @@ public class DiscoveryServer {
     private final boolean ads;
     private final Executor executor;
     private final AtomicBoolean isClosing = new AtomicBoolean();
+    private final FlowControl<DiscoveryResponse> flowControl;
 
     private AtomicLong streamNonce;
 
-    public DiscoveryRequestStreamObserver(String defaultTypeUrl,
-                                          StreamObserver<DiscoveryResponse> responseObserver,
-                                          long streamId,
-                                          boolean ads,
-                                          Executor executor) {
+    public DiscoveryRequestStreamObserver(
+        String defaultTypeUrl,
+        StreamObserver<DiscoveryResponse> responseObserver,
+        long streamId,
+        boolean ads,
+        Executor executor) {
       this.defaultTypeUrl = defaultTypeUrl;
       this.responseObserver = responseObserver;
       this.streamId = streamId;
@@ -219,6 +249,10 @@ public class DiscoveryServer {
       ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
       streamNonce = new AtomicLong();
       this.executor = executor;
+
+      this.flowControl = flowControlFactory.get(streamId, responseObserver, requestLimiter);
+
+      flowControl.streamOpened();
     }
 
     @Override
@@ -239,7 +273,8 @@ public class DiscoveryServer {
         requestTypeUrl = defaultTypeUrl;
       }
 
-      LOGGER.info("[{}] request {}[{}] with nonce {} from version {}",
+      LOGGER.info(
+          "[{}] request {}[{}] with nonce {} from version {}",
           streamId,
           requestTypeUrl,
           String.join(", ", request.getResourceNamesList()),
@@ -279,9 +314,10 @@ public class DiscoveryServer {
                 r -> executor.execute(() -> send(r, typeUrl)));
           });
 
-          return;
+          break;
         }
       }
+      flowControl.afterRequest();
     }
 
     @Override
@@ -292,6 +328,7 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
+        flowControl.streamClosed();
         responseObserver.onError(Status.fromThrowable(t).asException());
       } finally {
         cancel();
@@ -304,6 +341,7 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
+        flowControl.streamClosed();
         responseObserver.onCompleted();
       } finally {
         cancel();
@@ -352,6 +390,81 @@ public class DiscoveryServer {
           throw e;
         }
       }
+    }
+  }
+
+  public static class Builder {
+
+    private final ConfigWatcher configWatcher;
+
+    private List<DiscoveryServerCallbacks> callbacks;
+
+    private ExecutorGroup executorGroup;
+
+    private ProtoResourcesSerializer protoResourcesSerializer;
+
+    private RequestLimiter requestLimiter;
+
+    private FlowControl.Factory<DiscoveryResponse> flowControlFactory;
+
+    private Builder(ConfigWatcher configWatcher) {
+      this.configWatcher = configWatcher;
+    }
+
+    /**
+     * Creates an instance of {@link DiscoveryServer} based on provided configuration merged with defaults.
+     * @return instance of {@link DiscoveryServer}
+     */
+    public DiscoveryServer build() {
+      List<DiscoveryServerCallbacks> callbacks = this.callbacks == null
+          ? Collections.emptyList()
+          : this.callbacks;
+      ExecutorGroup executorGroup = this.executorGroup == null
+          ? new DefaultExecutorGroup()
+          : this.executorGroup;
+      ProtoResourcesSerializer protoResourcesSerializer = this.protoResourcesSerializer == null
+          ? new DefaultProtoResourcesSerializer()
+          : this.protoResourcesSerializer;
+      RequestLimiter requestLimiter = this.requestLimiter == null
+          ? new NoOpRequestLimiter()
+          : this.requestLimiter;
+      FlowControl.Factory<DiscoveryResponse> flowControlFactory = this.flowControlFactory == null
+          ? FlowControl.noOpFactory()
+          : this.flowControlFactory;
+
+      return new DiscoveryServer(
+          callbacks,
+          this.configWatcher,
+          executorGroup,
+          protoResourcesSerializer,
+          flowControlFactory,
+          requestLimiter
+      );
+    }
+
+    public Builder withCallbacks(List<DiscoveryServerCallbacks> callbacks) {
+      this.callbacks = callbacks;
+      return this;
+    }
+
+    public Builder withExecutorGroup(ExecutorGroup group) {
+      this.executorGroup = group;
+      return this;
+    }
+
+    public Builder withProtoResourcesSerializer(ProtoResourcesSerializer serializer) {
+      this.protoResourcesSerializer = serializer;
+      return this;
+    }
+
+    public Builder withRequestLimiter(RequestLimiter limiter) {
+      this.requestLimiter = limiter;
+      return this;
+    }
+
+    public Builder withFlowControlFactory(FlowControl.Factory<DiscoveryResponse> factory) {
+      this.flowControlFactory = factory;
+      return this;
     }
   }
 }

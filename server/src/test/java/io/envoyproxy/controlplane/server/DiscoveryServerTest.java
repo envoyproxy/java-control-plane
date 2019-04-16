@@ -17,6 +17,10 @@ import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.envoyproxy.controlplane.server.exception.RequestException;
+import io.envoyproxy.controlplane.server.limits.FlowControl;
+import io.envoyproxy.controlplane.server.limits.NoOpRequestLimiter;
+import io.envoyproxy.controlplane.server.limits.RequestLimiter;
+import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub;
@@ -54,10 +58,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import org.assertj.core.api.Condition;
 import org.junit.Rule;
 import org.junit.Test;
@@ -806,6 +810,94 @@ public class DiscoveryServerTest {
   }
 
   @Test
+  public void testFlowControlInformedOnCancel() {
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    ImmutableList<DiscoveryServerCallbacks> callbacks =
+        ImmutableList.of(new MockDiscoveryServerCallbacks());
+    RequestLimiter requestLimiter = new NoOpRequestLimiter();
+    MockFlowControl flowControl = new MockFlowControl();
+
+    DiscoveryServer server =
+        new DiscoveryServer(callbacks, configWatcher,
+            new DefaultExecutorGroup(),
+            new DefaultProtoResourcesSerializer(),
+            flowControlFactory(flowControl),
+            requestLimiter);
+
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase service =
+        server.getAggregatedDiscoveryServiceImpl();
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+    StreamObserver<DiscoveryRequest> requestObserver = service.streamAggregatedResources(responseObserver);
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.CLUSTER_TYPE_URL)
+        .setVersionInfo(VERSION)
+        .build());
+
+    requestObserver.onError(new StatusRuntimeException(Status.CANCELLED
+        .withDescription("internal error")
+        .withCause(new RuntimeException("some error"))));
+
+    assertThat(flowControl.openedStreams.get()).isEqualTo(1);
+    assertThat(flowControl.closedStreams.get()).isEqualTo(1);
+    assertThat(flowControl.processedRequests.get()).isEqualTo(1);
+  }
+
+  @Test
+  public void testFlowControl() {
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    ImmutableList<DiscoveryServerCallbacks> callbacks =
+        ImmutableList.of(new MockDiscoveryServerCallbacks());
+    RequestLimiter requestLimiter = new NoOpRequestLimiter();
+    MockFlowControl flowControl = new MockFlowControl();
+
+    DiscoveryServer server =
+        new DiscoveryServer(callbacks, configWatcher,
+            new DefaultExecutorGroup(),
+            new DefaultProtoResourcesSerializer(),
+            flowControlFactory(flowControl),
+            requestLimiter);
+
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase service =
+        server.getAggregatedDiscoveryServiceImpl();
+
+    ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase service2 =
+        server.getClusterDiscoveryServiceImpl();
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+    MockDiscoveryResponseObserver responseObserver2 = new MockDiscoveryResponseObserver();
+    StreamObserver<DiscoveryRequest> requestObserver = service.streamAggregatedResources(responseObserver);
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+        .setVersionInfo(VERSION)
+        .build());
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+        .setVersionInfo(VERSION)
+        .build());
+
+    StreamObserver<DiscoveryRequest> requestObserver2 = service2.streamClusters(responseObserver2);
+    requestObserver2.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.CLUSTER_TYPE_URL)
+        .setVersionInfo(VERSION)
+        .build());
+    requestObserver2.onError(new RuntimeException("send error"));
+
+    requestObserver.onCompleted();
+
+    assertThat(flowControl.openedStreams.get()).isEqualTo(2);
+    assertThat(flowControl.closedStreams.get()).isEqualTo(2);
+    assertThat(flowControl.processedRequests.get()).isEqualTo(3);
+  }
+
+  @Test
   public void testCallbacksOnCancelled() throws InterruptedException, ClassNotFoundException {
     final CountDownLatch streamCloseWithErrorLatch = new CountDownLatch(1);
     final CountDownLatch watchCreated = new CountDownLatch(1);
@@ -1150,5 +1242,43 @@ public class DiscoveryServerTest {
       completed.set(true);
       completedLatch.countDown();
     }
+  }
+
+  private static class MockRequestLimiter implements RequestLimiter {
+
+    private final AtomicLong attempts = new AtomicLong();
+
+    @Override
+    public void acquire() {
+      attempts.incrementAndGet();
+    }
+  }
+
+  private static class MockFlowControl implements FlowControl<DiscoveryResponse> {
+
+    private AtomicLong openedStreams = new AtomicLong();
+    private AtomicLong closedStreams = new AtomicLong();
+    private AtomicLong processedRequests = new AtomicLong();
+
+    @Override
+    public void streamOpened() {
+      openedStreams.incrementAndGet();
+    }
+
+    @Override
+    public void streamClosed() {
+      closedStreams.incrementAndGet();
+    }
+
+    @Override
+    public void afterRequest() {
+      processedRequests.incrementAndGet();
+    }
+  }
+
+  private static FlowControl.Factory<DiscoveryResponse> flowControlFactory(
+      FlowControl<DiscoveryResponse> flowControl
+  ) {
+    return (streamId, stream, limiter) -> flowControl;
   }
 }
