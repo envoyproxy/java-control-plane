@@ -212,7 +212,8 @@ public abstract class Snapshot {
    * Returns the version in this snapshot for the given resource type.
    *
    * @param typeUrl the URL for the requested resource type
-   * @param resourceNames list of resource names
+   * @param resourceNames list of requested resource names,
+   *                      used to calculate a version for the given resources
    */
   public String version(String typeUrl, List<String> resourceNames) {
     if (Strings.isNullOrEmpty(typeUrl)) {

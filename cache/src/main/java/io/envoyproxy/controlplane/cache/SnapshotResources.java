@@ -35,8 +35,7 @@ public abstract class SnapshotResources<T extends Message> {
    */
   public static <T extends Message> SnapshotResources<T> create(
       Iterable<T> resources,
-      ResourceVersionResolver versionResolver
-  ) {
+      ResourceVersionResolver versionResolver) {
     return new AutoValue_SnapshotResources<>(
         resourcesMap(resources),
         versionResolver);
@@ -58,21 +57,23 @@ public abstract class SnapshotResources<T extends Message> {
   public abstract Map<String, T> resources();
 
   /**
-   * Returns the version associated with this resources in this collection.
+   * Returns the version associated with this all resources in this collection.
    */
   public String version() {
     return resourceVersionResolver().version();
   }
 
   /**
-   * Returns the version associated with this resources in this collection, where the key is the name of the resource.
+   * Returns the version associated with the requested resources in this collection.
+   *
+   * @param resourceNames list of list of requested resources.
    */
   public String version(List<String> resourceNames) {
     return resourceVersionResolver().version(resourceNames);
   }
 
   /**
-   * Returns the versions associated with this resources in this collection.
+   * Returns the version resolver associated with this resources in this collection.
    */
   public abstract ResourceVersionResolver resourceVersionResolver();
 

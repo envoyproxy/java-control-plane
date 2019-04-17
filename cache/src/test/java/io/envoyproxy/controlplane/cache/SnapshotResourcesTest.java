@@ -50,17 +50,17 @@ public class SnapshotResourcesTest {
         }
     );
 
-    // when no resources name provided, the aggregated version should be returned
+    // when no resource name provided, the aggregated version should be returned
     assertThat(snapshot.version()).isEqualTo(aggregateVersion);
 
-    // when one resource name provided, the cluster version should be returned
+    // when one resource name is provided, the cluster version should be returned
     assertThat(snapshot.version(ImmutableList.of(CLUSTER0_NAME))).isEqualTo(versions.get(CLUSTER0_NAME));
     assertThat(snapshot.version(ImmutableList.of(CLUSTER1_NAME))).isEqualTo(versions.get(CLUSTER1_NAME));
 
-    // when unknown resource name provided, the aggregated version should be returned
+    // when an unknown resource name is provided, the aggregated version should be returned
     assertThat(snapshot.version(ImmutableList.of("unknown_cluster_name"))).isEqualTo(aggregateVersion);
 
-    // when multiple resource names provided, the aggregated version should be returned
+    // when multiple resource names are provided, the aggregated version should be returned
     assertThat(snapshot.version(ImmutableList.of(CLUSTER1_NAME, CLUSTER1_NAME))).isEqualTo(aggregateVersion);
   }
 }
