@@ -111,54 +111,6 @@ public class SnapshotTest {
   }
 
   @Test
-  public void createSeparateVersionsForEachCluster() {
-    final String clustersVersion = UUID.randomUUID().toString();
-    final String listenersVersion = UUID.randomUUID().toString();
-    final String routesVersion = UUID.randomUUID().toString();
-    final String secretsVersion = UUID.randomUUID().toString();
-
-    final Map<String, String> endpointVersions = ImmutableMap.of(
-        CLUSTER_NAME, UUID.randomUUID().toString()
-    );
-
-    Snapshot snapshot = Snapshot.create(
-        ImmutableList.of(CLUSTER), r -> clustersVersion,
-        ImmutableList.of(ENDPOINT), resourceNames -> {
-          if (resourceNames.size() != 1 || !endpointVersions.containsKey(resourceNames.get(0))) {
-            return clustersVersion;
-          }
-          return endpointVersions.get(resourceNames.get(0));
-        },
-        ImmutableList.of(LISTENER), r -> listenersVersion,
-        ImmutableList.of(ROUTE), r -> routesVersion,
-        ImmutableList.of(SECRET), r -> secretsVersion
-    );
-
-    assertThat(snapshot.clusters().resources())
-        .containsEntry(CLUSTER_NAME, CLUSTER)
-        .hasSize(1);
-
-    assertThat(snapshot.endpoints().resources())
-        .containsEntry(CLUSTER_NAME, ENDPOINT)
-        .hasSize(1);
-
-    assertThat(snapshot.listeners().resources())
-        .containsEntry(LISTENER_NAME, LISTENER)
-        .hasSize(1);
-
-    assertThat(snapshot.routes().resources())
-        .containsEntry(ROUTE_NAME, ROUTE)
-        .hasSize(1);
-
-    assertThat(snapshot.clusters().version()).isEqualTo(clustersVersion);
-    assertThat(snapshot.endpoints().version()).isEqualTo(clustersVersion);
-    assertThat(snapshot.endpoints().version(ImmutableList.of(CLUSTER_NAME)))
-        .isEqualTo(endpointVersions.get(CLUSTER_NAME));
-    assertThat(snapshot.listeners().version()).isEqualTo(listenersVersion);
-    assertThat(snapshot.routes().version()).isEqualTo(routesVersion);
-  }
-
-  @Test
   @SuppressWarnings("unchecked")
   public void resourcesReturnsExpectedResources() {
     Snapshot snapshot = Snapshot.create(
