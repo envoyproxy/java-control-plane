@@ -145,7 +145,22 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       }
 
       // Otherwise, the watch may be responded immediately
-      respond(watch, snapshot, group);
+      boolean responded = respond(watch, snapshot, group);
+
+      if (!responded) {
+        watchCount++;
+
+        LOGGER.info("did not respond immediately, leaving open watch {} for {}[{}] from node {} for version {}",
+            watchCount,
+            request.getTypeUrl(),
+            String.join(", ", request.getResourceNamesList()),
+            group,
+            request.getVersionInfo());
+
+        status.setWatch(watchCount, watch);
+
+        watch.setStop(() -> status.removeWatch(watchCount));
+      }
 
       return watch;
 
@@ -245,7 +260,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     return Response.create(request, filtered, version);
   }
 
-  private void respond(Watch watch, Snapshot snapshot, T group) {
+  private boolean respond(Watch watch, Snapshot snapshot, T group) {
     Map<String, ? extends Message> snapshotResources = snapshot.resources(watch.request().getTypeUrl());
 
     if (!watch.request().getResourceNamesList().isEmpty() && watch.ads()) {
@@ -262,7 +277,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
             String.join(", ", watch.request().getResourceNamesList()),
             String.join(", ", missingNames));
 
-        return;
+        return false;
       }
     }
 
@@ -281,6 +296,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
     try {
       watch.respond(response);
+      return true;
     } catch (WatchCancelledException e) {
       LOGGER.error(
           "failed to respond for {} from node {} at version {} with version {} because watch was already cancelled",
@@ -289,5 +305,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
           watch.request().getVersionInfo(),
           version);
     }
+
+    return false;
   }
 }

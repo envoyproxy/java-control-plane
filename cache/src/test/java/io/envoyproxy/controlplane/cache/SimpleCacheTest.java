@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -348,6 +349,26 @@ public class SimpleCacheTest {
     assertThat(statusInfo.numWatches()).isZero();
 
     watches.values().forEach(w -> assertThat(w.watch.isCancelled()).isTrue());
+  }
+
+  @Test
+  public void watchIsLeftOpenIfNotRespondedImmediately() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
+
+    ResponseTracker responseTracker = new ResponseTracker();
+    Watch watch = cache.createWatch(
+        true,
+        DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setTypeUrl(ROUTE_TYPE_URL)
+            .addAllResourceNames(Collections.singleton(ROUTE_NAME))
+            .build(),
+        Collections.singleton(ROUTE_NAME),
+        responseTracker);
+
+    assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
   }
 
   @Test
