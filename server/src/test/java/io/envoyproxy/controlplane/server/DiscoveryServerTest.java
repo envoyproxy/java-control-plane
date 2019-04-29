@@ -16,6 +16,7 @@ import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
+import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub;
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
 import org.assertj.core.api.Condition;
 import org.junit.Rule;
 import org.junit.Test;
@@ -864,6 +866,90 @@ public class DiscoveryServerTest {
     assertThat(callbacks.streamResponseCount).hasValue(1);
   }
 
+  @Test
+  public void testCallbacksRequestException() throws InterruptedException {
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+      @Override
+      public void onStreamRequest(long streamId, DiscoveryRequest request) {
+        super.onStreamRequest(streamId, request);
+        throw new RequestException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
+      }
+    };
+
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
+    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+    StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.LISTENER_TYPE_URL)
+        .build());
+
+    if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
+      fail(format("failed to error before timeout, completed = %b", responseObserver.completed.get()));
+    }
+
+    callbacks.assertThatNoErrors();
+
+    assertThat(responseObserver.errorException).isInstanceOfSatisfying(StatusRuntimeException.class, ex -> {
+      assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
+      assertThat(ex.getStatus().getDescription()).isEqualTo("request not valid");
+    });
+
+    assertThat(callbacks.streamCloseCount).hasValue(0);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
+    assertThat(callbacks.streamOpenCount).hasValue(1);
+    assertThat(callbacks.streamRequestCount).hasValue(1);
+    assertThat(callbacks.streamResponseCount).hasValue(0);
+  }
+
+  @Test
+  public void testCallbacksOtherStatusException() throws InterruptedException {
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+      @Override
+      public void onStreamRequest(long streamId, DiscoveryRequest request) {
+        super.onStreamRequest(streamId, request);
+        throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
+      }
+    };
+
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
+    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+    StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.LISTENER_TYPE_URL)
+        .build());
+
+    if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
+      fail(format("failed to error before timeout, completed = %b", responseObserver.completed.get()));
+    }
+
+    callbacks.assertThatNoErrors();
+
+    assertThat(responseObserver.errorException).isInstanceOfSatisfying(StatusRuntimeException.class, ex -> {
+      assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.UNKNOWN);
+      assertThat(ex.getStatus().getDescription()).isNull();
+    });
+
+    assertThat(callbacks.streamCloseCount).hasValue(0);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
+    assertThat(callbacks.streamOpenCount).hasValue(1);
+    assertThat(callbacks.streamRequestCount).hasValue(1);
+    assertThat(callbacks.streamResponseCount).hasValue(0);
+  }
+
   private static Table<String, String, Collection<? extends Message>> createResponses() {
     return ImmutableTable.<String, String, Collection<? extends Message>>builder()
         .put(Resources.CLUSTER_TYPE_URL, VERSION, ImmutableList.of(CLUSTER))
@@ -1005,6 +1091,7 @@ public class DiscoveryServerTest {
     private final AtomicInteger nonce = new AtomicInteger();
     private final Collection<DiscoveryResponse> responses = new LinkedList<>();
 
+    private Throwable errorException;
     private boolean sendError = false;
 
     void assertThatNoErrors() {
@@ -1054,6 +1141,7 @@ public class DiscoveryServerTest {
     @Override
     public void onError(Throwable t) {
       error.set(true);
+      errorException = t;
       errorLatch.countDown();
     }
 

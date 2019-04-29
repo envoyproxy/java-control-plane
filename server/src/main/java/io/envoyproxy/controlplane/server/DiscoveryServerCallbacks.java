@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
+import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 
@@ -48,6 +49,9 @@ public interface DiscoveryServerCallbacks {
    *
    * @param streamId an ID for this stream that is only unique to this discovery server instance
    * @param request the discovery request sent by the envoy instance
+   *
+   * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
+   *     will be returned to the client and the stream will be closed with error.
    */
   default void onStreamRequest(long streamId, DiscoveryRequest request) {
 
