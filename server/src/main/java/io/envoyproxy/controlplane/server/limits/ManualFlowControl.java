@@ -6,16 +6,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * {@link FlowControl} implementation that utilizes HTTP2 back-pressure and request limiting according to user-provided
+ * strategy.
+ * <p>It assumes {@link ServerCallStreamObserver} implementation, which is required for manual flow control.</p>
+ */
 public class ManualFlowControl implements FlowControl<DiscoveryResponse> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ManualFlowControl.class);
 
   private final long streamId;
-
   private final ServerCallStreamObserver<DiscoveryResponse> serverCallStreamObserver;
-
   private final AtomicBoolean observerWasReady = new AtomicBoolean(false);
-
   private final RequestLimiter requestLimiter;
 
   /**

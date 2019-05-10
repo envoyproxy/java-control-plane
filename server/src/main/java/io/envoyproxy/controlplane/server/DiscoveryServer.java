@@ -249,7 +249,6 @@ public class DiscoveryServer {
       ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
       streamNonce = new AtomicLong();
       this.executor = executor;
-
       this.flowControl = flowControlFactory.get(streamId, responseObserver, requestLimiter);
 
       flowControl.streamOpened();
@@ -273,8 +272,7 @@ public class DiscoveryServer {
         requestTypeUrl = defaultTypeUrl;
       }
 
-      LOGGER.info(
-          "[{}] request {}[{}] with nonce {} from version {}",
+      LOGGER.info("[{}] request {}[{}] with nonce {} from version {}",
           streamId,
           requestTypeUrl,
           String.join(", ", request.getResourceNamesList()),
@@ -328,9 +326,9 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
-        flowControl.streamClosed();
         responseObserver.onError(Status.fromThrowable(t).asException());
       } finally {
+        flowControl.streamClosed();
         cancel();
       }
     }
@@ -341,9 +339,9 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
-        flowControl.streamClosed();
         responseObserver.onCompleted();
       } finally {
+        flowControl.streamClosed();
         cancel();
       }
     }
@@ -393,19 +391,17 @@ public class DiscoveryServer {
     }
   }
 
+  /**
+   * Builder for creating a {@link DiscoveryServer} instance.
+   */
   public static class Builder {
 
     private final ConfigWatcher configWatcher;
-
-    private List<DiscoveryServerCallbacks> callbacks;
-
-    private ExecutorGroup executorGroup;
-
-    private ProtoResourcesSerializer protoResourcesSerializer;
-
-    private RequestLimiter requestLimiter;
-
-    private FlowControl.Factory<DiscoveryResponse> flowControlFactory;
+    private List<DiscoveryServerCallbacks> callbacks = Collections.emptyList();
+    private ExecutorGroup executorGroup = new DefaultExecutorGroup();
+    private ProtoResourcesSerializer protoResourcesSerializer = new DefaultProtoResourcesSerializer();
+    private RequestLimiter requestLimiter = new NoOpRequestLimiter();
+    private FlowControl.Factory<DiscoveryResponse> flowControlFactory = FlowControl.noOpFactory();
 
     private Builder(ConfigWatcher configWatcher) {
       this.configWatcher = configWatcher;
@@ -416,53 +412,67 @@ public class DiscoveryServer {
      * @return instance of {@link DiscoveryServer}
      */
     public DiscoveryServer build() {
-      List<DiscoveryServerCallbacks> callbacks = this.callbacks == null
-          ? Collections.emptyList()
-          : this.callbacks;
-      ExecutorGroup executorGroup = this.executorGroup == null
-          ? new DefaultExecutorGroup()
-          : this.executorGroup;
-      ProtoResourcesSerializer protoResourcesSerializer = this.protoResourcesSerializer == null
-          ? new DefaultProtoResourcesSerializer()
-          : this.protoResourcesSerializer;
-      RequestLimiter requestLimiter = this.requestLimiter == null
-          ? new NoOpRequestLimiter()
-          : this.requestLimiter;
-      FlowControl.Factory<DiscoveryResponse> flowControlFactory = this.flowControlFactory == null
-          ? FlowControl.noOpFactory()
-          : this.flowControlFactory;
-
       return new DiscoveryServer(
-          callbacks,
+          this.callbacks,
           this.configWatcher,
-          executorGroup,
-          protoResourcesSerializer,
-          flowControlFactory,
-          requestLimiter
+          this.executorGroup,
+          this.protoResourcesSerializer,
+          this.flowControlFactory,
+          this.requestLimiter
       );
     }
 
+    /**
+     * Use provided server callbacks.
+     * @param callbacks list of {@link DiscoveryServerCallbacks}
+     * @return the builder instance
+     */
     public Builder withCallbacks(List<DiscoveryServerCallbacks> callbacks) {
+      Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
       this.callbacks = callbacks;
       return this;
     }
 
+    /**
+     * Use provided executor group.
+     * @param group {@link ExecutorGroup} to be used
+     * @return the builder instance
+     */
     public Builder withExecutorGroup(ExecutorGroup group) {
+      Preconditions.checkNotNull(group, "ExecutorGroup cannot be null");
       this.executorGroup = group;
       return this;
     }
 
+    /**
+     * Use provided serializer.
+     * @param serializer {@link ProtoResourcesSerializer} to be used
+     * @return the builder instance
+     */
     public Builder withProtoResourcesSerializer(ProtoResourcesSerializer serializer) {
+      Preconditions.checkNotNull(serializer, "ProtoResourcesSerializer cannot be null");
       this.protoResourcesSerializer = serializer;
       return this;
     }
 
+    /**
+     * Use provided request limiter.
+     * @param limiter {@link RequestLimiter} to be used
+     * @return the builder instance
+     */
     public Builder withRequestLimiter(RequestLimiter limiter) {
+      Preconditions.checkNotNull(limiter, "RequestLimiter cannot be null");
       this.requestLimiter = limiter;
       return this;
     }
 
+    /**
+     * Use provided FlowControl factory.
+     * @param factory {@link FlowControl.Factory} to be used
+     * @return the builder instance
+     */
     public Builder withFlowControlFactory(FlowControl.Factory<DiscoveryResponse> factory) {
+      Preconditions.checkNotNull(factory, "FlowControl.Factory cannot be null");
       this.flowControlFactory = factory;
       return this;
     }

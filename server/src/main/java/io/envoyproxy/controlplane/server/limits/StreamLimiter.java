@@ -10,14 +10,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A provider of {@link ServerInterceptor} for limiting concurrently handled GRPC streams.
+ */
 public class StreamLimiter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StreamLimiter.class);
 
   private final long maxStreams;
-
   private final ServerInterceptor serverInterceptor;
-
   private final AtomicLong openStreams = new AtomicLong();
 
   /**
