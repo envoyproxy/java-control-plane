@@ -16,6 +16,7 @@ import io.envoyproxy.envoy.api.v2.Listener;
 import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.auth.Secret;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,6 +83,40 @@ public abstract class Snapshot {
         SnapshotResources.create(listeners, listenersVersion),
         SnapshotResources.create(routes, routesVersion),
         SnapshotResources.create(secrets, secretsVersion));
+  }
+
+  /**
+   * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
+   *
+   * @param clusters the cluster resources in this snapshot
+   * @param clusterVersionResolver version resolver of the clusters in this snapshot
+   * @param endpoints the endpoint resources in this snapshot
+   * @param endpointVersionResolver version resolver of the endpoints in this snapshot
+   * @param listeners the listener resources in this snapshot
+   * @param listenerVersionResolver version resolver of listeners in this snapshot
+   * @param routes the route resources in this snapshot
+   * @param routeVersionResolver version resolver of the routes in this snapshot
+   * @param secrets the secret resources in this snapshot
+   * @param secretVersionResolver version resolver of the secrets in this snapshot
+   */
+  public static Snapshot create(
+      Iterable<Cluster> clusters,
+      ResourceVersionResolver clusterVersionResolver,
+      Iterable<ClusterLoadAssignment> endpoints,
+      ResourceVersionResolver endpointVersionResolver,
+      Iterable<Listener> listeners,
+      ResourceVersionResolver listenerVersionResolver,
+      Iterable<RouteConfiguration> routes,
+      ResourceVersionResolver routeVersionResolver,
+      Iterable<Secret> secrets,
+      ResourceVersionResolver secretVersionResolver) {
+
+    return new AutoValue_Snapshot(
+        SnapshotResources.create(clusters, clusterVersionResolver),
+        SnapshotResources.create(endpoints, endpointVersionResolver),
+        SnapshotResources.create(listeners, listenerVersionResolver),
+        SnapshotResources.create(routes, routeVersionResolver),
+        SnapshotResources.create(secrets, secretVersionResolver));
   }
 
   /**
@@ -170,21 +205,32 @@ public abstract class Snapshot {
    * @param typeUrl the URL for the requested resource type
    */
   public String version(String typeUrl) {
+    return version(typeUrl, Collections.emptyList());
+  }
+
+  /**
+   * Returns the version in this snapshot for the given resource type.
+   *
+   * @param typeUrl the URL for the requested resource type
+   * @param resourceNames list of requested resource names,
+   *                      used to calculate a version for the given resources
+   */
+  public String version(String typeUrl, List<String> resourceNames) {
     if (Strings.isNullOrEmpty(typeUrl)) {
       return "";
     }
 
     switch (typeUrl) {
       case CLUSTER_TYPE_URL:
-        return clusters().version();
+        return clusters().version(resourceNames);
       case ENDPOINT_TYPE_URL:
-        return endpoints().version();
+        return endpoints().version(resourceNames);
       case LISTENER_TYPE_URL:
-        return listeners().version();
+        return listeners().version(resourceNames);
       case ROUTE_TYPE_URL:
-        return routes().version();
+        return routes().version(resourceNames);
       case SECRET_TYPE_URL:
-        return secrets().version();
+        return secrets().version(resourceNames);
       default:
         return "";
     }

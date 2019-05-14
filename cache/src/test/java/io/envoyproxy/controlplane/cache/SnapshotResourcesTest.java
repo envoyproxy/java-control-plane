@@ -3,7 +3,10 @@ package io.envoyproxy.controlplane.cache;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
 import io.envoyproxy.envoy.api.v2.Cluster;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.Test;
 
@@ -27,5 +30,37 @@ public class SnapshotResourcesTest {
         .hasSize(2);
 
     assertThat(snapshot.version()).isEqualTo(version);
+  }
+
+  @Test
+  public void populatesVersionWithSeparateVersionPerCluster() {
+    final String aggregateVersion = UUID.randomUUID().toString();
+
+    final Map<String, String> versions = ImmutableMap.of(
+        CLUSTER0_NAME, UUID.randomUUID().toString(),
+        CLUSTER1_NAME, UUID.randomUUID().toString()
+    );
+
+    SnapshotResources<Cluster> snapshot = SnapshotResources.create(
+        ImmutableList.of(CLUSTER0, CLUSTER1), resourceNames -> {
+          if (resourceNames.size() != 1 || !versions.containsKey(resourceNames.get(0))) {
+            return aggregateVersion;
+          }
+          return versions.get(resourceNames.get(0));
+        }
+    );
+
+    // when no resource name provided, the aggregated version should be returned
+    assertThat(snapshot.version()).isEqualTo(aggregateVersion);
+
+    // when one resource name is provided, the cluster version should be returned
+    assertThat(snapshot.version(ImmutableList.of(CLUSTER0_NAME))).isEqualTo(versions.get(CLUSTER0_NAME));
+    assertThat(snapshot.version(ImmutableList.of(CLUSTER1_NAME))).isEqualTo(versions.get(CLUSTER1_NAME));
+
+    // when an unknown resource name is provided, the aggregated version should be returned
+    assertThat(snapshot.version(ImmutableList.of("unknown_cluster_name"))).isEqualTo(aggregateVersion);
+
+    // when multiple resource names are provided, the aggregated version should be returned
+    assertThat(snapshot.version(ImmutableList.of(CLUSTER1_NAME, CLUSTER1_NAME))).isEqualTo(aggregateVersion);
   }
 }
