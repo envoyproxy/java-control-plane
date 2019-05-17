@@ -8,6 +8,7 @@ import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.Watch;
+import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -199,6 +201,7 @@ public class DiscoveryServer {
     private final long streamId;
     private final boolean ads;
     private final Executor executor;
+    private final AtomicBoolean isClosing = new AtomicBoolean();
 
     private AtomicLong streamNonce;
 
@@ -243,7 +246,12 @@ public class DiscoveryServer {
           nonce,
           request.getVersionInfo());
 
-      callbacks.forEach(cb -> cb.onStreamRequest(streamId, request));
+      try {
+        callbacks.forEach(cb -> cb.onStreamRequest(streamId, request));
+      } catch (RequestException e) {
+        closeWithError(e);
+        return;
+      }
 
       for (String typeUrl : Resources.TYPE_URLS) {
         DiscoveryResponse response = latestResponse.get(typeUrl);
@@ -304,6 +312,13 @@ public class DiscoveryServer {
 
     void onCancelled() {
       LOGGER.info("[{}] stream cancelled", streamId);
+      cancel();
+    }
+
+    private void closeWithError(Throwable exception) {
+      if (isClosing.compareAndSet(false, true)) {
+        responseObserver.onError(exception);
+      }
       cancel();
     }
 
