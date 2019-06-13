@@ -39,7 +39,7 @@
         <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>api</artifactId>
-            <version>0.1.16-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

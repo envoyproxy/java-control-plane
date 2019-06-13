@@ -28,6 +28,7 @@
         <awaitility.version>3.1.6</awaitility.version>
         <checkstyle.version>8.18</checkstyle.version>
         <grpc.version>1.19.0</grpc.version>
+        <pgv-java.version>0.1.0</pgv-java.version>
         <guava.version>26.0-android</guava.version><!-- Keep the Guava version in sync with grpc-java -->
         <junit.version>4.12</junit.version>
         <protobuf.version>3.6.1</protobuf.version><!-- Keep the Protobuf version in sync with grpc-java -->
@@ -40,7 +41,7 @@
         <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
         <maven-failsafe-plugin.version>2.21.0</maven-failsafe-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-        <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
         <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>

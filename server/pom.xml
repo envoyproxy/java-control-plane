@@ -14,7 +14,13 @@
         <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>cache</artifactId>
-            <version>0.1.16-SNAPSHOT</version>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.envoyproxy.protoc-gen-validate</groupId>
+            <artifactId>pgv-java-grpc</artifactId>
+            <version>${pgv-java.version}</version>
         </dependency>
 
         <dependency>

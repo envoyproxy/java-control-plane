@@ -33,6 +33,11 @@
             <version>${annotation-api.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.envoyproxy.protoc-gen-validate</groupId>
+            <artifactId>pgv-java-stub</artifactId>
+            <version>${pgv-java.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -50,19 +55,37 @@
                 <version>0.6.1</version>
                 <configuration>
                     <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.9.0:exe:${os.detected.classifier}</pluginArtifact>
-
                     <useArgumentFile>true</useArgumentFile>
                     <checkStaleness>true</checkStaleness>
                     <staleMillis>10000</staleMillis>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>protoc</id>
                         <goals>
                             <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>gprc-java</id>
+                        <goals>
                             <goal>compile-custom</goal>
                         </goals>
+                        <configuration>
+                            <pluginId>grpc-java</pluginId>
+                            <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>protoc-java-pgv</id>
+                        <goals>
+                            <goal>compile-custom</goal>
+                        </goals>
+                        <configuration>
+                            <pluginParameter>lang=java</pluginParameter>
+                            <pluginId>java-pgv</pluginId>
+                            <pluginArtifact>io.envoyproxy.protoc-gen-validate:protoc-gen-validate:${pgv-java.version}:exe:${os.detected.classifier}</pluginArtifact>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

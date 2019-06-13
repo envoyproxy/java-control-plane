@@ -19,6 +19,10 @@ import io.envoyproxy.envoy.api.v2.ListenerDiscoveryServiceGrpc.ListenerDiscovery
 import io.envoyproxy.envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.discovery.v2.SecretDiscoveryServiceGrpc;
+import io.envoyproxy.pgv.ReflectiveValidatorIndex;
+import io.envoyproxy.pgv.ValidationException;
+import io.envoyproxy.pgv.Validator;
+import io.envoyproxy.pgv.grpc.ValidationExceptions;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -202,6 +206,7 @@ public class DiscoveryServer {
     private final boolean ads;
     private final Executor executor;
     private final AtomicBoolean isClosing = new AtomicBoolean();
+    private final Validator<DiscoveryRequest> validator;
 
     private AtomicLong streamNonce;
 
@@ -219,10 +224,18 @@ public class DiscoveryServer {
       ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
       streamNonce = new AtomicLong();
       this.executor = executor;
+      validator = new ReflectiveValidatorIndex().validatorFor(DiscoveryRequest.class);
     }
 
     @Override
     public void onNext(DiscoveryRequest request) {
+      try {
+        validator.assertValid(request);
+      } catch (ValidationException e) {
+        closeWithError(ValidationExceptions.asStatus(e).asException());
+        return;
+      }
+
       String nonce = request.getResponseNonce();
       String requestTypeUrl = request.getTypeUrl();
 
