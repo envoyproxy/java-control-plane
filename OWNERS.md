@@ -7,3 +7,4 @@
 * Joey Bratton ([joeyb](https://github.com/joeyb)) (jbratton@salesforce.com)
 * Rama Chavali ([ramaraochavali](https://github.com/ramaraochavali)) (rama.rao@salesforce.com)
 * Ben Hoyt ([b-hoyt](https://github.com/b-hoyt)) (bhoyt@salesforce.com)
+* Snow Pettersen ([snowp](https://github.com/snowp))
