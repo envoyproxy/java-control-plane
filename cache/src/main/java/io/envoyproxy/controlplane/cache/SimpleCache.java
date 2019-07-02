@@ -130,12 +130,14 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
         long watchId = watchCount;
 
-        LOGGER.info("open watch {} for {}[{}] from node {} for version {}",
-            watchId,
-            request.getTypeUrl(),
-            String.join(", ", request.getResourceNamesList()),
-            group,
-            request.getVersionInfo());
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("open watch {} for {}[{}] from node {} for version {}",
+              watchId,
+              request.getTypeUrl(),
+              String.join(", ", request.getResourceNamesList()),
+              group,
+              request.getVersionInfo());
+        }
 
         status.setWatch(watchId, watch);
 
@@ -150,12 +152,14 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       if (!responded) {
         watchCount++;
 
-        LOGGER.info("did not respond immediately, leaving open watch {} for {}[{}] from node {} for version {}",
-            watchCount,
-            request.getTypeUrl(),
-            String.join(", ", request.getResourceNamesList()),
-            group,
-            request.getVersionInfo());
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("did not respond immediately, leaving open watch {} for {}[{}] from node {} for version {}",
+              watchCount,
+              request.getTypeUrl(),
+              String.join(", ", request.getResourceNamesList()),
+              group,
+              request.getVersionInfo());
+        }
 
         status.setWatch(watchCount, watch);
 
@@ -216,10 +220,12 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
 
         if (!watch.request().getVersionInfo().equals(version)) {
-          LOGGER.info("responding to open watch {}[{}] with new version {}",
-              id,
-              String.join(", ", watch.request().getResourceNamesList()),
-              version);
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("responding to open watch {}[{}] with new version {}",
+                id,
+                String.join(", ", watch.request().getResourceNamesList()),
+                version);
+          }
 
           respond(watch, snapshot, group);
 
@@ -283,7 +289,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
     String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
 
-    LOGGER.info("responding for {} from node {} at version {} with version {}",
+    LOGGER.debug("responding for {} from node {} at version {} with version {}",
         watch.request().getTypeUrl(),
         group,
         watch.request().getVersionInfo(),

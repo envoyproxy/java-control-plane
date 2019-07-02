@@ -177,7 +177,7 @@ public class DiscoveryServer {
     long streamId = streamCount.getAndIncrement();
     Executor executor = executorGroup.next();
 
-    LOGGER.info("[{}] open stream from {}", streamId, defaultTypeUrl);
+    LOGGER.debug("[{}] open stream from {}", streamId, defaultTypeUrl);
 
     callbacks.forEach(cb -> cb.onStreamOpen(streamId, defaultTypeUrl));
 
@@ -239,7 +239,7 @@ public class DiscoveryServer {
         requestTypeUrl = defaultTypeUrl;
       }
 
-      LOGGER.info("[{}] request {}[{}] with nonce {} from version {}",
+      LOGGER.debug("[{}] request {}[{}] with nonce {} from version {}",
           streamId,
           requestTypeUrl,
           String.join(", ", request.getResourceNamesList()),
@@ -300,7 +300,7 @@ public class DiscoveryServer {
 
     @Override
     public void onCompleted() {
-      LOGGER.info("[{}] stream closed", streamId);
+      LOGGER.debug("[{}] stream closed", streamId);
 
       try {
         callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
@@ -337,7 +337,7 @@ public class DiscoveryServer {
           .setNonce(nonce)
           .build();
 
-      LOGGER.info("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
+      LOGGER.debug("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
 
       callbacks.forEach(cb -> cb.onStreamResponse(streamId, response.request(), discoveryResponse));
 
