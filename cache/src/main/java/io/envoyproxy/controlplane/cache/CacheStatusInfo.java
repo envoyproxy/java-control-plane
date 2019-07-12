@@ -17,7 +17,7 @@ public class CacheStatusInfo<T> implements StatusInfo<T> {
   private final T nodeGroup;
 
   private final ConcurrentMap<Long, Watch> watches = new ConcurrentHashMap<>();
-  private long lastWatchRequestTime;
+  private volatile long lastWatchRequestTime;
 
   public CacheStatusInfo(T nodeGroup) {
     this.nodeGroup = nodeGroup;
