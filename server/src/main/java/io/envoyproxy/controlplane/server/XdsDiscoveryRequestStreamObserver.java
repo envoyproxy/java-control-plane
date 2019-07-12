@@ -9,9 +9,14 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
+/**
+ * {@code XdsDiscoveryRequestStreamObserver} is a lightweight implementation of {@link DiscoveryRequestStreamObserver}
+ * tailored for non-ADS streams which handle a single watch.
+ */
 public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObserver {
   private volatile Watch watch;
   private volatile DiscoveryResponse latestResponse;
+  // ackedResources is only used in the same thread so it need not be volatile
   private Set<String> ackedResources;
 
   XdsDiscoveryRequestStreamObserver(String defaultTypeUrl,

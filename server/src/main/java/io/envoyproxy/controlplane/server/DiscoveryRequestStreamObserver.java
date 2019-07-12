@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * {@code DiscoveryRequestStreamObserver} is provides the base implementation for XDS stream handling.
+ */
 public abstract class DiscoveryRequestStreamObserver implements StreamObserver<DiscoveryRequest> {
   private static final AtomicLongFieldUpdater<DiscoveryRequestStreamObserver> streamNonceUpdater =
       AtomicLongFieldUpdater.newUpdater(DiscoveryRequestStreamObserver.class, "streamNonce");

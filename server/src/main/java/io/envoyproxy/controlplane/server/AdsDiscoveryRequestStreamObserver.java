@@ -15,6 +15,10 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
+/**
+ * {@code AdsDiscoveryRequestStreamObserver} is an implementation of {@link DiscoveryRequestStreamObserver} tailored for
+ * ADS streams, which handle multiple watches for all TYPE_URLS.
+ */
 public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObserver {
   private final ConcurrentMap<String, Watch> watches;
   private final ConcurrentMap<String, DiscoveryResponse> latestResponse;
