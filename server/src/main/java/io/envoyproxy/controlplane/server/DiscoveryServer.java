@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -38,10 +37,8 @@ import org.slf4j.LoggerFactory;
 
 public class DiscoveryServer {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
-
   static final String ANY_TYPE_URL = "";
-
+  private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
   private final List<DiscoveryServerCallbacks> callbacks;
   private final ConfigWatcher configWatcher;
   private final ExecutorGroup executorGroup;
@@ -58,7 +55,8 @@ public class DiscoveryServer {
 
   /**
    * Creates the server.
-   * @param callbacks server callbacks
+   *
+   * @param callbacks     server callbacks
    * @param configWatcher source of configuration updates
    */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher) {
@@ -67,9 +65,10 @@ public class DiscoveryServer {
 
   /**
    * Creates the server.
-   * @param callbacks server callbacks
-   * @param configWatcher source of configuration updates
-   * @param executorGroup executor group to use for responding stream requests
+   *
+   * @param callbacks                server callbacks
+   * @param configWatcher            source of configuration updates
+   * @param executorGroup            executor group to use for responding stream requests
    * @param protoResourcesSerializer serializer of proto buffer messages
    */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
@@ -162,7 +161,8 @@ public class DiscoveryServer {
    */
   public SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase getSecretDiscoveryServiceImpl() {
     return new SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase() {
-      @Override public StreamObserver<DiscoveryRequest> streamSecrets(
+      @Override
+      public StreamObserver<DiscoveryRequest> streamSecrets(
           StreamObserver<DiscoveryResponse> responseObserver) {
         return createRequestHandler(responseObserver, false, Resources.SECRET_TYPE_URL);
       }
@@ -201,7 +201,7 @@ public class DiscoveryServer {
     private final long streamId;
     private final boolean ads;
     private final Executor executor;
-    private final AtomicBoolean isClosing = new AtomicBoolean();
+    private boolean isClosing;
 
     private AtomicLong streamNonce;
 
@@ -214,10 +214,10 @@ public class DiscoveryServer {
       this.responseObserver = responseObserver;
       this.streamId = streamId;
       this.ads = ads;
-      watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-      latestResponse = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-      ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-      streamNonce = new AtomicLong();
+      this.watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      this.latestResponse = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      this.ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+      this.streamNonce = new AtomicLong();
       this.executor = executor;
     }
 
@@ -228,10 +228,15 @@ public class DiscoveryServer {
 
       if (defaultTypeUrl.equals(ANY_TYPE_URL)) {
         if (requestTypeUrl.isEmpty()) {
-          responseObserver.onError(
-              Status.UNKNOWN
-                  .withDescription(String.format("[%d] type URL is required for ADS", streamId))
-                  .asRuntimeException());
+          synchronized (responseObserver) {
+            if (!isClosing) {
+              isClosing = true;
+              responseObserver.onError(
+                  Status.UNKNOWN
+                      .withDescription(String.format("[%d] type URL is required for ADS", streamId))
+                      .asRuntimeException());
+            }
+          }
 
           return;
         }
@@ -292,7 +297,12 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
-        responseObserver.onError(Status.fromThrowable(t).asException());
+        synchronized (responseObserver) {
+          if (!isClosing) {
+            isClosing = true;
+            responseObserver.onError(Status.fromThrowable(t).asException());
+          }
+        }
       } finally {
         cancel();
       }
@@ -304,7 +314,12 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
-        responseObserver.onCompleted();
+        synchronized (responseObserver) {
+          if (!isClosing) {
+            isClosing = true;
+            responseObserver.onCompleted();
+          }
+        }
       } finally {
         cancel();
       }
@@ -316,8 +331,11 @@ public class DiscoveryServer {
     }
 
     private void closeWithError(Throwable exception) {
-      if (isClosing.compareAndSet(false, true)) {
-        responseObserver.onError(exception);
+      synchronized (responseObserver) {
+        if (!isClosing) {
+          isClosing = true;
+          responseObserver.onError(exception);
+        }
       }
       cancel();
     }
@@ -345,11 +363,15 @@ public class DiscoveryServer {
       // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions
       // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
       latestResponse.put(typeUrl, discoveryResponse);
-      try {
-        responseObserver.onNext(discoveryResponse);
-      } catch (StatusRuntimeException e) {
-        if (!Status.CANCELLED.getCode().equals(e.getStatus().getCode())) {
-          throw e;
+      synchronized (responseObserver) {
+        if (!isClosing) {
+          try {
+            responseObserver.onNext(discoveryResponse);
+          } catch (StatusRuntimeException e) {
+            if (!Status.CANCELLED.getCode().equals(e.getStatus().getCode())) {
+              throw e;
+            }
+          }
         }
       }
     }
