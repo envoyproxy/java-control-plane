@@ -228,15 +228,10 @@ public class DiscoveryServer {
 
       if (defaultTypeUrl.equals(ANY_TYPE_URL)) {
         if (requestTypeUrl.isEmpty()) {
-          synchronized (responseObserver) {
-            if (!isClosing) {
-              isClosing = true;
-              responseObserver.onError(
-                  Status.UNKNOWN
-                      .withDescription(String.format("[%d] type URL is required for ADS", streamId))
-                      .asRuntimeException());
-            }
-          }
+          closeWithError(
+              Status.UNKNOWN
+                  .withDescription(String.format("[%d] type URL is required for ADS", streamId))
+                  .asRuntimeException());
 
           return;
         }
@@ -297,12 +292,7 @@ public class DiscoveryServer {
 
       try {
         callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
-        synchronized (responseObserver) {
-          if (!isClosing) {
-            isClosing = true;
-            responseObserver.onError(Status.fromThrowable(t).asException());
-          }
-        }
+        closeWithError(Status.fromThrowable(t).asException());
       } finally {
         cancel();
       }
