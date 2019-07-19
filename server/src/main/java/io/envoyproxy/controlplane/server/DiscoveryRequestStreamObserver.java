@@ -28,8 +28,6 @@ import org.slf4j.LoggerFactory;
 public abstract class DiscoveryRequestStreamObserver implements StreamObserver<DiscoveryRequest> {
   private static final AtomicLongFieldUpdater<DiscoveryRequestStreamObserver> streamNonceUpdater =
       AtomicLongFieldUpdater.newUpdater(DiscoveryRequestStreamObserver.class, "streamNonce");
-  private static final AtomicIntegerFieldUpdater<DiscoveryRequestStreamObserver> isClosingUpdater =
-      AtomicIntegerFieldUpdater.newUpdater(DiscoveryRequestStreamObserver.class, "isClosing");
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
   final String defaultTypeUrl;
