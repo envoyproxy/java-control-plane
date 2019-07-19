@@ -29,8 +29,8 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
       AtomicLongFieldUpdater.newUpdater(DiscoveryRequestStreamObserver.class, "streamNonce");
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
-  final String defaultTypeUrl;
   final long streamId;
+  private final String defaultTypeUrl;
   private final StreamObserver<DiscoveryResponse> responseObserver;
   private final Executor executor;
   private final DiscoveryServer discoverySever;
