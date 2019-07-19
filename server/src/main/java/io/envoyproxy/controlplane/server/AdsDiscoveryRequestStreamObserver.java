@@ -39,7 +39,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
     String requestTypeUrl = request.getTypeUrl();
 
     if (requestTypeUrl.isEmpty()) {
-      responseObserver.onError(
+      closeWithError(
           Status.UNKNOWN
               .withDescription(String.format("[%d] type URL is required for ADS", streamId))
               .asRuntimeException());

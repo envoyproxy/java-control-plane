@@ -6,10 +6,12 @@ import com.google.protobuf.Message;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -40,11 +42,9 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
   @GuardedBy("lock")
   private final Map<T, Snapshot> snapshots = new HashMap<>();
-  @GuardedBy("lock")
-  private final Map<T, CacheStatusInfo<T>> statuses = new HashMap<>();
+  private final ConcurrentMap<T, CacheStatusInfo<T>> statuses = new ConcurrentHashMap<>();
 
-  @GuardedBy("lock")
-  private long watchCount;
+  private AtomicLong watchCount = new AtomicLong();
 
   /**
    * Constructs a simple cache.
@@ -58,9 +58,10 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   /**
    * {@inheritDoc}
    */
-  @Override public boolean clearSnapshot(T group) {
+  @Override
+  public boolean clearSnapshot(T group) {
+    // we take a writeLock to prevent watches from being created
     writeLock.lock();
-
     try {
       CacheStatusInfo<T> status = statuses.get(group);
 
@@ -91,12 +92,11 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Consumer<Response> responseConsumer) {
 
     T group = groups.hash(request.getNode());
-
-    writeLock.lock();
-
+    // even though we're modifying, we take a readLock to allow multiple watches to be created in parallel since it
+    // doesn't conflict
+    readLock.lock();
     try {
       CacheStatusInfo<T> status = statuses.computeIfAbsent(group, g -> new CacheStatusInfo<>(group));
-
       status.setLastWatchRequestTime(System.currentTimeMillis());
 
       Snapshot snapshot = snapshots.get(group);
@@ -105,7 +105,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Watch watch = new Watch(ads, request, responseConsumer);
 
       if (snapshot != null) {
-        HashSet<String> requestedResources = new HashSet<>(request.getResourceNamesList());
+        Set<String> requestedResources = ImmutableSet.copyOf(request.getResourceNamesList());
 
         // If the request is asking for resources we haven't sent to the proxy yet, see if we have additional resources.
         if (!knownResourceNames.equals(requestedResources)) {
@@ -126,9 +126,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
       // If the requested version is up-to-date or missing a response, leave an open watch.
       if (snapshot == null || request.getVersionInfo().equals(version)) {
-        watchCount++;
-
-        long watchId = watchCount;
+        long watchId = watchCount.incrementAndGet();
 
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug("open watch {} for {}[{}] from node {} for version {}",
@@ -150,33 +148,33 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       boolean responded = respond(watch, snapshot, group);
 
       if (!responded) {
-        watchCount++;
+        long watchId = watchCount.incrementAndGet();
 
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug("did not respond immediately, leaving open watch {} for {}[{}] from node {} for version {}",
-              watchCount,
+              watchId,
               request.getTypeUrl(),
               String.join(", ", request.getResourceNamesList()),
               group,
               request.getVersionInfo());
         }
 
-        status.setWatch(watchCount, watch);
+        status.setWatch(watchId, watch);
 
-        watch.setStop(() -> status.removeWatch(watchCount));
+        watch.setStop(() -> status.removeWatch(watchId));
       }
 
       return watch;
-
     } finally {
-      writeLock.unlock();
+      readLock.unlock();
     }
   }
 
   /**
    * {@inheritDoc}
    */
-  @Override public Snapshot getSnapshot(T group) {
+  @Override
+  public Snapshot getSnapshot(T group) {
     readLock.lock();
 
     try {
@@ -189,56 +187,51 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   /**
    * {@inheritDoc}
    */
-  @Override public Collection<T> groups() {
-    readLock.lock();
-
-    try {
-      return ImmutableSet.copyOf(statuses.keySet());
-    } finally {
-      readLock.unlock();
-    }
+  @Override
+  public Collection<T> groups() {
+    return ImmutableSet.copyOf(statuses.keySet());
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void setSnapshot(T group, Snapshot snapshot) {
+  public synchronized void setSnapshot(T group, Snapshot snapshot) {
+    // we take a writeLock to prevent watches from being created while we update the snapshot
+    CacheStatusInfo<T> status;
     writeLock.lock();
-
     try {
       // Update the existing snapshot entry.
       snapshots.put(group, snapshot);
-
-      CacheStatusInfo<T> status = statuses.get(group);
-
-      if (status == null) {
-        return;
-      }
-
-      status.watchesRemoveIf((id, watch) -> {
-        String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
-
-        if (!watch.request().getVersionInfo().equals(version)) {
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("responding to open watch {}[{}] with new version {}",
-                id,
-                String.join(", ", watch.request().getResourceNamesList()),
-                version);
-          }
-
-          respond(watch, snapshot, group);
-
-          // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
-          return true;
-        }
-
-        // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
-        return false;
-      });
+      status = statuses.get(group);
     } finally {
       writeLock.unlock();
     }
+
+    if (status == null) {
+      return;
+    }
+
+    status.watchesRemoveIf((id, watch) -> {
+      String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
+
+      if (!watch.request().getVersionInfo().equals(version)) {
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug("responding to open watch {}[{}] with new version {}",
+              id,
+              String.join(", ", watch.request().getResourceNamesList()),
+              version);
+        }
+
+        respond(watch, snapshot, group);
+
+        // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
+        return true;
+      }
+
+      // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
+      return false;
+    });
   }
 
   /**
@@ -259,9 +252,9 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     Collection<? extends Message> filtered = request.getResourceNamesList().isEmpty()
         ? resources.values()
         : request.getResourceNamesList().stream()
-            .map(resources::get)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+        .map(resources::get)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
 
     return Response.create(request, filtered, version);
   }

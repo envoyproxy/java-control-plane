@@ -52,9 +52,9 @@ public class DiscoveryServer {
   /**
    * Creates the server.
    *
-   * @param callbacks     server callbacks
-   * @param configWatcher source of configuration updates
-   * @param executorGroup executor group to use for responding stream requests
+   * @param callbacks                server callbacks
+   * @param configWatcher            source of configuration updates
+   * @param executorGroup            executor group to use for responding stream requests
    * @param protoResourcesSerializer serializer of proto buffer messages
    */
   public DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,

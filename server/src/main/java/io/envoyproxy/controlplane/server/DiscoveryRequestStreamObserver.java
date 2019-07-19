@@ -34,11 +34,11 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
 
   final String defaultTypeUrl;
   final long streamId;
-  final StreamObserver<DiscoveryResponse> responseObserver;
+  private final StreamObserver<DiscoveryResponse> responseObserver;
   private final Executor executor;
   private final DiscoveryServer discoverySever;
   private volatile long streamNonce;
-  private volatile int isClosing;
+  private volatile boolean isClosing;
 
   DiscoveryRequestStreamObserver(String defaultTypeUrl,
                                  StreamObserver<DiscoveryResponse> responseObserver,
@@ -61,7 +61,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
 
     try {
       discoverySever.callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
-      responseObserver.onError(Status.fromThrowable(t).asException());
+      closeWithError(Status.fromThrowable(t).asException());
     } finally {
       cancel();
     }
@@ -73,7 +73,12 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
 
     try {
       discoverySever.callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
-      responseObserver.onCompleted();
+      synchronized (responseObserver) {
+        if (!isClosing) {
+          isClosing = true;
+          responseObserver.onCompleted();
+        }
+      }
     } finally {
       cancel();
     }
@@ -124,9 +129,12 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     }
   }
 
-  private void closeWithError(Throwable exception) {
-    if (isClosingUpdater.compareAndSet(this, 0, 1)) {
-      responseObserver.onError(exception);
+  void closeWithError(Throwable exception) {
+    synchronized (responseObserver) {
+      if (!isClosing) {
+        isClosing = true;
+        responseObserver.onError(exception);
+      }
     }
     cancel();
   }
@@ -150,11 +158,15 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions
     // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
     setLatestResponse(typeUrl, discoveryResponse);
-    try {
-      responseObserver.onNext(discoveryResponse);
-    } catch (StatusRuntimeException e) {
-      if (!Status.CANCELLED.getCode().equals(e.getStatus().getCode())) {
-        throw e;
+    synchronized (responseObserver) {
+      if (!isClosing) {
+        try {
+          responseObserver.onNext(discoveryResponse);
+        } catch (StatusRuntimeException e) {
+          if (!Status.CANCELLED.getCode().equals(e.getStatus().getCode())) {
+            throw e;
+          }
+        }
       }
     }
   }
