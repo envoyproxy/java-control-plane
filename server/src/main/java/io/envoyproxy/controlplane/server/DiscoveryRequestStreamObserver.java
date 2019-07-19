@@ -15,7 +15,6 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
