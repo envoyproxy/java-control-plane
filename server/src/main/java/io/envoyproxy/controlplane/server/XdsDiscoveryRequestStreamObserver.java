@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.Watch;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
@@ -26,11 +25,6 @@ public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
                                     DiscoveryServer discoveryServer) {
     super(defaultTypeUrl, responseObserver, streamId, executor, discoveryServer);
     this.ackedResources = Collections.emptySet();
-  }
-
-  @Override
-  public void onNext(DiscoveryRequest request) {
-    processRequest(defaultTypeUrl, request);
   }
 
   @Override

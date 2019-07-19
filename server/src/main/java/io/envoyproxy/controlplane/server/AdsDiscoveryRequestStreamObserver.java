@@ -36,9 +36,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
 
   @Override
   public void onNext(DiscoveryRequest request) {
-    String requestTypeUrl = request.getTypeUrl();
-
-    if (requestTypeUrl.isEmpty()) {
+    if (request.getTypeUrl().isEmpty()) {
       closeWithError(
           Status.UNKNOWN
               .withDescription(String.format("[%d] type URL is required for ADS", streamId))
@@ -47,7 +45,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
       return;
     }
 
-    processRequest(requestTypeUrl, request);
+    super.onNext(request);
   }
 
   @Override

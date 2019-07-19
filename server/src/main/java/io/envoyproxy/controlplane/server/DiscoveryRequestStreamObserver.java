@@ -51,42 +51,8 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   }
 
   @Override
-  public void onError(Throwable t) {
-    if (!Status.fromThrowable(t).getCode().equals(Status.CANCELLED.getCode())) {
-      LOGGER.error("[{}] stream closed with error", streamId, t);
-    }
-
-    try {
-      discoverySever.callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
-      closeWithError(Status.fromThrowable(t).asException());
-    } finally {
-      cancel();
-    }
-  }
-
-  @Override
-  public void onCompleted() {
-    LOGGER.debug("[{}] stream closed", streamId);
-
-    try {
-      discoverySever.callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
-      synchronized (responseObserver) {
-        if (!isClosing) {
-          isClosing = true;
-          responseObserver.onCompleted();
-        }
-      }
-    } finally {
-      cancel();
-    }
-  }
-
-  void onCancelled() {
-    LOGGER.info("[{}] stream cancelled", streamId);
-    cancel();
-  }
-
-  void processRequest(String requestTypeUrl, DiscoveryRequest request) {
+  public void onNext(DiscoveryRequest request) {
+    String requestTypeUrl = request.getTypeUrl().isEmpty() ? defaultTypeUrl : request.getTypeUrl();
     String nonce = request.getResponseNonce();
 
     if (LOGGER.isDebugEnabled()) {
@@ -124,6 +90,42 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
           ackedResources(requestTypeUrl),
           r -> executor.execute(() -> send(r, requestTypeUrl))));
     }
+  }
+
+  @Override
+  public void onError(Throwable t) {
+    if (!Status.fromThrowable(t).getCode().equals(Status.CANCELLED.getCode())) {
+      LOGGER.error("[{}] stream closed with error", streamId, t);
+    }
+
+    try {
+      discoverySever.callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
+      closeWithError(Status.fromThrowable(t).asException());
+    } finally {
+      cancel();
+    }
+  }
+
+  @Override
+  public void onCompleted() {
+    LOGGER.debug("[{}] stream closed", streamId);
+
+    try {
+      discoverySever.callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
+      synchronized (responseObserver) {
+        if (!isClosing) {
+          isClosing = true;
+          responseObserver.onCompleted();
+        }
+      }
+    } finally {
+      cancel();
+    }
+  }
+
+  void onCancelled() {
+    LOGGER.info("[{}] stream cancelled", streamId);
+    cancel();
   }
 
   void closeWithError(Throwable exception) {
