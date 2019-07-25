@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 
 /**
@@ -9,19 +9,19 @@ import java.util.function.Consumer;
  * the xDS server.
  */
 public class Watch {
-
+  private static final AtomicIntegerFieldUpdater<Watch> isCancelledUpdater =
+      AtomicIntegerFieldUpdater.newUpdater(Watch.class, "isCancelled");
   private final boolean ads;
-  private final AtomicBoolean isCancelled = new AtomicBoolean();
   private final DiscoveryRequest request;
   private final Consumer<Response> responseConsumer;
-
+  private volatile int isCancelled = 0;
   private Runnable stop;
 
   /**
    * Construct a watch.
    *
-   * @param ads is this watch for an ADS request?
-   * @param request the original request for the watch
+   * @param ads              is this watch for an ADS request?
+   * @param request          the original request for the watch
    * @param responseConsumer handler for outgoing response messages
    */
   public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer) {
@@ -42,7 +42,7 @@ public class Watch {
    * may be called multiple times, with each subsequent call being a no-op.
    */
   public void cancel() {
-    if (isCancelled.compareAndSet(false, true)) {
+    if (isCancelledUpdater.compareAndSet(this, 0, 1)) {
       if (stop != null) {
         stop.run();
       }
@@ -53,7 +53,7 @@ public class Watch {
    * Returns boolean indicating whether or not the watch has been cancelled.
    */
   public boolean isCancelled() {
-    return isCancelled.get();
+    return isCancelledUpdater.get(this) == 1;
   }
 
   /**
