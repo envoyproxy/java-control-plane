@@ -74,8 +74,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     DiscoveryResponse latestResponse = latestResponse(requestTypeUrl);
     String resourceNonce = latestResponse == null ? null : latestResponse.getNonce();
 
-    if (isNullOrEmpty(resourceNonce)
-        || resourceNonce.equals(nonce)) {
+    if (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce)) {
       if (!request.hasErrorDetail() && latestResponse != null) {
         Set<String> ackedResourcesForType = latestResponse.getResourcesList()
             .stream()
