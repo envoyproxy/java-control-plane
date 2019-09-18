@@ -39,8 +39,10 @@ cp protobuf-*/gogoproto/gogo.proto "${protodir}/gogoproto"
 
 curl -sL https://github.com/googleapis/googleapis/archive/${GOOGLEAPIS_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/google/api"
+mkdir -p "${protodir}/google/api/expr/v1alpha1"
 mkdir -p "${protodir}/google/rpc"
 cp googleapis-*/google/api/annotations.proto googleapis-*/google/api/http.proto "${protodir}/google/api"
+cp googleapis-*/google/api/expr/v1alpha1/syntax.proto "${protodir}/google/api/expr/v1alpha1"
 cp googleapis-*/google/rpc/status.proto "${protodir}/google/rpc"
 
 curl -sL https://github.com/lyft/protoc-gen-validate/archive/${PGV_GIT_SHA}.tar.gz | tar xz --include="*.proto"
