@@ -1,7 +1,7 @@
 # Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
-ENVOY_SHA="706f910954574e5d18dd4ba94ce66e8ee77b238c" # Sept 13, 2019
+ENVOY_SHA="f6cf95709403998e63504c0a159269b4db61f9fd" # Nov 1, 2019
 
 # dependencies (source: https://github.com/envoyproxy/envoy/blob/<DATA_PLANE_API_SHA>/api/bazel/repositories.bzl)
 GOGOPROTO_SHA="4cbf7e384e768b4e01799441fdf2a706a5635ae7" # v1.2.0
