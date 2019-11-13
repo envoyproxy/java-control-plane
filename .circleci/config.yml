@@ -49,6 +49,10 @@ jobs:
                 mvn -B -s .circleci/settings.xml deploy
               fi
             elif [[ -n "${DEPLOY_BRANCH}" ]]; then
+              echo $GPG_KEY | base64 --decode > signing-key
+              gpg --passphrase $GPG_PASSPHRASE --import signing-key
+              shred signing-key
+
               mvn -B -s .circleci/settings-snapshots.xml deploy
             fi
 
