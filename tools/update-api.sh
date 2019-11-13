@@ -29,7 +29,7 @@ pushd "${tmpdir}" >/dev/null
 
 rm -rf "${protodir}"
 
-curl -sL https://github.com/envoyproxy/envoy/archive/${ENVOY_SHA}.tar.gz | tar xz --include="*.proto"
+curl -sL https://github.com/MarcinFalkowski/envoy/archive/${ENVOY_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/envoy"
 cp -r envoy-*/api/envoy/* "${protodir}/envoy"
 

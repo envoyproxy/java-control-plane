@@ -48,6 +48,8 @@ jobs:
               else
                 mvn -B -s .circleci/settings.xml deploy
               fi
+            elif [[ -n "${DEPLOY_BRANCH}" ]]; then
+              mvn -B -s .circleci/settings-snapshots.xml deploy
             fi
 
       - run: bash <(curl -s https://codecov.io/bash)
