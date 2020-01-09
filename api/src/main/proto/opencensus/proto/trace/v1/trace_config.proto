@@ -22,6 +22,8 @@ option java_outer_classname = "TraceConfigProto";
 
 option go_package = "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1";
 
+option ruby_package = "OpenCensus.Proto.Trace.V1";
+
 // Global configuration of the trace service. All fields must be specified, or
 // the default (zero) values will be used for each type.
 message TraceConfig {

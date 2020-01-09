@@ -3,9 +3,8 @@
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
 ENVOY_SHA="3c899ffab8092ae7adf34042644ea14cb2404e07" # Dec 10, 2019
 
-# dependencies (source: https://github.com/envoyproxy/envoy/blob/<DATA_PLANE_API_SHA>/api/bazel/repositories.bzl)
-GOGOPROTO_SHA="4cbf7e384e768b4e01799441fdf2a706a5635ae7" # v1.2.0
-GOOGLEAPIS_SHA="be480e391cc88a75cf2a81960ef79c80d5012068"  # Jul 24, 2019
-OPENCENSUS_SHA="a105b96453fe85139acc07b68de48f2cbdd71249" # Mar 13, 2018 (tag v0.2.0)
-PGV_GIT_SHA="4349a359d42fdfee53b85dd5c89a2f169e1dc6b2" # Jan 30, 2019  (tag v0.0.13)
+# dependencies (source: https://github.com/envoyproxy/envoy/blob/<ENVOY_SHA>/api/bazel/repository_locations.bzl)
+GOOGLEAPIS_SHA="82944da21578a53b74e547774cf62ed31a05b841"  # Dec 2, 2019
+OPENCENSUS_SHA="5cec5ea58c3efa81fa808f2bd38ce182da9ee731" # July 25, 2019
+PGV_GIT_SHA="a18376249eb51cdd517f67fe8703897322812e6d" # Nov 5, 2019
 PROMETHEUS_SHA="99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c" # Nov 17, 2017

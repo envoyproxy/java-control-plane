@@ -33,10 +33,6 @@ curl -sL https://github.com/envoyproxy/envoy/archive/${ENVOY_SHA}.tar.gz | tar x
 mkdir -p "${protodir}/envoy"
 cp -r envoy-*/api/envoy/* "${protodir}/envoy"
 
-curl -sL https://github.com/gogo/protobuf/archive/${GOGOPROTO_SHA}.tar.gz | tar xz --include="*.proto"
-mkdir -p "${protodir}/gogoproto"
-cp protobuf-*/gogoproto/gogo.proto "${protodir}/gogoproto"
-
 curl -sL https://github.com/googleapis/googleapis/archive/${GOOGLEAPIS_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/google/api"
 mkdir -p "${protodir}/google/api/expr/v1alpha1"
