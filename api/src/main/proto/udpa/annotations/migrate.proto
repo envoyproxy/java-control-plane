@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package udpa.annotations;
+
+import "google/protobuf/descriptor.proto";
+
+// Magic number in this file derived from top 28bit of SHA256 digest of
+// "udpa.annotation.migrate".
+
+extend google.protobuf.MessageOptions {
+  MigrateAnnotation message_migrate = 171962766;
+}
+
+extend google.protobuf.FieldOptions {
+  MigrateAnnotation field_migrate = 171962766;
+}
+
+extend google.protobuf.EnumOptions {
+  MigrateAnnotation enum_migrate = 171962766;
+}
+
+extend google.protobuf.EnumValueOptions {
+  MigrateAnnotation enum_value_migrate = 171962766;
+}
+
+message MigrateAnnotation {
+  // Rename the message/field/enum/enum value in next version.
+  // This doesn't handle package level move, there will be another field for that.
+  string rename = 1;
+}
