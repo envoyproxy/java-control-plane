@@ -1,11 +1,14 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.common.collect.ImmutableSet;
+
+import javax.annotation.concurrent.ThreadSafe;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
-import javax.annotation.concurrent.ThreadSafe;
+import java.util.stream.Collectors;
 
 /**
  * {@code CacheStatusInfo} provides a default implementation of {@link StatusInfo} for use in {@link Cache}
@@ -16,7 +19,7 @@ public class CacheStatusInfo<T> implements StatusInfo<T> {
 
   private final T nodeGroup;
 
-  private final ConcurrentMap<Long, Watch> watches = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Map<Long, Watch>> watches = new ConcurrentHashMap<>();
   private volatile long lastWatchRequestTime;
 
   public CacheStatusInfo(T nodeGroup) {
@@ -44,16 +47,19 @@ public class CacheStatusInfo<T> implements StatusInfo<T> {
    */
   @Override
   public int numWatches() {
-    return watches.size();
+    return watches.values().stream().mapToInt(Map::size).sum();
   }
 
   /**
    * Removes the given watch from the tracked collection of watches.
    *
+   * @param typeUrl type of resource from which watch should be removed
    * @param watchId the ID for the watch that should be removed
    */
-  public void removeWatch(long watchId) {
-    watches.remove(watchId);
+  public void removeWatch(String typeUrl, Long watchId) {
+    if (watches.containsKey(typeUrl)) {
+      watches.get(typeUrl).remove(watchId);
+    }
   }
 
   /**
@@ -68,18 +74,26 @@ public class CacheStatusInfo<T> implements StatusInfo<T> {
   /**
    * Adds the given watch to the tracked collection of watches.
    *
+   * @param typeUrl type of resource from which watch should be removed
    * @param watchId the ID for the watch that should be added
    * @param watch   the watch that should be added
    */
-  public void setWatch(long watchId, Watch watch) {
-    watches.put(watchId, watch);
+  public void setWatch(String typeUrl, Long watchId, Watch watch) {
+    if (!watches.containsKey(typeUrl)) {
+      watches.put(typeUrl, new ConcurrentHashMap<>());
+    }
+    watches.get(typeUrl).put(watchId, watch);
   }
 
   /**
    * Returns the set of IDs for all watched currently being tracked.
    */
   public Set<Long> watchIds() {
-    return ImmutableSet.copyOf(watches.keySet());
+    return ImmutableSet.copyOf(
+        watches.values().stream().flatMap(
+            typeResources -> typeResources.keySet().stream()
+        ).collect(Collectors.toSet())
+    );
   }
 
   /**
@@ -88,7 +102,9 @@ public class CacheStatusInfo<T> implements StatusInfo<T> {
    *
    * @param filter the function to execute on each watch
    */
-  public void watchesRemoveIf(BiFunction<Long, Watch, Boolean> filter) {
-    watches.entrySet().removeIf(entry -> filter.apply(entry.getKey(), entry.getValue()));
+  public void watchesRemoveIf(String typeUrl, BiFunction<Long, Watch, Boolean> filter) {
+    if (watches.containsKey(typeUrl)) {
+      watches.get(typeUrl).entrySet().removeIf(entry -> filter.apply(entry.getKey(), entry.getValue()));
+    }
   }
 }

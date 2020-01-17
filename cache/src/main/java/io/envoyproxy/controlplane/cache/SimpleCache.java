@@ -4,6 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.concurrent.GuardedBy;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,9 +21,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.annotation.concurrent.GuardedBy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@code SimpleCache} provides a default implementation of {@link SnapshotCache}. It maintains a single versioned
@@ -137,9 +138,9 @@ public class SimpleCache<T> implements SnapshotCache<T> {
               request.getVersionInfo());
         }
 
-        status.setWatch(watchId, watch);
+        status.setWatch(request.getTypeUrl(), watchId, watch);
 
-        watch.setStop(() -> status.removeWatch(watchId));
+        watch.setStop(() -> status.removeWatch(request.getTypeUrl(), watchId));
 
         return watch;
       }
@@ -159,9 +160,9 @@ public class SimpleCache<T> implements SnapshotCache<T> {
               request.getVersionInfo());
         }
 
-        status.setWatch(watchId, watch);
+        status.setWatch(request.getTypeUrl(), watchId, watch);
 
-        watch.setStop(() -> status.removeWatch(watchId));
+        watch.setStop(() -> status.removeWatch(request.getTypeUrl(), watchId));
       }
 
       return watch;
@@ -212,26 +213,29 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       return;
     }
 
-    status.watchesRemoveIf((id, watch) -> {
-      String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
+    // Responses should be in specific order and TYPE_URLS has a list of resources in the right order.
+    for (String typeUrl : Resources.TYPE_URLS) {
+      status.watchesRemoveIf(typeUrl, (id, watch) -> {
+        String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
 
-      if (!watch.request().getVersionInfo().equals(version)) {
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("responding to open watch {}[{}] with new version {}",
-              id,
-              String.join(", ", watch.request().getResourceNamesList()),
-              version);
+        if (!watch.request().getVersionInfo().equals(version)) {
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("responding to open watch {}[{}] with new version {}",
+                id,
+                String.join(", ", watch.request().getResourceNamesList()),
+                version);
+          }
+
+          respond(watch, snapshot, group);
+
+          // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
+          return true;
         }
 
-        respond(watch, snapshot, group);
-
-        // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
-        return true;
-      }
-
-      // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
-      return false;
-    });
+        // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
+        return false;
+      });
+    }
   }
 
   /**
