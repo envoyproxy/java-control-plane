@@ -27,6 +27,8 @@ option java_outer_classname = "CommonProto";
 
 option go_package = "github.com/census-instrumentation/opencensus-proto/gen-go/agent/common/v1";
 
+option ruby_package = "OpenCensus.Proto.Agent.Common.V1";
+
 // Identifier metadata of the Node that produces the span or tracing data.
 // Note, this is not the metadata about the Node or service that is described by associated spans.
 // In the future we plan to extend the identifier proto definition to support
@@ -76,6 +78,7 @@ message LibraryInfo {
     PHP = 7;
     PYTHON = 8;
     RUBY = 9;
+    WEB_JS = 10;
   }
 
   // Language of OpenCensus Library.
