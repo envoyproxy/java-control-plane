@@ -42,7 +42,6 @@ public class CacheStatusInfoTest {
 
   @Test
   public void numWatchesReturnsExpectedSize() {
-    final String typeUrl = Resources.CLUSTER_TYPE_URL;
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
     final long watchId1 = ThreadLocalRandom.current().nextLong(10000, 50000);
     final long watchId2 = ThreadLocalRandom.current().nextLong(50000, 100000);
@@ -51,17 +50,17 @@ public class CacheStatusInfoTest {
 
     assertThat(info.numWatches()).isZero();
 
-    info.setWatch(typeUrl, watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
 
     assertThat(info.numWatches()).isEqualTo(1);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1);
 
-    info.setWatch(typeUrl, watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
 
     assertThat(info.numWatches()).isEqualTo(2);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1, watchId2);
 
-    info.removeWatch(typeUrl, watchId1);
+    info.removeWatch(watchId1);
 
     assertThat(info.numWatches()).isEqualTo(1);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId2);
@@ -69,20 +68,19 @@ public class CacheStatusInfoTest {
 
   @Test
   public void watchesRemoveIfRemovesExpectedWatches() {
-    final String typeUrl = Resources.CLUSTER_TYPE_URL;
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
     final long watchId1 = ThreadLocalRandom.current().nextLong(10000, 50000);
     final long watchId2 = ThreadLocalRandom.current().nextLong(50000, 100000);
 
     CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
-    info.setWatch(typeUrl, watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
-    info.setWatch(typeUrl, watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
 
     assertThat(info.numWatches()).isEqualTo(2);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1, watchId2);
 
-    info.watchesRemoveIf(typeUrl, (watchId, watch) -> watchId.equals(watchId1));
+    info.watchesRemoveIf((watchId, watch) -> watchId.equals(watchId1));
 
     assertThat(info.numWatches()).isEqualTo(1);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId2);
@@ -90,7 +88,6 @@ public class CacheStatusInfoTest {
 
   @Test
   public void testConcurrentSetWatchAndRemove() {
-    final String typeUrl = Resources.CLUSTER_TYPE_URL;
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
     final int watchCount = 50;
 
@@ -101,15 +98,13 @@ public class CacheStatusInfoTest {
     watchIds.parallelStream().forEach(watchId -> {
       Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { });
 
-      info.setWatch(typeUrl, watchId, watch);
+      info.setWatch(watchId, watch);
     });
 
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchIds.toArray(new Long[0]));
     assertThat(info.numWatches()).isEqualTo(watchIds.size());
 
-    watchIds.parallelStream().forEach(
-        id -> info.removeWatch(typeUrl, id)
-    );
+    watchIds.parallelStream().forEach(info::removeWatch);
 
     assertThat(info.watchIds()).isEmpty();
     assertThat(info.numWatches()).isZero();
