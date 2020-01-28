@@ -215,48 +215,6 @@ public class SimpleCacheTest {
   }
 
   @Test
-  public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHints() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
-
-    cache.setSnapshot(SingleNodeGroup.GROUP, MULTIPLE_RESOURCES_SNAPSHOT2);
-
-    // Set a watch for the current snapshot with the same version but with resource hints present
-    // in the snapshot that the watch creator does not currently know about.
-    //
-    // Note how we're requesting the resources from MULTIPLE_RESOURCE_SNAPSHOT2 while claiming we
-    // only know about the ones from SNAPSHOT2
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
-        .collect(Collectors.toMap(
-            typeUrl -> typeUrl,
-            typeUrl -> {
-              ResponseTracker responseTracker = new ResponseTracker();
-
-              Watch watch = cache.createWatch(
-                  ADS,
-                  DiscoveryRequest.newBuilder()
-                      .setNode(Node.getDefaultInstance())
-                      .setTypeUrl(typeUrl)
-                      .setVersionInfo(MULTIPLE_RESOURCES_SNAPSHOT2.version(typeUrl))
-                      .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
-                      .build(),
-                  SNAPSHOT2.resources(typeUrl).keySet(),
-                  responseTracker);
-
-              return new WatchAndTracker(watch, responseTracker);
-            }));
-
-    // The snapshot version matches for all resources, but for eds and cds there are new resources present
-    // for the same version, so we expect the watches to trigger.
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.CLUSTER_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.ENDPOINT_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
-
-    // Remaining watches should not trigger
-    for (WatchAndTracker watchAndTracker : watches.values()) {
-      assertThatWatchIsOpenWithNoResponses(watchAndTracker);
-    }
-  }
-
-  @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHintsNoChange() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
@@ -419,7 +377,8 @@ public class SimpleCacheTest {
             .setTypeUrl("")
             .build(),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     // clearSnapshot should fail and the snapshot should be left untouched
     assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
@@ -445,7 +404,8 @@ public class SimpleCacheTest {
             .setTypeUrl("")
             .build(),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
   }
