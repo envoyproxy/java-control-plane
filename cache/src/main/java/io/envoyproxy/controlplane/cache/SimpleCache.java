@@ -3,8 +3,10 @@ package io.envoyproxy.controlplane.cache;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
+import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.concurrent.GuardedBy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -261,13 +264,35 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
   private boolean respond(Watch watch, Snapshot snapshot, T group) {
     Map<String, ? extends Message> snapshotResources = snapshot.resources(watch.request().getTypeUrl());
+    Map<String, ClusterLoadAssignment> snapshotWithMissingResources = Collections.emptyMap();
 
     if (!watch.request().getResourceNamesList().isEmpty() && watch.ads()) {
       Collection<String> missingNames = watch.request().getResourceNamesList().stream()
           .filter(name -> !snapshotResources.containsKey(name))
           .collect(Collectors.toList());
 
-      if (!missingNames.isEmpty()) {
+      // When Envoy receive CDS response and reconnect to new instance of control-plane before EDS was sent, Envoy might
+      // stack in warming phase. New instance of control-plane might not have cluster in snapshot and won't be able to
+      // respond. First request from Envoy contains empty string version info.
+      if (!missingNames.isEmpty()
+          && watch.request().getTypeUrl().equals(Resources.ENDPOINT_TYPE_URL)
+          && watch.request().getVersionInfo().equals("")) {
+        LOGGER.info("adding missing resources [{}] to response for {} in ADS mode from node {} at version {}",
+            String.join(", ", missingNames),
+            watch.request().getTypeUrl(),
+            group,
+            snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList())
+        );
+        snapshotWithMissingResources = new HashMap<>(missingNames.size() + snapshotResources.size());
+        for (String missingName : missingNames) {
+          snapshotWithMissingResources.put(
+              missingName,
+              ClusterLoadAssignment.newBuilder().setClusterName(missingName).build()
+          );
+          snapshotWithMissingResources.putAll(
+              (Map<? extends String, ? extends ClusterLoadAssignment>) snapshotResources);
+        }
+      } else if (!missingNames.isEmpty()) {
         LOGGER.info(
             "not responding in ADS mode for {} from node {} at version {} for request [{}] since [{}] not in snapshot",
             watch.request().getTypeUrl(),
@@ -275,7 +300,6 @@ public class SimpleCache<T> implements SnapshotCache<T> {
             snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList()),
             String.join(", ", watch.request().getResourceNamesList()),
             String.join(", ", missingNames));
-
         return false;
       }
     }
@@ -287,11 +311,18 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         group,
         watch.request().getVersionInfo(),
         version);
-
-    Response response = createResponse(
-        watch.request(),
-        snapshotResources,
-        version);
+    Response response;
+    if (!snapshotWithMissingResources.isEmpty()) {
+      response = createResponse(
+          watch.request(),
+          snapshotWithMissingResources,
+          version);
+    } else {
+      response = createResponse(
+          watch.request(),
+          snapshotResources,
+          version);
+    }
 
     try {
       watch.respond(response);
