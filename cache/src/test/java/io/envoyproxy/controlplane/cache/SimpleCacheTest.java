@@ -74,6 +74,7 @@ public class SimpleCacheTest {
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
+            .setVersionInfo("123")
             .build(),
         Collections.emptySet(),
         responseTracker);

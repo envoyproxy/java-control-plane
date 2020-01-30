@@ -282,9 +282,12 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       // until gets EDS response with missing resource or get restarted.
       if (!missingNames.isEmpty()
           && watch.request().getTypeUrl().equals(Resources.ENDPOINT_TYPE_URL)
-          && !watch.request().getVersionInfo().equals("")) {
-        LOGGER.debug("adding missing resources [{}] to snapshot for ADS mode response",
-            missingNames
+          && watch.request().getVersionInfo().equals("")) {
+        LOGGER.info("adding missing resources [{}] to response for {} in ADS mode from node {} at version {}",
+            String.join(", ", missingNames),
+            watch.request().getTypeUrl(),
+            group,
+            snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList())
         );
         snapshotForMissingResources = new HashMap<>(missingNames.size());
         for (String missingName : missingNames) {
