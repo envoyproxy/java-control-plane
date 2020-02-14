@@ -81,6 +81,15 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     }
   }
 
+  @Override
+  public Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer) {
+    return createWatch(ads, request, knownResourceNames, responseConsumer, false);
+  }
+
   /**
    * {@inheritDoc}
    */
@@ -89,7 +98,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       boolean ads,
       DiscoveryRequest request,
       Set<String> knownResourceNames,
-      Consumer<Response> responseConsumer) {
+      Consumer<Response> responseConsumer,
+      boolean hasClusterChanged) {
 
     T group = groups.hash(request.getNode());
     // even though we're modifying, we take a readLock to allow multiple watches to be created in parallel since it
@@ -102,13 +112,13 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Snapshot snapshot = snapshots.get(group);
       String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl(), request.getResourceNamesList());
 
-      Watch watch = new Watch(ads, request, responseConsumer);
+      Watch watch = new Watch(ads, request, responseConsumer, hasClusterChanged);
 
       if (snapshot != null) {
         Set<String> requestedResources = ImmutableSet.copyOf(request.getResourceNamesList());
 
         // If the request is asking for resources we haven't sent to the proxy yet, see if we have additional resources.
-        if (!knownResourceNames.equals(requestedResources)) {
+        if (!knownResourceNames.equals(requestedResources) || watch.hasClusterChanged()) {
           Sets.SetView<String> newResourceHints = Sets.difference(requestedResources, knownResourceNames);
 
           // If any of the newly requested resources are in the snapshot respond immediately. If not we'll fall back to
@@ -215,7 +225,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     status.watchesRemoveIf((id, watch) -> {
       String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
 
-      if (!watch.request().getVersionInfo().equals(version)) {
+      if (!watch.request().getVersionInfo().equals(version) || watch.hasClusterChanged()) {
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug("responding to open watch {}[{}] with new version {}",
               id,

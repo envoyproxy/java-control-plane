@@ -13,6 +13,12 @@ import javax.annotation.concurrent.ThreadSafe;
 @ThreadSafe
 public interface ConfigWatcher {
 
+  Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer);
+
   /**
    * Returns a new configuration resource {@link Watch} for the given discovery request.
    *
@@ -25,5 +31,6 @@ public interface ConfigWatcher {
       boolean ads,
       DiscoveryRequest request,
       Set<String> knownResourceNames,
-      Consumer<Response> responseConsumer);
+      Consumer<Response> responseConsumer,
+      boolean hasClusterChanged);
 }

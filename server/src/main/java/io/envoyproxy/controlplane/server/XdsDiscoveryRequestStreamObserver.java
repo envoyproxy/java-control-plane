@@ -64,4 +64,9 @@ public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
     cancel();
     watch = watchCreator.get();
   }
+
+  @Override
+  boolean hasClusterChanged() {
+    return false;
+  }
 }

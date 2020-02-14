@@ -23,6 +23,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   private final ConcurrentMap<String, Watch> watches;
   private final ConcurrentMap<String, DiscoveryResponse> latestResponse;
   private final ConcurrentMap<String, Set<String>> ackedResources;
+  private volatile boolean hasClusterChanged;
 
   AdsDiscoveryRequestStreamObserver(StreamObserver<DiscoveryResponse> responseObserver,
                                     long streamId,
@@ -59,6 +60,11 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   }
 
   @Override
+  public boolean hasClusterChanged() {
+    return hasClusterChanged;
+  }
+
+  @Override
   DiscoveryResponse latestResponse(String typeUrl) {
     return latestResponse.get(typeUrl);
   }
@@ -66,6 +72,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   @Override
   void setLatestResponse(String typeUrl, DiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
+    hasClusterChanged = typeUrl.equals(Resources.CLUSTER_TYPE_URL);
   }
 
   @Override

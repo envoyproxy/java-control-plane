@@ -37,6 +37,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   private volatile long streamNonce;
   private volatile boolean isClosing;
 
+
   DiscoveryRequestStreamObserver(String defaultTypeUrl,
                                  StreamObserver<DiscoveryResponse> responseObserver,
                                  long streamId,
@@ -87,7 +88,9 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
           ads(),
           request,
           ackedResources(requestTypeUrl),
-          r -> executor.execute(() -> send(r, requestTypeUrl))));
+          r -> executor.execute(() -> send(r, requestTypeUrl)),
+          hasClusterChanged()
+      ));
     }
   }
 
@@ -182,4 +185,6 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   abstract void setAckedResources(String typeUrl, Set<String> resources);
 
   abstract void computeWatch(String typeUrl, Supplier<Watch> watchCreator);
+
+  abstract boolean hasClusterChanged();
 }
