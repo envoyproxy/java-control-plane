@@ -2,19 +2,14 @@ syntax = "proto3";
 
 package envoy.admin.v2alpha;
 
-option java_package = "io.envoyproxy.envoy.admin.v2alpha";
-option java_outer_classname = "ConfigDumpProto";
-option java_multiple_files = true;
-
-import "envoy/api/v2/auth/cert.proto";
-import "envoy/api/v2/cds.proto";
-import "envoy/api/v2/lds.proto";
-import "envoy/api/v2/rds.proto";
-import "envoy/api/v2/srds.proto";
 import "envoy/config/bootstrap/v2/bootstrap.proto";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v2alpha";
+option java_outer_classname = "ConfigDumpProto";
+option java_multiple_files = true;
 
 // [#protodoc-title: ConfigDump]
 
@@ -31,6 +26,12 @@ message ConfigDump {
   // * *clusters*: :ref:`ClustersConfigDump <envoy_api_msg_admin.v2alpha.ClustersConfigDump>`
   // * *listeners*: :ref:`ListenersConfigDump <envoy_api_msg_admin.v2alpha.ListenersConfigDump>`
   // * *routes*:  :ref:`RoutesConfigDump <envoy_api_msg_admin.v2alpha.RoutesConfigDump>`
+  //
+  // You can filter output with the resource and mask query parameters.
+  // See :ref:`/config_dump?resource={} <operations_admin_interface_config_dump_by_resource>`,
+  // :ref:`/config_dump?mask={} <operations_admin_interface_config_dump_by_mask>`,
+  // or :ref:`/config_dump?resource={},mask={}
+  // <operations_admin_interface_config_dump_by_resource_and_mask>` for more information.
   repeated google.protobuf.Any configs = 1;
 }
 
@@ -63,7 +64,7 @@ message ListenersConfigDump {
   // Describes a statically loaded listener.
   message StaticListener {
     // The listener config.
-    api.v2.Listener listener = 1;
+    google.protobuf.Any listener = 1;
 
     // The timestamp when the Listener was last successfully updated.
     google.protobuf.Timestamp last_updated = 2;
@@ -77,7 +78,7 @@ message ListenersConfigDump {
     string version_info = 1;
 
     // The listener config.
-    api.v2.Listener listener = 2;
+    google.protobuf.Any listener = 2;
 
     // The timestamp when the Listener was last successfully updated.
     google.protobuf.Timestamp last_updated = 3;
@@ -128,7 +129,7 @@ message ClustersConfigDump {
   // Describes a statically loaded cluster.
   message StaticCluster {
     // The cluster config.
-    api.v2.Cluster cluster = 1;
+    google.protobuf.Any cluster = 1;
 
     // The timestamp when the Cluster was last updated.
     google.protobuf.Timestamp last_updated = 2;
@@ -143,7 +144,7 @@ message ClustersConfigDump {
     string version_info = 1;
 
     // The cluster config.
-    api.v2.Cluster cluster = 2;
+    google.protobuf.Any cluster = 2;
 
     // The timestamp when the Cluster was last updated.
     google.protobuf.Timestamp last_updated = 3;
@@ -176,7 +177,7 @@ message ClustersConfigDump {
 message RoutesConfigDump {
   message StaticRouteConfig {
     // The route config.
-    api.v2.RouteConfiguration route_config = 1;
+    google.protobuf.Any route_config = 1;
 
     // The timestamp when the Route was last updated.
     google.protobuf.Timestamp last_updated = 2;
@@ -189,7 +190,7 @@ message RoutesConfigDump {
     string version_info = 1;
 
     // The route config.
-    api.v2.RouteConfiguration route_config = 2;
+    google.protobuf.Any route_config = 2;
 
     // The timestamp when the Route was last updated.
     google.protobuf.Timestamp last_updated = 3;
@@ -212,7 +213,7 @@ message ScopedRoutesConfigDump {
     string name = 1;
 
     // The scoped route configurations.
-    repeated api.v2.ScopedRouteConfiguration scoped_route_configs = 2;
+    repeated google.protobuf.Any scoped_route_configs = 2;
 
     // The timestamp when the scoped route config set was last updated.
     google.protobuf.Timestamp last_updated = 3;
@@ -228,7 +229,7 @@ message ScopedRoutesConfigDump {
     string version_info = 2;
 
     // The scoped route configurations.
-    repeated api.v2.ScopedRouteConfiguration scoped_route_configs = 3;
+    repeated google.protobuf.Any scoped_route_configs = 3;
 
     // The timestamp when the scoped route config set was last updated.
     google.protobuf.Timestamp last_updated = 4;
@@ -257,7 +258,7 @@ message SecretsConfigDump {
     // The actual secret information.
     // Security sensitive information is redacted (replaced with "[redacted]") for
     // private keys and passwords in TLS certificates.
-    api.v2.auth.Secret secret = 4;
+    google.protobuf.Any secret = 4;
   }
 
   // StaticSecret specifies statically loaded secret in bootstrap.
@@ -271,7 +272,7 @@ message SecretsConfigDump {
     // The actual secret information.
     // Security sensitive information is redacted (replaced with "[redacted]") for
     // private keys and passwords in TLS certificates.
-    api.v2.auth.Secret secret = 3;
+    google.protobuf.Any secret = 3;
   }
 
   // The statically loaded secrets.
