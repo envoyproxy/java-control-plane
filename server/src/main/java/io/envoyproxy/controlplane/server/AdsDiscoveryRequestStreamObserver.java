@@ -60,7 +60,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
 
   @Override
   public boolean hasClusterChanged() {
-    return hasClusterChanged;
+    return hasClusterChanged.get();
   }
 
   @Override
@@ -71,7 +71,7 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   @Override
   void setLatestResponse(String typeUrl, DiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
-    hasClusterChanged = typeUrl.equals(Resources.CLUSTER_TYPE_URL) || !typeUrl.equals(Resources.ENDPOINT_TYPE_URL);
+    hasClusterChanged.set(typeUrl.equals(Resources.CLUSTER_TYPE_URL) || !typeUrl.equals(Resources.ENDPOINT_TYPE_URL));
   }
 
   @Override
