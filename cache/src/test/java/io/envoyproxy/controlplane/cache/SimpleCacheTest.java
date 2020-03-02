@@ -15,6 +15,7 @@ import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.auth.Secret;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
@@ -194,25 +195,35 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
-        .collect(Collectors.toMap(
-            typeUrl -> typeUrl,
-            typeUrl -> {
-              ResponseTracker responseTracker = new ResponseTracker();
+    ResponseOrderTracker responseOrderTracker = new ResponseOrderTracker();
 
-              Watch watch = cache.createWatch(
-                  ADS,
-                  DiscoveryRequest.newBuilder()
-                      .setNode(Node.getDefaultInstance())
-                      .setTypeUrl(typeUrl)
-                      .setVersionInfo(SNAPSHOT1.version(typeUrl))
-                      .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                      .build(),
-                  SNAPSHOT2.resources(typeUrl).keySet(),
-                  responseTracker);
+    HashMap<String, WatchAndTracker> watches = new HashMap<>();
 
-              return new WatchAndTracker(watch, responseTracker);
-            }));
+    for (int i = 0; i < 2; ++i) {
+      watches.putAll(Resources.TYPE_URLS.stream()
+          .collect(Collectors.toMap(
+              typeUrl -> typeUrl,
+              typeUrl -> {
+                ResponseTracker responseTracker = new ResponseTracker();
+
+                Watch watch = cache.createWatch(
+                    ADS,
+                    DiscoveryRequest.newBuilder()
+                        .setNode(Node.getDefaultInstance())
+                        .setTypeUrl(typeUrl)
+                        .setVersionInfo(SNAPSHOT1.version(typeUrl))
+                        .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
+                        .build(),
+                    SNAPSHOT2.resources(typeUrl).keySet(),
+                    r -> {
+                      responseTracker.accept(r);
+                      responseOrderTracker.accept(r);
+                    });
+
+                return new WatchAndTracker(watch, responseTracker);
+              }))
+      );
+    }
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
     for (String typeUrl : Resources.TYPE_URLS) {
@@ -224,6 +235,12 @@ public class SimpleCacheTest {
     for (String typeUrl : Resources.TYPE_URLS) {
       assertThatWatchReceivesSnapshot(watches.get(typeUrl), SNAPSHOT2);
     }
+
+    // Verify that CDS and LDS always get triggered before EDS and RDS respectively.
+    assertThat(responseOrderTracker.responseTypes).containsExactly(Resources.CLUSTER_TYPE_URL,
+        Resources.CLUSTER_TYPE_URL, Resources.ENDPOINT_TYPE_URL, Resources.ENDPOINT_TYPE_URL,
+        Resources.LISTENER_TYPE_URL, Resources.LISTENER_TYPE_URL, Resources.ROUTE_TYPE_URL,
+        Resources.ROUTE_TYPE_URL, Resources.SECRET_TYPE_URL, Resources.SECRET_TYPE_URL);
   }
 
   @Test
@@ -487,6 +504,16 @@ public class SimpleCacheTest {
     @Override
     public void accept(Response response) {
       responses.add(response);
+    }
+
+  }
+
+  private static class ResponseOrderTracker implements Consumer<Response> {
+
+    private final LinkedList<String> responseTypes = new LinkedList<>();
+
+    @Override public void accept(Response response) {
+      responseTypes.add(response.request().getTypeUrl());
     }
   }
 

@@ -26,6 +26,8 @@ option java_outer_classname = "TraceProto";
 
 option go_package = "github.com/census-instrumentation/opencensus-proto/gen-go/trace/v1";
 
+option ruby_package = "OpenCensus.Proto.Trace.V1";
+
 // A span represents a single operation within a trace. Spans can be
 // nested to form a trace tree. Spans may also be linked to other spans
 // from the same or different trace. And form graphs. Often, a trace
@@ -270,6 +272,9 @@ message Span {
 
     // A set of attributes on the link.
     Attributes attributes = 4;
+
+    // The Tracestate associated with the link.
+    Tracestate tracestate = 5;
   }
 
   // A collection of links, which are references from this span to a span
