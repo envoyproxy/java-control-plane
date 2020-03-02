@@ -1,9 +1,11 @@
 package io.envoyproxy.controlplane.cache;
 
+import static io.envoyproxy.controlplane.cache.Resources.ENDPOINT_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
@@ -71,7 +73,7 @@ public class SimpleCacheTest {
         true,
         DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
-            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+            .setTypeUrl(ENDPOINT_TYPE_URL)
             .addResourceNames("none")
             .build(),
         Collections.emptySet(),
@@ -92,7 +94,7 @@ public class SimpleCacheTest {
         false,
         DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
-            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+            .setTypeUrl(ENDPOINT_TYPE_URL)
             .addResourceNames("none")
             .build(),
         Collections.emptySet(),
@@ -127,6 +129,33 @@ public class SimpleCacheTest {
 
       assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
     }
+  }
+
+  @Test
+  public void shouldSendEdsWhenClusterChangedButVersionDidnt() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    ResponseTracker responseTracker = new ResponseTracker();
+
+    Watch watch = cache.createWatch(
+        ADS,
+        DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setVersionInfo(VERSION1)
+            .setTypeUrl(ENDPOINT_TYPE_URL)
+            .addAllResourceNames(SNAPSHOT1.resources(ENDPOINT_TYPE_URL).keySet())
+            .build(),
+        Sets.newHashSet(""),
+        responseTracker,
+        true);
+
+    assertThat(watch.request().getTypeUrl()).isEqualTo(ENDPOINT_TYPE_URL);
+    assertThat(watch.request().getResourceNamesList()).containsExactlyElementsOf(
+        SNAPSHOT1.resources(ENDPOINT_TYPE_URL).keySet());
+
+    assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
   }
 
   @Test
@@ -231,7 +260,7 @@ public class SimpleCacheTest {
     // The snapshot version matches for all resources, but for eds and cds there are new resources present
     // for the same version, so we expect the watches to trigger.
     assertThatWatchReceivesSnapshot(watches.remove(Resources.CLUSTER_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.ENDPOINT_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
+    assertThatWatchReceivesSnapshot(watches.remove(ENDPOINT_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
 
     // Remaining watches should not trigger
     for (WatchAndTracker watchAndTracker : watches.values()) {
@@ -402,7 +431,8 @@ public class SimpleCacheTest {
             .setTypeUrl("")
             .build(),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     // clearSnapshot should fail and the snapshot should be left untouched
     assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
@@ -428,7 +458,8 @@ public class SimpleCacheTest {
             .setTypeUrl("")
             .build(),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
   }

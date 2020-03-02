@@ -983,7 +983,7 @@ public class DiscoveryServerTest {
 
       counts.put(request.getTypeUrl(), counts.getOrDefault(request.getTypeUrl(), 0) + 1);
 
-      Watch watch = new Watch(ads, request, responseConsumer, hasClusterChanged);
+      Watch watch = new Watch(ads, request, responseConsumer);
 
       if (responses.row(request.getTypeUrl()).size() > 0) {
         final Response response;

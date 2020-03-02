@@ -112,13 +112,13 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       Snapshot snapshot = snapshots.get(group);
       String version = snapshot == null ? "" : snapshot.version(request.getTypeUrl(), request.getResourceNamesList());
 
-      Watch watch = new Watch(ads, request, responseConsumer, hasClusterChanged);
+      Watch watch = new Watch(ads, request, responseConsumer);
 
       if (snapshot != null) {
         Set<String> requestedResources = ImmutableSet.copyOf(request.getResourceNamesList());
 
         // If the request is asking for resources we haven't sent to the proxy yet, see if we have additional resources.
-        if (!knownResourceNames.equals(requestedResources) || watch.hasClusterChanged()) {
+        if (!knownResourceNames.equals(requestedResources)) {
           Sets.SetView<String> newResourceHints = Sets.difference(requestedResources, knownResourceNames);
 
           // If any of the newly requested resources are in the snapshot respond immediately. If not we'll fall back to
@@ -131,6 +131,10 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
             return watch;
           }
+        } else if (request.getTypeUrl().equals(Resources.ENDPOINT_TYPE_URL) && hasClusterChanged) {
+          respond(watch, snapshot, group);
+
+          return watch;
         }
       }
 
@@ -225,7 +229,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     status.watchesRemoveIf((id, watch) -> {
       String version = snapshot.version(watch.request().getTypeUrl(), watch.request().getResourceNamesList());
 
-      if (!watch.request().getVersionInfo().equals(version) || watch.hasClusterChanged()) {
+      if (!watch.request().getVersionInfo().equals(version)) {
         if (LOGGER.isDebugEnabled()) {
           LOGGER.debug("responding to open watch {}[{}] with new version {}",
               id,

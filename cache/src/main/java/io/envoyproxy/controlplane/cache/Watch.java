@@ -15,7 +15,6 @@ public class Watch {
   private final DiscoveryRequest request;
   private final Consumer<Response> responseConsumer;
   private volatile int isCancelled = 0;
-  private volatile boolean hasClusterChanged = false;
   private Runnable stop;
 
   /**
@@ -26,21 +25,9 @@ public class Watch {
    * @param responseConsumer handler for outgoing response messages
    */
   public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer) {
-    this(ads, request, responseConsumer, false);
-  }
-
-  /**
-   * Construct a watch.
-   *
-   * @param ads              is this watch for an ADS request?
-   * @param request          the original request for the watch
-   * @param responseConsumer handler for outgoing response messages
-   */
-  public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer, boolean hasClusterChanged) {
     this.ads = ads;
     this.request = request;
     this.responseConsumer = responseConsumer;
-    this.hasClusterChanged = hasClusterChanged;
   }
 
   /**
@@ -96,9 +83,5 @@ public class Watch {
    */
   public void setStop(Runnable stop) {
     this.stop = stop;
-  }
-
-  public boolean hasClusterChanged() {
-    return hasClusterChanged;
   }
 }
