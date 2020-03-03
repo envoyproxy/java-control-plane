@@ -6,6 +6,7 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
+import io.envoyproxy.envoy.api.v2.Resource;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
@@ -71,7 +72,11 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   @Override
   void setLatestResponse(String typeUrl, DiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
-    hasClusterChanged.set(typeUrl.equals(Resources.CLUSTER_TYPE_URL) || !typeUrl.equals(Resources.ENDPOINT_TYPE_URL));
+    if(typeUrl.equals(Resources.CLUSTER_TYPE_URL)) {
+      hasClusterChanged.set(true);
+    } else if (typeUrl.equals(Resources.ENDPOINT_TYPE_URL)){
+      hasClusterChanged.set(false);
+    }
   }
 
   @Override
