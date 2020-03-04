@@ -4,6 +4,7 @@ import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
@@ -128,6 +129,33 @@ public class SimpleCacheTest {
 
       assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
     }
+  }
+
+  @Test
+  public void shouldSendEdsWhenClusterChangedButEdsVersionDidnt() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    ResponseTracker responseTracker = new ResponseTracker();
+
+    Watch watch = cache.createWatch(
+        ADS,
+        DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setVersionInfo(VERSION1)
+            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+            .addAllResourceNames(SNAPSHOT1.resources(Resources.ENDPOINT_TYPE_URL).keySet())
+            .build(),
+        Sets.newHashSet(""),
+        responseTracker,
+        true);
+
+    assertThat(watch.request().getTypeUrl()).isEqualTo(Resources.ENDPOINT_TYPE_URL);
+    assertThat(watch.request().getResourceNamesList()).containsExactlyElementsOf(
+        SNAPSHOT1.resources(Resources.ENDPOINT_TYPE_URL).keySet());
+
+    assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
   }
 
   @Test

@@ -96,6 +96,17 @@ public class TestResources {
    * @param port port to use for the endpoint
    */
   public static ClusterLoadAssignment createEndpoint(String clusterName, int port) {
+    return createEndpoint(clusterName, LOCALHOST, port);
+  }
+
+  /**
+   * Returns a new test endpoint for the given cluster.
+   *
+   * @param clusterName name of the test cluster that is associated with this endpoint
+   * @param address ip address to use for the endpoint
+   * @param port port to use for the endpoint
+   */
+  public static ClusterLoadAssignment createEndpoint(String clusterName, String address, int port) {
     return ClusterLoadAssignment.newBuilder()
         .setClusterName(clusterName)
         .addEndpoints(LocalityLbEndpoints.newBuilder()
@@ -103,7 +114,7 @@ public class TestResources {
                 .setEndpoint(Endpoint.newBuilder()
                     .setAddress(Address.newBuilder()
                         .setSocketAddress(SocketAddress.newBuilder()
-                            .setAddress(LOCALHOST)
+                            .setAddress(address)
                             .setPortValue(port)
                             .setProtocol(Protocol.TCP))))))
         .build();

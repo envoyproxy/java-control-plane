@@ -15,6 +15,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
   final long streamId;
+  volatile AtomicBoolean hasClusterChanged;
   private final String defaultTypeUrl;
   private final StreamObserver<DiscoveryResponse> responseObserver;
   private final Executor executor;
@@ -48,6 +50,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     this.executor = executor;
     this.streamNonce = 0;
     this.discoverySever = discoveryServer;
+    this.hasClusterChanged = new AtomicBoolean(false);
   }
 
   @Override
@@ -87,7 +90,9 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
           ads(),
           request,
           ackedResources(requestTypeUrl),
-          r -> executor.execute(() -> send(r, requestTypeUrl))));
+          r -> executor.execute(() -> send(r, requestTypeUrl)),
+          hasClusterChanged.get()
+      ));
     }
   }
 

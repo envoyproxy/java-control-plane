@@ -52,7 +52,15 @@ public class DiscoveryServerAdsIT {
 
       cache.setSnapshot(
           GROUP,
-          createSnapshot(true, "upstream", "upstream", EchoContainer.PORT, "listener0", LISTENER_PORT, "route0", "1"));
+          createSnapshot(true,
+              "upstream",
+              UPSTREAM.ipAddress(),
+              EchoContainer.PORT,
+              "listener0",
+              LISTENER_PORT,
+              "route0",
+              "1")
+      );
 
       DiscoveryServer server = new DiscoveryServer(callbacks, cache);
 
