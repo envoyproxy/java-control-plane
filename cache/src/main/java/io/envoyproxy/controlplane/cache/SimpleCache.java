@@ -81,6 +81,15 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     }
   }
 
+  @Override
+  public Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer) {
+    return createWatch(ads, request, knownResourceNames, responseConsumer, false);
+  }
+
   /**
    * {@inheritDoc}
    */
@@ -89,7 +98,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       boolean ads,
       DiscoveryRequest request,
       Set<String> knownResourceNames,
-      Consumer<Response> responseConsumer) {
+      Consumer<Response> responseConsumer,
+      boolean hasClusterChanged) {
 
     T group = groups.hash(request.getNode());
     // even though we're modifying, we take a readLock to allow multiple watches to be created in parallel since it
@@ -121,6 +131,10 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
             return watch;
           }
+        } else if (hasClusterChanged && request.getTypeUrl().equals(Resources.ENDPOINT_TYPE_URL)) {
+          respond(watch, snapshot, group);
+
+          return watch;
         }
       }
 

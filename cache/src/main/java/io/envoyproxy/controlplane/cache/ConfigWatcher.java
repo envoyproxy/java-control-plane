@@ -26,4 +26,20 @@ public interface ConfigWatcher {
       DiscoveryRequest request,
       Set<String> knownResourceNames,
       Consumer<Response> responseConsumer);
+
+  /**
+   * Returns a new configuration resource {@link Watch} for the given discovery request.
+   *
+   * @param ads is the watch for an ADS request?
+   * @param request the discovery request (node, names, etc.) to use to generate the watch
+   * @param knownResourceNames resources that are already known to the caller
+   * @param responseConsumer the response handler, used to process outgoing response messages
+   * @param hasClusterChanged indicates if EDS should be send. Works in ads mode only.
+   */
+  Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer,
+      boolean hasClusterChanged);
 }
