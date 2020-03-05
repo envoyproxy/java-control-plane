@@ -74,16 +74,12 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
       return;
     }
 
-    DiscoveryResponse latestResponse = latestResponse(requestTypeUrl);
+    LatestResponse latestResponse = latestResponse(requestTypeUrl);
     String resourceNonce = latestResponse == null ? null : latestResponse.getNonce();
 
     if (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce)) {
       if (!request.hasErrorDetail() && latestResponse != null) {
-        Set<String> ackedResourcesForType = latestResponse.getResourcesList()
-            .stream()
-            .map(Resources::getResourceName)
-            .collect(Collectors.toSet());
-        setAckedResources(requestTypeUrl, ackedResourcesForType);
+        setAckedResources(requestTypeUrl, latestResponse.getResources());
       }
 
       computeWatch(requestTypeUrl, () -> discoverySever.configWatcher.createWatch(
@@ -160,7 +156,10 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     // Store the latest response *before* we send the response. This ensures that by the time the request
     // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions
     // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
-    setLatestResponse(typeUrl, discoveryResponse);
+    setLatestResponse(
+        typeUrl,
+        new LatestResponse(nonce, resources.stream().map(Resources::getResourceName).collect(Collectors.toSet()))
+    );
     synchronized (responseObserver) {
       if (!isClosing) {
         try {
@@ -178,9 +177,9 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
 
   abstract boolean ads();
 
-  abstract DiscoveryResponse latestResponse(String typeUrl);
+  abstract LatestResponse latestResponse(String typeUrl);
 
-  abstract void setLatestResponse(String typeUrl, DiscoveryResponse response);
+  abstract void setLatestResponse(String typeUrl, LatestResponse response);
 
   abstract Set<String> ackedResources(String typeUrl);
 
