@@ -23,11 +23,15 @@ class LatestResponse {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     LatestResponse that = (LatestResponse) o;
-    return Objects.equals(nonce, that.nonce) &&
-        Objects.equals(resources, that.resources);
+    return Objects.equals(nonce, that.nonce)
+        && Objects.equals(resources, that.resources);
   }
 
   @Override
@@ -37,9 +41,9 @@ class LatestResponse {
 
   @Override
   public String toString() {
-    return "LatestResponse{" +
-        "nonce='" + nonce + '\'' +
-        ", resources=" + resources +
-        '}';
+    return "LatestResponse{"
+        + "nonce='" + nonce + '\''
+        + ", resources=" + resources
+        + '}';
   }
 }
