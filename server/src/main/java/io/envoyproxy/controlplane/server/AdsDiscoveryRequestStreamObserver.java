@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  */
 public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObserver {
   private final ConcurrentMap<String, Watch> watches;
-  private final ConcurrentMap<String, DiscoveryResponse> latestResponse;
+  private final ConcurrentMap<String, LatestDiscoveryResponse> latestResponse;
   private final ConcurrentMap<String, Set<String>> ackedResources;
 
   AdsDiscoveryRequestStreamObserver(StreamObserver<DiscoveryResponse> responseObserver,
@@ -59,12 +59,12 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   }
 
   @Override
-  DiscoveryResponse latestResponse(String typeUrl) {
+  LatestDiscoveryResponse latestResponse(String typeUrl) {
     return latestResponse.get(typeUrl);
   }
 
   @Override
-  void setLatestResponse(String typeUrl, DiscoveryResponse response) {
+  void setLatestResponse(String typeUrl, LatestDiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
   }
 
