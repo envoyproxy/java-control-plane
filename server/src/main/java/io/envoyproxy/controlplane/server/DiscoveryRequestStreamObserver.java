@@ -74,12 +74,12 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
       return;
     }
 
-    LatestResponse latestResponse = latestResponse(requestTypeUrl);
-    String resourceNonce = latestResponse == null ? null : latestResponse.getNonce();
+    LatestDiscoveryResponse latestDiscoveryResponse = latestResponse(requestTypeUrl);
+    String resourceNonce = latestDiscoveryResponse == null ? null : latestDiscoveryResponse.getNonce();
 
     if (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce)) {
-      if (!request.hasErrorDetail() && latestResponse != null) {
-        setAckedResources(requestTypeUrl, latestResponse.getResources());
+      if (!request.hasErrorDetail() && latestDiscoveryResponse != null) {
+        setAckedResources(requestTypeUrl, latestDiscoveryResponse.getResources());
       }
 
       computeWatch(requestTypeUrl, () -> discoverySever.configWatcher.createWatch(
@@ -158,7 +158,10 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
     setLatestResponse(
         typeUrl,
-        new LatestResponse(nonce, resources.stream().map(Resources::getResourceName).collect(Collectors.toSet()))
+        new LatestDiscoveryResponse(
+            nonce,
+            resources.stream().map(Resources::getResourceName).collect(Collectors.toSet())
+        )
     );
     synchronized (responseObserver) {
       if (!isClosing) {
@@ -177,9 +180,9 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
 
   abstract boolean ads();
 
-  abstract LatestResponse latestResponse(String typeUrl);
+  abstract LatestDiscoveryResponse latestResponse(String typeUrl);
 
-  abstract void setLatestResponse(String typeUrl, LatestResponse response);
+  abstract void setLatestResponse(String typeUrl, LatestDiscoveryResponse response);
 
   abstract Set<String> ackedResources(String typeUrl);
 

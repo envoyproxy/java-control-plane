@@ -3,12 +3,12 @@ package io.envoyproxy.controlplane.server;
 import java.util.Objects;
 import java.util.Set;
 
-class LatestResponse {
+class LatestDiscoveryResponse {
 
   private final String nonce;
   private final Set<String> resources;
 
-  public LatestResponse(String nonce, Set<String> resources) {
+  public LatestDiscoveryResponse(String nonce, Set<String> resources) {
     this.nonce = nonce;
     this.resources = resources;
   }
@@ -29,7 +29,7 @@ class LatestResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    LatestResponse that = (LatestResponse) o;
+    LatestDiscoveryResponse that = (LatestDiscoveryResponse) o;
     return Objects.equals(nonce, that.nonce)
         && Objects.equals(resources, that.resources);
   }
