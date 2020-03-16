@@ -72,11 +72,11 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     }
 
     LatestDiscoveryResponse latestDiscoveryResponse = latestResponse(requestTypeUrl);
-    String resourceNonce = latestDiscoveryResponse == null ? null : latestDiscoveryResponse.getNonce();
+    String resourceNonce = latestDiscoveryResponse == null ? null : latestDiscoveryResponse.nonce();
 
     if (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce)) {
       if (!request.hasErrorDetail() && latestDiscoveryResponse != null) {
-        setAckedResources(requestTypeUrl, latestDiscoveryResponse.getResources());
+        setAckedResources(requestTypeUrl, latestDiscoveryResponse.resourceNames());
       }
 
       computeWatch(requestTypeUrl, () -> discoverySever.configWatcher.createWatch(
@@ -153,7 +153,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
     setLatestResponse(
         typeUrl,
-        new LatestDiscoveryResponse(
+        LatestDiscoveryResponse.create(
             nonce,
             resources.stream().map(Resources::getResourceName).collect(Collectors.toSet())
         )
