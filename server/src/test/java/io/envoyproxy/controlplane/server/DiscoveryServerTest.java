@@ -1017,13 +1017,6 @@ public class DiscoveryServerTest {
       return watch;
     }
 
-    @Override
-    public Watch createWatch(boolean ads,
-                             DiscoveryRequest request,
-                             Set<String> knownResourceNames,
-                             Consumer<Response> responseConsumer) {
-      return createWatch(ads, request, knownResourceNames, responseConsumer, false);
-    }
   }
 
   private static class MockDiscoveryServerCallbacks implements DiscoveryServerCallbacks {
