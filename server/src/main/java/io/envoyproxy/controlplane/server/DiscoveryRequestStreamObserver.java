@@ -155,7 +155,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
         typeUrl,
         LatestDiscoveryResponse.create(
             nonce,
-            resources.stream().map(Resources::getResourceName).collect(Collectors.toSet())
+            response.resources().stream().map(Resources::getResourceName).collect(Collectors.toSet())
         )
     );
     synchronized (responseObserver) {
