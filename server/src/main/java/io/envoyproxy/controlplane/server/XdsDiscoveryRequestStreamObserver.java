@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  */
 public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObserver {
   private volatile Watch watch;
-  private volatile DiscoveryResponse latestResponse;
+  private volatile LatestDiscoveryResponse latestDiscoveryResponse;
   // ackedResources is only used in the same thread so it need not be volatile
   private Set<String> ackedResources;
 
@@ -40,13 +40,13 @@ public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   }
 
   @Override
-  DiscoveryResponse latestResponse(String typeUrl) {
-    return latestResponse;
+  LatestDiscoveryResponse latestResponse(String typeUrl) {
+    return latestDiscoveryResponse;
   }
 
   @Override
-  void setLatestResponse(String typeUrl, DiscoveryResponse response) {
-    latestResponse = response;
+  void setLatestResponse(String typeUrl, LatestDiscoveryResponse response) {
+    latestDiscoveryResponse = response;
   }
 
   @Override

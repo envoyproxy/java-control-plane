@@ -74,16 +74,12 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
       return;
     }
 
-    DiscoveryResponse latestResponse = latestResponse(requestTypeUrl);
-    String resourceNonce = latestResponse == null ? null : latestResponse.getNonce();
+    LatestDiscoveryResponse latestDiscoveryResponse = latestResponse(requestTypeUrl);
+    String resourceNonce = latestDiscoveryResponse == null ? null : latestDiscoveryResponse.nonce();
 
     if (isNullOrEmpty(resourceNonce) || resourceNonce.equals(nonce)) {
-      if (!request.hasErrorDetail() && latestResponse != null) {
-        Set<String> ackedResourcesForType = latestResponse.getResourcesList()
-            .stream()
-            .map(Resources::getResourceName)
-            .collect(Collectors.toSet());
-        setAckedResources(requestTypeUrl, ackedResourcesForType);
+      if (!request.hasErrorDetail() && latestDiscoveryResponse != null) {
+        setAckedResources(requestTypeUrl, latestDiscoveryResponse.resourceNames());
       }
 
       computeWatch(requestTypeUrl, () -> discoverySever.configWatcher.createWatch(
@@ -160,7 +156,13 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     // Store the latest response *before* we send the response. This ensures that by the time the request
     // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions
     // which may see the incoming request arrive before the map is updated, failing the nonce check erroneously.
-    setLatestResponse(typeUrl, discoveryResponse);
+    setLatestResponse(
+        typeUrl,
+        LatestDiscoveryResponse.create(
+            nonce,
+            response.resources().stream().map(Resources::getResourceName).collect(Collectors.toSet())
+        )
+    );
     synchronized (responseObserver) {
       if (!isClosing) {
         try {
@@ -178,9 +180,9 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
 
   abstract boolean ads();
 
-  abstract DiscoveryResponse latestResponse(String typeUrl);
+  abstract LatestDiscoveryResponse latestResponse(String typeUrl);
 
-  abstract void setLatestResponse(String typeUrl, DiscoveryResponse response);
+  abstract void setLatestResponse(String typeUrl, LatestDiscoveryResponse response);
 
   abstract Set<String> ackedResources(String typeUrl);
 

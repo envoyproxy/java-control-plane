@@ -5,7 +5,7 @@
     <parent>
         <artifactId>java-control-plane</artifactId>
         <groupId>io.envoyproxy.controlplane</groupId>
-        <version>0.1.23-SNAPSHOT</version>
+        <version>0.1.24-SNAPSHOT</version>
     </parent>
 
     <artifactId>server</artifactId>
@@ -14,7 +14,14 @@
         <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>cache</artifactId>
-            <version>0.1.23-SNAPSHOT</version>
+            <version>0.1.24-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auto.value</groupId>
+            <artifactId>auto-value</artifactId>
+            <version>${auto-value.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
