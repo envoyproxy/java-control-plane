@@ -1016,7 +1016,6 @@ public class DiscoveryServerTest {
 
       return watch;
     }
-
   }
 
   private static class MockDiscoveryServerCallbacks implements DiscoveryServerCallbacks {
