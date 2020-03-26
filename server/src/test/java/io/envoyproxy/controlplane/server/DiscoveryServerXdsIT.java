@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.controlplane.server.TestSnapshots.createSnapshot;
+import static io.envoyproxy.controlplane.server.TestSnapshots.createSnapshotNoEds;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -52,7 +52,15 @@ public class DiscoveryServerXdsIT {
 
       cache.setSnapshot(
           GROUP,
-          createSnapshot(false, "upstream", "upstream", EchoContainer.PORT, "listener0", LISTENER_PORT, "route0", "1"));
+          createSnapshotNoEds(false,
+              "upstream",
+              "upstream",
+              EchoContainer.PORT,
+              "listener0",
+              LISTENER_PORT,
+              "route0",
+              "1")
+      );
 
       DiscoveryServer server = new DiscoveryServer(callbacks, cache);
 

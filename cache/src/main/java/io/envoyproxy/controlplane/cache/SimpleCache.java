@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
@@ -81,6 +82,14 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     }
   }
 
+  public Watch createWatch(
+      boolean ads,
+      DiscoveryRequest request,
+      Set<String> knownResourceNames,
+      Consumer<Response> responseConsumer) {
+    return createWatch(ads, request, knownResourceNames, responseConsumer, false);
+  }
+
   /**
    * {@inheritDoc}
    */
@@ -89,7 +98,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
       boolean ads,
       DiscoveryRequest request,
       Set<String> knownResourceNames,
-      Consumer<Response> responseConsumer) {
+      Consumer<Response> responseConsumer,
+      boolean hasClusterChanged) {
 
     T group = groups.hash(request.getNode());
     // even though we're modifying, we take a readLock to allow multiple watches to be created in parallel since it
@@ -121,6 +131,10 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
             return watch;
           }
+        } else if (hasClusterChanged && request.getTypeUrl().equals(Resources.ENDPOINT_TYPE_URL)) {
+          respond(watch, snapshot, group);
+
+          return watch;
         }
       }
 
@@ -213,6 +227,25 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     }
 
     // Responses should be in specific order and TYPE_URLS has a list of resources in the right order.
+    respondWithSpecificOrder(group, snapshot, status);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public StatusInfo statusInfo(T group) {
+    readLock.lock();
+
+    try {
+      return statuses.get(group);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @VisibleForTesting
+  protected void respondWithSpecificOrder(T group, Snapshot snapshot, CacheStatusInfo<T> status) {
     for (String typeUrl : Resources.TYPE_URLS) {
       status.watchesRemoveIf((id, watch) -> {
         if (!watch.request().getTypeUrl().equals(typeUrl)) {
@@ -237,20 +270,6 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
         return false;
       });
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public StatusInfo statusInfo(T group) {
-    readLock.lock();
-
-    try {
-      return statuses.get(group);
-    } finally {
-      readLock.unlock();
     }
   }
 

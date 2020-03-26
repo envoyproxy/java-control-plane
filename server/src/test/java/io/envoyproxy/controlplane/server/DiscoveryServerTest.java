@@ -824,9 +824,9 @@ public class DiscoveryServerTest {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses()) {
       @Override
       public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResources,
-                               Consumer<Response> responseConsumer) {
+                               Consumer<Response> responseConsumer, boolean hasClusterChanged) {
         watchCreated.countDown();
-        watch.set(super.createWatch(ads, request, knownResources, responseConsumer));
+        watch.set(super.createWatch(ads, request, knownResources, responseConsumer, false));
         return watch.get();
       }
     };
@@ -978,7 +978,8 @@ public class DiscoveryServerTest {
         boolean ads,
         DiscoveryRequest request,
         Set<String> knownResources,
-        Consumer<Response> responseConsumer) {
+        Consumer<Response> responseConsumer,
+        boolean hasClusterChanged) {
 
       counts.put(request.getTypeUrl(), counts.getOrDefault(request.getTypeUrl(), 0) + 1);
 

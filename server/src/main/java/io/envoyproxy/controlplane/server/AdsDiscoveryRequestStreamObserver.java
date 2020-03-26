@@ -66,6 +66,11 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   @Override
   void setLatestResponse(String typeUrl, LatestDiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
+    if (typeUrl.equals(Resources.CLUSTER_TYPE_URL)) {
+      hasClusterChanged = true;
+    } else if (typeUrl.equals(Resources.ENDPOINT_TYPE_URL)) {
+      hasClusterChanged = false;
+    }
   }
 
   @Override
