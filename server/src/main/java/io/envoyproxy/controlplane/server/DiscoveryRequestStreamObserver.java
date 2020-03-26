@@ -30,7 +30,6 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
 
   final long streamId;
-  // TODO: Add same fix for listeners
   volatile boolean hasClusterChanged;
   private final String defaultTypeUrl;
   private final StreamObserver<DiscoveryResponse> responseObserver;
