@@ -251,7 +251,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   }
 
   @VisibleForTesting
-  protected void respondWithSpecificOrder(T group, Snapshot snapshot, ConcurrentMap<String, CacheStatusInfo<T>> statusMap) {
+  protected void respondWithSpecificOrder(T group, Snapshot snapshot,
+                                          ConcurrentMap<String, CacheStatusInfo<T>> statusMap) {
     for (String typeUrl : Resources.TYPE_URLS) {
       CacheStatusInfo<T> status = statusMap.get(typeUrl);
       if (status == null) {
