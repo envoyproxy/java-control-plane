@@ -4,8 +4,7 @@ import java.util.Collection;
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * {@code CacheStatusInfo} provides a default implementation of {@link StatusInfo} for use in {@link Cache}
- * implementations.
+ * {@code GroupCacheStatusInfo} provides an implementation of {@link StatusInfo} for a group of {@link CacheStatusInfo}.
  */
 @ThreadSafe
 class GroupCacheStatusInfo<T> implements StatusInfo<T> {
