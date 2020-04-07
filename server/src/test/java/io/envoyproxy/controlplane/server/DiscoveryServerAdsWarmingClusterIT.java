@@ -24,6 +24,7 @@ import io.envoyproxy.envoy.api.v2.core.ConfigSource;
 import io.envoyproxy.envoy.api.v2.core.Http2ProtocolOptions;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -192,7 +193,7 @@ public class DiscoveryServerAdsWarmingClusterIT {
     }
 
     @Override
-    protected void respondWithSpecificOrder(T group, Snapshot snapshot, CacheStatusInfo<T> status) {
+    protected void respondWithSpecificOrder(T group, Snapshot snapshot, ConcurrentMap<String, CacheStatusInfo<T>> status) {
       // This code has been removed to show specific case which is hard to reproduce in integration test:
       //      1. Envoy connects to control-plane
       //      2. Snapshot already exists in control-plane <- other instance share same group

@@ -1,6 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
@@ -43,7 +44,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
 
   @GuardedBy("lock")
   private final Map<T, Snapshot> snapshots = new HashMap<>();
-  private final ConcurrentMap<T, CacheStatusInfo<T>> statuses = new ConcurrentHashMap<>();
+  private final ConcurrentMap<T, ConcurrentMap<String, CacheStatusInfo<T>>> statuses = new ConcurrentHashMap<>();
 
   private AtomicLong watchCount = new AtomicLong();
 
@@ -64,10 +65,10 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     // we take a writeLock to prevent watches from being created
     writeLock.lock();
     try {
-      CacheStatusInfo<T> status = statuses.get(group);
+      Map<String, CacheStatusInfo<T>> status = statuses.get(group);
 
       // If we don't know about this group, do nothing.
-      if (status != null && status.numWatches() > 0) {
+      if (status != null && status.values().stream().mapToLong(CacheStatusInfo::numWatches).sum() > 0) {
         LOGGER.warn("tried to clear snapshot for group with existing watches, group={}", group);
 
         return false;
@@ -106,7 +107,8 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     // doesn't conflict
     readLock.lock();
     try {
-      CacheStatusInfo<T> status = statuses.computeIfAbsent(group, g -> new CacheStatusInfo<>(group));
+      CacheStatusInfo<T> status = statuses.computeIfAbsent(group, g -> new ConcurrentHashMap<>())
+          .computeIfAbsent(request.getTypeUrl(), s -> new CacheStatusInfo<>(group));
       status.setLastWatchRequestTime(System.currentTimeMillis());
 
       Snapshot snapshot = snapshots.get(group);
@@ -212,7 +214,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
   @Override
   public synchronized void setSnapshot(T group, Snapshot snapshot) {
     // we take a writeLock to prevent watches from being created while we update the snapshot
-    CacheStatusInfo<T> status;
+    ConcurrentMap<String, CacheStatusInfo<T>> status;
     writeLock.lock();
     try {
       // Update the existing snapshot entry.
@@ -238,15 +240,25 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     readLock.lock();
 
     try {
-      return statuses.get(group);
+      ConcurrentMap<String, CacheStatusInfo<T>> statusMap = statuses.get(group);
+      if (statusMap == null || statusMap.isEmpty()) {
+        return null;
+      }
+
+      return new GroupCacheStatusInfo<T>(statusMap.values());
     } finally {
       readLock.unlock();
     }
   }
 
   @VisibleForTesting
-  protected void respondWithSpecificOrder(T group, Snapshot snapshot, CacheStatusInfo<T> status) {
+  protected void respondWithSpecificOrder(T group, Snapshot snapshot, ConcurrentMap<String, CacheStatusInfo<T>> statusMap) {
     for (String typeUrl : Resources.TYPE_URLS) {
+      CacheStatusInfo<T> status = statusMap.get(typeUrl);
+      if (status == null) {
+        continue;
+      }
+
       status.watchesRemoveIf((id, watch) -> {
         if (!watch.request().getTypeUrl().equals(typeUrl)) {
           return false;
@@ -331,5 +343,13 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     }
 
     return false;
+  }
+
+  private Map<String, CacheStatusInfo<T>> makeStatusMap(T group) {
+    ImmutableMap.Builder<String, CacheStatusInfo<T>> builder = ImmutableMap.builder();
+    Resources.TYPE_URLS.forEach(s -> {
+      builder.put(s, new CacheStatusInfo<>(group));
+    });
+    return builder.build();
   }
 }
