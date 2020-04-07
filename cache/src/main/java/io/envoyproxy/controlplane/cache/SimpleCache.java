@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
@@ -343,13 +342,5 @@ public class SimpleCache<T> implements SnapshotCache<T> {
     }
 
     return false;
-  }
-
-  private Map<String, CacheStatusInfo<T>> makeStatusMap(T group) {
-    ImmutableMap.Builder<String, CacheStatusInfo<T>> builder = ImmutableMap.builder();
-    Resources.TYPE_URLS.forEach(s -> {
-      builder.put(s, new CacheStatusInfo<>(group));
-    });
-    return builder.build();
   }
 }
