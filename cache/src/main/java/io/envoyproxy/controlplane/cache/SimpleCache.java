@@ -244,7 +244,7 @@ public class SimpleCache<T> implements SnapshotCache<T> {
         return null;
       }
 
-      return new GroupCacheStatusInfo<T>(statusMap.values());
+      return new GroupCacheStatusInfo<>(statusMap.values());
     } finally {
       readLock.unlock();
     }

@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -11,7 +12,7 @@ class GroupCacheStatusInfo<T> implements StatusInfo<T> {
   private final Collection<CacheStatusInfo<T>> statuses;
 
   public GroupCacheStatusInfo(Collection<CacheStatusInfo<T>> statuses) {
-    this.statuses = statuses;
+    this.statuses = new ArrayList<>(statuses);
   }
 
   /**
