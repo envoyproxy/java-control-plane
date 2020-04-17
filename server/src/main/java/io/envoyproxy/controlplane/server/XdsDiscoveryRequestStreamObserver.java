@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.Watch;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.Set;

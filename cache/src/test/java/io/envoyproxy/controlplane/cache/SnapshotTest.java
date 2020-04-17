@@ -10,11 +10,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Message;
-import io.envoyproxy.envoy.api.v2.Cluster;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
-import io.envoyproxy.envoy.api.v2.Listener;
-import io.envoyproxy.envoy.api.v2.RouteConfiguration;
-import io.envoyproxy.envoy.api.v2.auth.Secret;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
+import io.envoyproxy.envoy.config.listener.v3.Listener;
+import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;

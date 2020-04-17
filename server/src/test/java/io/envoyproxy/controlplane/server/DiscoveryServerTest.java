@@ -17,26 +17,20 @@ import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.envoyproxy.controlplane.server.exception.RequestException;
-import io.envoyproxy.envoy.api.v2.Cluster;
-import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc;
-import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
-import io.envoyproxy.envoy.api.v2.EndpointDiscoveryServiceGrpc;
-import io.envoyproxy.envoy.api.v2.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceStub;
-import io.envoyproxy.envoy.api.v2.Listener;
-import io.envoyproxy.envoy.api.v2.ListenerDiscoveryServiceGrpc;
-import io.envoyproxy.envoy.api.v2.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceStub;
-import io.envoyproxy.envoy.api.v2.RouteConfiguration;
-import io.envoyproxy.envoy.api.v2.RouteDiscoveryServiceGrpc;
-import io.envoyproxy.envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceStub;
-import io.envoyproxy.envoy.api.v2.auth.Secret;
-import io.envoyproxy.envoy.api.v2.core.Node;
-import io.envoyproxy.envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc;
-import io.envoyproxy.envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
-import io.envoyproxy.envoy.service.discovery.v2.SecretDiscoveryServiceGrpc;
-import io.envoyproxy.envoy.service.discovery.v2.SecretDiscoveryServiceGrpc.SecretDiscoveryServiceStub;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.Node;
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
+import io.envoyproxy.envoy.config.listener.v3.Listener;
+import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
+import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
+import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.secret.v3.SecretDiscoveryServiceGrpc;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -97,7 +91,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -163,11 +157,11 @@ public class DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
 
-    ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    RouteDiscoveryServiceGrpc.RouteDiscoveryServiceStub routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    SecretDiscoveryServiceGrpc.SecretDiscoveryServiceStub secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -225,7 +219,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
 
@@ -259,7 +253,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -287,7 +281,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -334,7 +328,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -364,11 +358,11 @@ public class DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
 
-    ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    RouteDiscoveryServiceGrpc.RouteDiscoveryServiceStub routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    SecretDiscoveryServiceGrpc.SecretDiscoveryServiceStub secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -469,7 +463,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -648,11 +642,11 @@ public class DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
 
-    ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
-    SecretDiscoveryServiceStub   secretStub    = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    RouteDiscoveryServiceGrpc.RouteDiscoveryServiceStub routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    SecretDiscoveryServiceGrpc.SecretDiscoveryServiceStub secretStub    = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -732,7 +726,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -834,7 +828,7 @@ public class DiscoveryServerTest {
 
     grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
 
-    ClusterDiscoveryServiceStub stub = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub stub = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -880,7 +874,7 @@ public class DiscoveryServerTest {
     DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
     StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
@@ -922,7 +916,7 @@ public class DiscoveryServerTest {
     DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
-    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
     StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);

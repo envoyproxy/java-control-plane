@@ -4,8 +4,8 @@ import static io.envoyproxy.controlplane.server.DiscoveryServer.ANY_TYPE_URL;
 
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Watch;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;

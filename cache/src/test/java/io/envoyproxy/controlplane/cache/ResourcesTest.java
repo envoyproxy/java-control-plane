@@ -9,12 +9,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import com.google.type.Color;
-import io.envoyproxy.envoy.api.v2.Cluster;
-import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
-import io.envoyproxy.envoy.api.v2.Cluster.EdsClusterConfig;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
-import io.envoyproxy.envoy.api.v2.Listener;
-import io.envoyproxy.envoy.api.v2.RouteConfiguration;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
+import io.envoyproxy.envoy.config.listener.v3.Listener;
+import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -68,9 +66,9 @@ public class ResourcesTest {
     Cluster clusterWithServiceName = Cluster.newBuilder()
         .setName(CLUSTER_NAME)
         .setEdsClusterConfig(
-            EdsClusterConfig.newBuilder()
+            Cluster.EdsClusterConfig.newBuilder()
                 .setServiceName(clusterServiceName))
-        .setType(DiscoveryType.EDS)
+        .setType(Cluster.DiscoveryType.EDS)
         .build();
 
     Map<Collection<Message>, Set<String>> cases = ImmutableMap.<Collection<Message>, Set<String>>builder()

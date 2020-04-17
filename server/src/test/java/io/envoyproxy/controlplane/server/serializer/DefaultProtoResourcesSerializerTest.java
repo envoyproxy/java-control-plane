@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.Any;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import java.util.Collection;
 import java.util.List;
 import org.junit.Test;

@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 

@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager.RouteSpecifierCase.RDS;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -10,17 +9,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.google.protobuf.Struct;
-import com.google.protobuf.util.JsonFormat;
-import io.envoyproxy.envoy.api.v2.Cluster;
-import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
-import io.envoyproxy.envoy.api.v2.Listener;
-import io.envoyproxy.envoy.api.v2.RouteConfiguration;
-import io.envoyproxy.envoy.api.v2.auth.Secret;
-import io.envoyproxy.envoy.api.v2.listener.Filter;
-import io.envoyproxy.envoy.api.v2.listener.FilterChain;
-import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
+import io.envoyproxy.envoy.config.listener.v3.Filter;
+import io.envoyproxy.envoy.config.listener.v3.FilterChain;
+import io.envoyproxy.envoy.config.listener.v3.Listener;
+import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
+import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,33 +26,30 @@ import org.slf4j.LoggerFactory;
 
 public class Resources {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Resources.class);
-
   static final String FILTER_ENVOY_ROUTER = "envoy.router";
   static final String FILTER_HTTP_CONNECTION_MANAGER = "envoy.http_connection_manager";
-
-  private static final String TYPE_URL_PREFIX = "type.googleapis.com/envoy.api.v2.";
-
-  public static final String CLUSTER_TYPE_URL = TYPE_URL_PREFIX + "Cluster";
-  public static final String ENDPOINT_TYPE_URL = TYPE_URL_PREFIX + "ClusterLoadAssignment";
-  public static final String LISTENER_TYPE_URL = TYPE_URL_PREFIX + "Listener";
-  public static final String ROUTE_TYPE_URL = TYPE_URL_PREFIX + "RouteConfiguration";
-  public static final String SECRET_TYPE_URL = TYPE_URL_PREFIX + "auth.Secret";
-
+  private static final Logger LOGGER = LoggerFactory.getLogger(Resources.class);
+  public static final String CLUSTER_TYPE_URL = "type.googleapis.com/envoy.config.cluster.v3.Cluster";
+  public static final String ENDPOINT_TYPE_URL = "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+  public static final String LISTENER_TYPE_URL = "type.googleapis.com/envoy.config.listener.v3.Listener";
+  public static final String ROUTE_TYPE_URL = "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
+  public static final String SECRET_TYPE_URL = "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret";
   public static final List<String> TYPE_URLS = ImmutableList.of(
       CLUSTER_TYPE_URL,
       ENDPOINT_TYPE_URL,
       LISTENER_TYPE_URL,
       ROUTE_TYPE_URL,
       SECRET_TYPE_URL);
-
   public static final Map<String, Class<? extends Message>> RESOURCE_TYPE_BY_URL = ImmutableMap.of(
       CLUSTER_TYPE_URL, Cluster.class,
       ENDPOINT_TYPE_URL, ClusterLoadAssignment.class,
       LISTENER_TYPE_URL, Listener.class,
       ROUTE_TYPE_URL, RouteConfiguration.class,
       SECRET_TYPE_URL, Secret.class
-      );
+  );
+
+  private Resources() {
+  }
 
   /**
    * Returns the name of the given resource message.
@@ -126,7 +119,7 @@ public class Resources {
         Cluster c = (Cluster) r;
 
         // For EDS clusters, use the cluster name or the service name override.
-        if (c.getType() == DiscoveryType.EDS) {
+        if (c.getType() == Cluster.DiscoveryType.EDS) {
           if (!isNullOrEmpty(c.getEdsClusterConfig().getServiceName())) {
             refs.add(c.getEdsClusterConfig().getServiceName());
           } else {
@@ -144,12 +137,10 @@ public class Resources {
             }
 
             try {
-              HttpConnectionManager.Builder config = HttpConnectionManager.newBuilder();
+              HttpConnectionManager config = filter.getTypedConfig().unpack(HttpConnectionManager.class);
 
-              // TODO: Filter#getConfig() is deprecated, migrate to use Filter#getTypedConfig().
-              structAsMessage(filter.getConfig(), config);
-
-              if (config.getRouteSpecifierCase() == RDS && !isNullOrEmpty(config.getRds().getRouteConfigName())) {
+              if (config.getRouteSpecifierCase() == HttpConnectionManager.RouteSpecifierCase.RDS
+                  && !isNullOrEmpty(config.getRds().getRouteConfigName())) {
                 refs.add(config.getRds().getRouteConfigName());
               }
             } catch (InvalidProtocolBufferException e) {
@@ -165,16 +156,4 @@ public class Resources {
 
     return refs.build();
   }
-
-  private static void structAsMessage(Struct struct, Message.Builder messageBuilder)
-      throws InvalidProtocolBufferException {
-
-    String json = JsonFormat.printer()
-        .preservingProtoFieldNames()
-        .print(struct);
-
-    JsonFormat.parser().merge(json, messageBuilder);
-  }
-
-  private Resources() { }
 }

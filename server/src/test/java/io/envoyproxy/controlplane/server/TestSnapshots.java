@@ -2,10 +2,10 @@ package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.Snapshot;
 import io.envoyproxy.controlplane.cache.TestResources;
-import io.envoyproxy.envoy.api.v2.Cluster;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
-import io.envoyproxy.envoy.api.v2.Listener;
-import io.envoyproxy.envoy.api.v2.RouteConfiguration;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
+import io.envoyproxy.envoy.config.listener.v3.Listener;
+import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 class TestSnapshots {

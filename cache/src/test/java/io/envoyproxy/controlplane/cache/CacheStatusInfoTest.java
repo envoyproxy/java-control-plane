@@ -2,8 +2,8 @@ package io.envoyproxy.controlplane.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.core.Node;
+import io.envoyproxy.envoy.config.core.v3.Node;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
