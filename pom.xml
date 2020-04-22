@@ -9,7 +9,9 @@
 
     <modules>
         <module>api</module>
+        <module>cache</module>
         <module>cache-v3</module>
+        <module>server</module>
         <module>server-v3</module>
         <module>test</module>
     </modules>

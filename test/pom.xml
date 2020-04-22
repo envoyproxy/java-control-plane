@@ -23,6 +23,18 @@
 
         <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
+            <artifactId>cache-v3</artifactId>
+            <version>0.1.24-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.envoyproxy.controlplane</groupId>
+            <artifactId>server-v3</artifactId>
+            <version>0.1.24-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>server</artifactId>
             <version>0.1.24-SNAPSHOT</version>
         </dependency>
