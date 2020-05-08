@@ -16,6 +16,7 @@ import io.envoyproxy.envoy.api.v2.core.Node;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -75,11 +76,48 @@ public class SimpleCacheTest {
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
+            .setVersionInfo("123")
             .build(),
         Collections.emptySet(),
         responseTracker);
 
     assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
+  }
+
+  @Test
+  public void invalidNamesListShouldReturnWatcherWithResponseInAdsModeWhenVersionIsEmpty() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, MULTIPLE_RESOURCES_SNAPSHOT2);
+
+    ResponseTracker responseTracker = new ResponseTracker();
+
+    Watch watch = cache.createWatch(
+        true,
+        DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+            .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(Resources.ENDPOINT_TYPE_URL).keySet())
+            .addResourceNames("none")
+            .setVersionInfo("")
+            .build(),
+        Collections.emptySet(),
+        responseTracker);
+
+    assertThat(responseTracker.responses).isNotEmpty();
+
+    Response response = responseTracker.responses.getFirst();
+
+    assertThat(response).isNotNull();
+    assertThat(response.version()).isEqualTo(MULTIPLE_RESOURCES_SNAPSHOT2.version(watch.request().getTypeUrl()));
+
+    List<ClusterLoadAssignment> expectedResponse = new LinkedList<>((List<ClusterLoadAssignment>)
+        MULTIPLE_RESOURCES_SNAPSHOT2.resources(watch.request().getTypeUrl()).values());
+    // Because versionInfo in request is empty we should send all requested resources to don't leave Envoy
+    // in warming state.
+    expectedResponse.add(ClusterLoadAssignment.newBuilder().setClusterName("none").build());
+
+    assertThat(response.resources().toArray(new Message[0])).containsExactlyElementsOf(expectedResponse);
   }
 
   @Test
@@ -447,7 +485,8 @@ public class SimpleCacheTest {
             .setTypeUrl("")
             .build(),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     // clearSnapshot should fail and the snapshot should be left untouched
     assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
@@ -473,7 +512,8 @@ public class SimpleCacheTest {
             .setTypeUrl("")
             .build(),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
   }
