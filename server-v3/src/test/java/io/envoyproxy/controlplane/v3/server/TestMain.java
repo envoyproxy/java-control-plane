@@ -5,6 +5,7 @@ import com.google.protobuf.Duration;
 import io.envoyproxy.controlplane.v3.cache.SimpleCache;
 import io.envoyproxy.controlplane.v3.cache.Snapshot;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster.DiscoveryType;
 import io.envoyproxy.envoy.config.core.v3.Address;
 import io.envoyproxy.envoy.config.core.v3.SocketAddress;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -35,7 +36,7 @@ public class TestMain {
                 Cluster.newBuilder()
                     .setName("cluster0")
                     .setConnectTimeout(Duration.newBuilder().setSeconds(5))
-                    .setType(Cluster.DiscoveryType.STATIC)
+                    .setType(DiscoveryType.STATIC)
                     .setLoadAssignment(ClusterLoadAssignment.newBuilder()
                         .addEndpoints(LocalityLbEndpoints.newBuilder()
                             .addLbEndpoints(LbEndpoint.newBuilder()
@@ -83,7 +84,7 @@ public class TestMain {
                 Cluster.newBuilder()
                     .setName("cluster1")
                     .setConnectTimeout(Duration.newBuilder().setSeconds(5))
-                    .setType(Cluster.DiscoveryType.STATIC)
+                    .setType(DiscoveryType.STATIC)
                     .setLoadAssignment(ClusterLoadAssignment.newBuilder()
                         .addEndpoints(LocalityLbEndpoints.newBuilder()
                             .addLbEndpoints(LbEndpoint.newBuilder()

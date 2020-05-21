@@ -51,17 +51,16 @@ public class DiscoveryServerXdsIT {
         }
       };
 
-      Snapshot snapshot = createSnapshotNoEds(false,
-          "upstream",
-          "upstream",
-          EchoContainer.PORT,
-          "listener0",
-          LISTENER_PORT,
-          "route0",
-          "1");
       cache.setSnapshot(
           GROUP,
-          snapshot
+          createSnapshotNoEds(false,
+              "upstream",
+              "upstream",
+              EchoContainer.PORT,
+              "listener0",
+              LISTENER_PORT,
+              "route0",
+              "1")
       );
 
       DiscoveryServer server = new DiscoveryServer(callbacks, cache);

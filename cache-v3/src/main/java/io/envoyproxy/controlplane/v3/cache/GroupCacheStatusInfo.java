@@ -8,7 +8,7 @@ import javax.annotation.concurrent.ThreadSafe;
  * {@code GroupCacheStatusInfo} provides an implementation of {@link StatusInfo} for a group of {@link CacheStatusInfo}.
  */
 @ThreadSafe
-public class GroupCacheStatusInfo<T> implements StatusInfo<T> {
+class GroupCacheStatusInfo<T> implements StatusInfo<T> {
   private final Collection<CacheStatusInfo<T>> statuses;
 
   public GroupCacheStatusInfo(Collection<CacheStatusInfo<T>> statuses) {

@@ -6,12 +6,17 @@ import io.envoyproxy.controlplane.v3.cache.Resources;
 import io.envoyproxy.controlplane.v3.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.v3.server.serializer.ProtoResourcesSerializer;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.secret.v3.SecretDiscoveryServiceGrpc;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -75,8 +80,8 @@ public class DiscoveryServer {
   /**
    * Returns an ADS implementation that uses this server's {@link ConfigWatcher}.
    */
-  public AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase getAggregatedDiscoveryServiceImpl() {
-    return new AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase() {
+  public AggregatedDiscoveryServiceImplBase getAggregatedDiscoveryServiceImpl() {
+    return new AggregatedDiscoveryServiceImplBase() {
       @Override
       public StreamObserver<DiscoveryRequest> streamAggregatedResources(
           StreamObserver<DiscoveryResponse> responseObserver) {
@@ -89,8 +94,8 @@ public class DiscoveryServer {
   /**
    * Returns a CDS implementation that uses this server's {@link ConfigWatcher}.
    */
-  public ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase getClusterDiscoveryServiceImpl() {
-    return new ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase() {
+  public ClusterDiscoveryServiceImplBase getClusterDiscoveryServiceImpl() {
+    return new ClusterDiscoveryServiceImplBase() {
       @Override
       public StreamObserver<DiscoveryRequest> streamClusters(
           StreamObserver<DiscoveryResponse> responseObserver) {
@@ -103,8 +108,8 @@ public class DiscoveryServer {
   /**
    * Returns an EDS implementation that uses this server's {@link ConfigWatcher}.
    */
-  public EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase getEndpointDiscoveryServiceImpl() {
-    return new EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase() {
+  public EndpointDiscoveryServiceImplBase getEndpointDiscoveryServiceImpl() {
+    return new EndpointDiscoveryServiceImplBase() {
       @Override
       public StreamObserver<DiscoveryRequest> streamEndpoints(
           StreamObserver<DiscoveryResponse> responseObserver) {
@@ -117,8 +122,8 @@ public class DiscoveryServer {
   /**
    * Returns a LDS implementation that uses this server's {@link ConfigWatcher}.
    */
-  public ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase getListenerDiscoveryServiceImpl() {
-    return new ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase() {
+  public ListenerDiscoveryServiceImplBase getListenerDiscoveryServiceImpl() {
+    return new ListenerDiscoveryServiceImplBase() {
       @Override
       public StreamObserver<DiscoveryRequest> streamListeners(
           StreamObserver<DiscoveryResponse> responseObserver) {
@@ -131,8 +136,8 @@ public class DiscoveryServer {
   /**
    * Returns a RDS implementation that uses this server's {@link ConfigWatcher}.
    */
-  public RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase getRouteDiscoveryServiceImpl() {
-    return new RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase() {
+  public RouteDiscoveryServiceImplBase getRouteDiscoveryServiceImpl() {
+    return new RouteDiscoveryServiceImplBase() {
       @Override
       public StreamObserver<DiscoveryRequest> streamRoutes(
           StreamObserver<DiscoveryResponse> responseObserver) {

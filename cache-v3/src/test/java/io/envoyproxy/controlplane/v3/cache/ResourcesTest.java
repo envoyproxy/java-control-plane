@@ -10,6 +10,8 @@ import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import com.google.type.Color;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster.EdsClusterConfig;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster.DiscoveryType;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -66,9 +68,9 @@ public class ResourcesTest {
     Cluster clusterWithServiceName = Cluster.newBuilder()
         .setName(CLUSTER_NAME)
         .setEdsClusterConfig(
-            Cluster.EdsClusterConfig.newBuilder()
+            EdsClusterConfig.newBuilder()
                 .setServiceName(clusterServiceName))
-        .setType(Cluster.DiscoveryType.EDS)
+        .setType(DiscoveryType.EDS)
         .build();
 
     Map<Collection<Message>, Set<String>> cases = ImmutableMap.<Collection<Message>, Set<String>>builder()

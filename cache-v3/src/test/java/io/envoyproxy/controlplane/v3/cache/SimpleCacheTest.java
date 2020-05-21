@@ -21,7 +21,6 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class SimpleCacheTest {
@@ -102,7 +101,7 @@ public class SimpleCacheTest {
         responseTracker);
 
     assertThat(watch.isCancelled()).isFalse();
-    Assertions.assertThat(responseTracker.responses).isNotEmpty();
+    assertThat(responseTracker.responses).isNotEmpty();
   }
 
   @Test
@@ -481,11 +480,11 @@ public class SimpleCacheTest {
 
   private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
     assertThat(watchAndTracker.watch.isCancelled()).isFalse();
-    Assertions.assertThat(watchAndTracker.tracker.responses).isEmpty();
+    assertThat(watchAndTracker.tracker.responses).isEmpty();
   }
 
   private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
-    Assertions.assertThat(watchAndTracker.tracker.responses).isNotEmpty();
+    assertThat(watchAndTracker.tracker.responses).isNotEmpty();
 
     Response response = watchAndTracker.tracker.responses.getFirst();
 

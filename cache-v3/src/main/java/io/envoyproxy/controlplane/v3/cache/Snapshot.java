@@ -1,5 +1,11 @@
 package io.envoyproxy.controlplane.v3.cache;
 
+import static io.envoyproxy.controlplane.v3.cache.Resources.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.v3.cache.Resources.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.v3.cache.Resources.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.v3.cache.Resources.ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.v3.cache.Resources.SECRET_TYPE_URL;
+
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -160,19 +166,11 @@ public abstract class Snapshot {
   public void ensureConsistent() throws SnapshotConsistencyException {
     Set<String> clusterEndpointRefs = Resources.getResourceReferences(clusters().resources().values());
 
-    ensureAllResourceNamesExist(
-        Resources.CLUSTER_TYPE_URL,
-        Resources.ENDPOINT_TYPE_URL,
-        clusterEndpointRefs,
-        endpoints().resources());
+    ensureAllResourceNamesExist(CLUSTER_TYPE_URL, ENDPOINT_TYPE_URL, clusterEndpointRefs, endpoints().resources());
 
     Set<String> listenerRouteRefs = Resources.getResourceReferences(listeners().resources().values());
 
-    ensureAllResourceNamesExist(
-        Resources.LISTENER_TYPE_URL,
-        Resources.ROUTE_TYPE_URL,
-        listenerRouteRefs,
-        routes().resources());
+    ensureAllResourceNamesExist(LISTENER_TYPE_URL, ROUTE_TYPE_URL, listenerRouteRefs, routes().resources());
   }
 
   /**
@@ -186,15 +184,15 @@ public abstract class Snapshot {
     }
 
     switch (typeUrl) {
-      case Resources.CLUSTER_TYPE_URL:
+      case CLUSTER_TYPE_URL:
         return clusters().resources();
-      case Resources.ENDPOINT_TYPE_URL:
+      case ENDPOINT_TYPE_URL:
         return endpoints().resources();
-      case Resources.LISTENER_TYPE_URL:
+      case LISTENER_TYPE_URL:
         return listeners().resources();
-      case Resources.ROUTE_TYPE_URL:
+      case ROUTE_TYPE_URL:
         return routes().resources();
-      case Resources.SECRET_TYPE_URL:
+      case SECRET_TYPE_URL:
         return secrets().resources();
       default:
         return ImmutableMap.of();
@@ -223,15 +221,15 @@ public abstract class Snapshot {
     }
 
     switch (typeUrl) {
-      case Resources.CLUSTER_TYPE_URL:
+      case CLUSTER_TYPE_URL:
         return clusters().version(resourceNames);
-      case Resources.ENDPOINT_TYPE_URL:
+      case ENDPOINT_TYPE_URL:
         return endpoints().version(resourceNames);
-      case Resources.LISTENER_TYPE_URL:
+      case LISTENER_TYPE_URL:
         return listeners().version(resourceNames);
-      case Resources.ROUTE_TYPE_URL:
+      case ROUTE_TYPE_URL:
         return routes().version(resourceNames);
-      case Resources.SECRET_TYPE_URL:
+      case SECRET_TYPE_URL:
         return secrets().version(resourceNames);
       default:
         return "";

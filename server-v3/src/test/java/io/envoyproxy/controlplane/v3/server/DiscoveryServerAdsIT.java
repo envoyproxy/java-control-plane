@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.v3.server;
 
+import static io.envoyproxy.controlplane.v3.server.TestSnapshots.createSnapshot;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -51,7 +52,7 @@ public class DiscoveryServerAdsIT {
 
       cache.setSnapshot(
           GROUP,
-          TestSnapshots.createSnapshot(true,
+          createSnapshot(true,
               "upstream",
               UPSTREAM.ipAddress(),
               EchoContainer.PORT,

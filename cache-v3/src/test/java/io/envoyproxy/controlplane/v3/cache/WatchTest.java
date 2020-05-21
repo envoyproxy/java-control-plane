@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 public class WatchTest {
@@ -92,6 +91,6 @@ public class WatchTest {
 
     assertThatThrownBy(() -> watch.respond(response3)).isInstanceOf(WatchCancelledException.class);
 
-    Assertions.assertThat(responses).containsExactly(response1, response2);
+    assertThat(responses).containsExactly(response1, response2);
   }
 }

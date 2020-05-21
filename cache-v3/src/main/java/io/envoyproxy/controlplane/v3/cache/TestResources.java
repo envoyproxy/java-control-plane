@@ -4,14 +4,19 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Any;
 import com.google.protobuf.util.Durations;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster.DiscoveryType;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster.EdsClusterConfig;
 import io.envoyproxy.envoy.config.core.v3.Address;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
 import io.envoyproxy.envoy.config.core.v3.ApiConfigSource;
+import io.envoyproxy.envoy.config.core.v3.ApiConfigSource.ApiType;
 import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import io.envoyproxy.envoy.config.core.v3.ConfigSource;
 import io.envoyproxy.envoy.config.core.v3.DataSource;
 import io.envoyproxy.envoy.config.core.v3.GrpcService;
+import io.envoyproxy.envoy.config.core.v3.GrpcService.EnvoyGrpc;
 import io.envoyproxy.envoy.config.core.v3.SocketAddress;
+import io.envoyproxy.envoy.config.core.v3.SocketAddress.Protocol;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.endpoint.v3.Endpoint;
 import io.envoyproxy.envoy.config.endpoint.v3.LbEndpoint;
@@ -25,6 +30,7 @@ import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.config.route.v3.RouteMatch;
 import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
+import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.CodecType;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpFilter;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.Rds;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
@@ -58,10 +64,10 @@ public class TestResources {
     return Cluster.newBuilder()
         .setName(clusterName)
         .setConnectTimeout(Durations.fromSeconds(5))
-        .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder()
+        .setEdsClusterConfig(EdsClusterConfig.newBuilder()
             .setEdsConfig(edsSource)
             .setServiceName(clusterName))
-        .setType(Cluster.DiscoveryType.EDS)
+        .setType(DiscoveryType.EDS)
         .build();
   }
 
@@ -76,7 +82,7 @@ public class TestResources {
     return Cluster.newBuilder()
         .setName(clusterName)
         .setConnectTimeout(Durations.fromSeconds(5))
-        .setType(Cluster.DiscoveryType.STRICT_DNS)
+        .setType(DiscoveryType.STRICT_DNS)
         .setLoadAssignment(createEndpoint(clusterName, address, port))
         .build();
   }
@@ -108,7 +114,7 @@ public class TestResources {
                         .setSocketAddress(SocketAddress.newBuilder()
                             .setAddress(address)
                             .setPortValue(port)
-                            .setProtocol(SocketAddress.Protocol.TCP))))))
+                            .setProtocol(Protocol.TCP))))))
         .build();
   }
 
@@ -130,14 +136,14 @@ public class TestResources {
         .setResourceApiVersion(ApiVersion.V3)
         .setApiConfigSource(ApiConfigSource.newBuilder()
             .setTransportApiVersion(ApiVersion.V3)
-            .setApiType(ApiConfigSource.ApiType.GRPC)
+            .setApiType(ApiType.GRPC)
             .addGrpcServices(GrpcService.newBuilder()
-                .setEnvoyGrpc(GrpcService.EnvoyGrpc.newBuilder()
+                .setEnvoyGrpc(EnvoyGrpc.newBuilder()
                     .setClusterName(XDS_CLUSTER))))
         .build();
 
     HttpConnectionManager manager = HttpConnectionManager.newBuilder()
-        .setCodecType(HttpConnectionManager.CodecType.AUTO)
+        .setCodecType(CodecType.AUTO)
         .setStatPrefix("http")
         .setRds(Rds.newBuilder()
             .setConfigSource(rdsSource)
@@ -152,7 +158,7 @@ public class TestResources {
             .setSocketAddress(SocketAddress.newBuilder()
                 .setAddress(ANY_ADDRESS)
                 .setPortValue(port)
-                .setProtocol(SocketAddress.Protocol.TCP)))
+                .setProtocol(Protocol.TCP)))
         .addFilterChains(FilterChain.newBuilder()
             .addFilters(Filter.newBuilder()
                 .setName(Resources.FILTER_HTTP_CONNECTION_MANAGER)
