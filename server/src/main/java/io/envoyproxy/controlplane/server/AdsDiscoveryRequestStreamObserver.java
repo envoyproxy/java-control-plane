@@ -4,8 +4,6 @@ import static io.envoyproxy.controlplane.server.DiscoveryServer.ANY_TYPE_URL;
 
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Watch;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
@@ -19,24 +17,29 @@ import java.util.function.Supplier;
  * {@code AdsDiscoveryRequestStreamObserver} is an implementation of {@link DiscoveryRequestStreamObserver} tailored for
  * ADS streams, which handle multiple watches for all TYPE_URLS.
  */
-public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObserver {
+public class AdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStreamObserver<T, U> {
   private final ConcurrentMap<String, Watch> watches;
   private final ConcurrentMap<String, LatestDiscoveryResponse> latestResponse;
   private final ConcurrentMap<String, Set<String>> ackedResources;
+  private final DiscoveryServer<T, U> discoveryServer;
 
-  AdsDiscoveryRequestStreamObserver(StreamObserver<DiscoveryResponse> responseObserver,
-                                    long streamId,
-                                    Executor executor,
-                                    DiscoveryServer discoveryServer) {
+  AdsDiscoveryRequestStreamObserver(StreamObserver<U> responseObserver,
+      long streamId,
+      Executor executor,
+      DiscoveryServer discoveryServer) {
     super(ANY_TYPE_URL, responseObserver, streamId, executor, discoveryServer);
-    this.watches = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-    this.latestResponse = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
-    this.ackedResources = new ConcurrentHashMap<>(Resources.TYPE_URLS.size());
+
+    // NOTE: while V2 URLs are referenced here, the size of V2_TYPE_URLS and V3_TYPE_URLS is the
+    // same, so this isn't actually pinning to a version.
+    this.watches = new ConcurrentHashMap<>(Resources.V2_TYPE_URLS.size());
+    this.latestResponse = new ConcurrentHashMap<>(Resources.V2_TYPE_URLS.size());
+    this.ackedResources = new ConcurrentHashMap<>(Resources.V2_TYPE_URLS.size());
+    this.discoveryServer = discoveryServer;
   }
 
   @Override
-  public void onNext(DiscoveryRequest request) {
-    if (request.getTypeUrl().isEmpty()) {
+  public void onNext(T request) {
+    if (discoveryServer.wrapXdsRequest(request).getTypeUrl().isEmpty()) {
       closeWithError(
           Status.UNKNOWN
               .withDescription(String.format("[%d] type URL is required for ADS", streamId))
@@ -66,9 +69,9 @@ public class AdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObs
   @Override
   void setLatestResponse(String typeUrl, LatestDiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
-    if (typeUrl.equals(Resources.CLUSTER_TYPE_URL)) {
+    if (typeUrl.equals(Resources.CLUSTER_TYPE_URL) || typeUrl.equals(Resources.V3_CLUSTER_TYPE_URL)) {
       hasClusterChanged = true;
-    } else if (typeUrl.equals(Resources.ENDPOINT_TYPE_URL)) {
+    } else if (typeUrl.equals(Resources.ENDPOINT_TYPE_URL) || typeUrl.equals(Resources.V3_ENDPOINT_TYPE_URL)) {
       hasClusterChanged = false;
     }
   }

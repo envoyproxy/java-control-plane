@@ -2,7 +2,6 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.auto.value.AutoValue;
 import com.google.protobuf.Message;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.Collection;
 
 /**
@@ -11,14 +10,15 @@ import java.util.Collection;
 @AutoValue
 public abstract class Response {
 
-  public static Response create(DiscoveryRequest request, Collection<? extends Message> resources, String version) {
+  public static Response create(XdsRequest request, Collection<? extends Message> resources,
+      String version) {
     return new AutoValue_Response(request, resources, version);
   }
 
   /**
    * Returns the original request associated with the response.
    */
-  public abstract DiscoveryRequest request();
+  public abstract XdsRequest request();
 
   /**
    * Returns the resources to include in the response.

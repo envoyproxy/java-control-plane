@@ -1,6 +1,5 @@
 package io.envoyproxy.controlplane.cache;
 
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.ThreadSafe;
@@ -25,7 +24,7 @@ public interface ConfigWatcher {
    */
   Watch createWatch(
       boolean ads,
-      DiscoveryRequest request,
+      XdsRequest request,
       Set<String> knownResourceNames,
       Consumer<Response> responseConsumer,
       boolean hasClusterChanged);

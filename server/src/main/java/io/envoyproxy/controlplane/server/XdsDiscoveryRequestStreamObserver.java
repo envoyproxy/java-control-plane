@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.Watch;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.Set;
@@ -12,17 +11,17 @@ import java.util.function.Supplier;
  * {@code XdsDiscoveryRequestStreamObserver} is a lightweight implementation of {@link DiscoveryRequestStreamObserver}
  * tailored for non-ADS streams which handle a single watch.
  */
-public class XdsDiscoveryRequestStreamObserver extends DiscoveryRequestStreamObserver {
+public class XdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStreamObserver<T, U> {
   private volatile Watch watch;
   private volatile LatestDiscoveryResponse latestDiscoveryResponse;
   // ackedResources is only used in the same thread so it need not be volatile
   private Set<String> ackedResources;
 
   XdsDiscoveryRequestStreamObserver(String defaultTypeUrl,
-                                    StreamObserver<DiscoveryResponse> responseObserver,
-                                    long streamId,
-                                    Executor executor,
-                                    DiscoveryServer discoveryServer) {
+      StreamObserver<U> responseObserver,
+      long streamId,
+      Executor executor,
+      DiscoveryServer discoveryServer) {
     super(defaultTypeUrl, responseObserver, streamId, executor, discoveryServer);
     this.ackedResources = Collections.emptySet();
   }

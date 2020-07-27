@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
-import io.envoyproxy.envoy.api.v2.core.Node;
+import io.envoyproxy.envoy.config.core.v3.Node;
 
 /**
  * {@code StatusInfo} tracks the state for remote envoy nodes.
@@ -13,7 +13,8 @@ public interface StatusInfo<T> {
   long lastWatchRequestTime();
 
   /**
-   * Returns the node grouping represented by this status, generated via {@link NodeGroup#hash(Node)}.
+   * Returns the node grouping represented by this status, generated via
+   * {@link NodeGroup#hashv3(Node)} or {@link NodeGroup#hashV2(io.envoyproxy.envoy.api.v2.core.Node)}.
    */
   T nodeGroup();
 

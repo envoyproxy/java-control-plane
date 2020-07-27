@@ -2,11 +2,13 @@ package io.envoyproxy.controlplane.server;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Duration;
-import io.envoyproxy.controlplane.cache.SimpleCache;
-import io.envoyproxy.controlplane.cache.Snapshot;
+import io.envoyproxy.controlplane.cache.NodeGroup;
+import io.envoyproxy.controlplane.cache.V2SimpleCache;
+import io.envoyproxy.controlplane.cache.V2Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
 import io.envoyproxy.envoy.api.v2.core.Address;
+import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.api.v2.core.SocketAddress;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -18,16 +20,25 @@ public class TestMain {
   private static final String GROUP = "key";
 
   /**
-   * Example minimal xDS implementation using the java-control-plane lib.
+   * Example minimal xDS implementation using the java-control-plane lib. This example configures
+   * a DiscoveryServer with a v2 cache, but handles v2 or v3 requests from data planes.
    *
    * @param arg command-line args
    */
   public static void main(String[] arg) throws IOException, InterruptedException {
-    SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new NodeGroup<String>() {
+      @Override public String hashV2(Node node) {
+        return GROUP;
+      }
+
+      @Override public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+        return GROUP;
+      }
+    });
 
     cache.setSnapshot(
         GROUP,
-        Snapshot.create(
+        V2Snapshot.create(
             ImmutableList.of(
                 Cluster.newBuilder()
                     .setName("cluster0")
@@ -42,14 +53,20 @@ public class TestMain {
             ImmutableList.of(),
             "1"));
 
-    DiscoveryServer discoveryServer = new DiscoveryServer(cache);
+    V2DiscoveryServer discoveryServer = new V2DiscoveryServer(cache);
+    V3DiscoveryServer v3DiscoveryServer = new V3DiscoveryServer(cache);
 
     ServerBuilder builder = NettyServerBuilder.forPort(12345)
         .addService(discoveryServer.getAggregatedDiscoveryServiceImpl())
         .addService(discoveryServer.getClusterDiscoveryServiceImpl())
         .addService(discoveryServer.getEndpointDiscoveryServiceImpl())
         .addService(discoveryServer.getListenerDiscoveryServiceImpl())
-        .addService(discoveryServer.getRouteDiscoveryServiceImpl());
+        .addService(discoveryServer.getRouteDiscoveryServiceImpl())
+        .addService(v3DiscoveryServer.getAggregatedDiscoveryServiceImpl())
+        .addService(v3DiscoveryServer.getClusterDiscoveryServiceImpl())
+        .addService(v3DiscoveryServer.getEndpointDiscoveryServiceImpl())
+        .addService(v3DiscoveryServer.getListenerDiscoveryServiceImpl())
+        .addService(v3DiscoveryServer.getRouteDiscoveryServiceImpl());
 
     Server server = builder.build();
 
@@ -63,7 +80,7 @@ public class TestMain {
 
     cache.setSnapshot(
         GROUP,
-        Snapshot.create(
+        V2Snapshot.create(
             ImmutableList.of(
                 Cluster.newBuilder()
                     .setName("cluster1")

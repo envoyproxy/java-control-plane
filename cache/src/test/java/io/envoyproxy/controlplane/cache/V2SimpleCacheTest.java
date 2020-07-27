@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,7 +24,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
-public class SimpleCacheTest {
+public class V2SimpleCacheTest {
 
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
   private static final String CLUSTER_NAME = "cluster0";
@@ -35,35 +36,35 @@ public class SimpleCacheTest {
   private static final String VERSION1 = UUID.randomUUID().toString();
   private static final String VERSION2 = UUID.randomUUID().toString();
 
-  private static final Snapshot SNAPSHOT1 = Snapshot.create(
+  private static final V2Snapshot SNAPSHOT1 = V2Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
-      ImmutableList.of(Secret.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION1);
 
-  private static final Snapshot SNAPSHOT2 = Snapshot.create(
+  private static final V2Snapshot SNAPSHOT2 = V2Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
-      ImmutableList.of(Secret.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION2);
 
-  private static final Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = Snapshot.create(
+  private static final V2Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = V2Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build(),
           Cluster.newBuilder().setName(SECONDARY_CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.newBuilder().setClusterName(CLUSTER_NAME).build(),
           ClusterLoadAssignment.newBuilder().setClusterName(SECONDARY_CLUSTER_NAME).build()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
-      ImmutableList.of(Secret.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION2);
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponseInAdsMode() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -71,11 +72,11 @@ public class SimpleCacheTest {
 
     Watch watch = cache.createWatch(
         true,
-        DiscoveryRequest.newBuilder()
+        XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
-            .build(),
+            .build()),
         Collections.emptySet(),
         responseTracker);
 
@@ -84,7 +85,7 @@ public class SimpleCacheTest {
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithResponseInXdsMode() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -92,11 +93,11 @@ public class SimpleCacheTest {
 
     Watch watch = cache.createWatch(
         false,
-        DiscoveryRequest.newBuilder()
+        XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
-            .build(),
+            .build()),
         Collections.emptySet(),
         responseTracker);
 
@@ -106,20 +107,20 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatch() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       ResponseTracker responseTracker = new ResponseTracker();
 
       Watch watch = cache.createWatch(
           ADS,
-          DiscoveryRequest.newBuilder()
+          XdsRequest.create(DiscoveryRequest.newBuilder()
               .setNode(Node.getDefaultInstance())
               .setTypeUrl(typeUrl)
               .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-              .build(),
+              .build()),
           Collections.emptySet(),
           responseTracker);
 
@@ -133,7 +134,7 @@ public class SimpleCacheTest {
 
   @Test
   public void shouldSendEdsWhenClusterChangedButEdsVersionDidnt() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -141,12 +142,12 @@ public class SimpleCacheTest {
 
     Watch watch = cache.createWatch(
         ADS,
-        DiscoveryRequest.newBuilder()
+        XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setVersionInfo(VERSION1)
             .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
             .addAllResourceNames(SNAPSHOT1.resources(Resources.ENDPOINT_TYPE_URL).keySet())
-            .build(),
+            .build()),
         Sets.newHashSet(""),
         responseTracker,
         true);
@@ -160,9 +161,9 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetAfterWatch() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -170,11 +171,11 @@ public class SimpleCacheTest {
 
               Watch watch = cache.createWatch(
                   ADS,
-                  DiscoveryRequest.newBuilder()
+                  XdsRequest.create(DiscoveryRequest.newBuilder()
                       .setNode(Node.getDefaultInstance())
                       .setTypeUrl(typeUrl)
                       .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                      .build(),
+                      .build()),
                   Collections.emptySet(),
                   responseTracker);
 
@@ -183,14 +184,14 @@ public class SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThatWatchReceivesSnapshot(watches.get(typeUrl), SNAPSHOT1);
     }
   }
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithRequestVersion() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -199,7 +200,7 @@ public class SimpleCacheTest {
     HashMap<String, WatchAndTracker> watches = new HashMap<>();
 
     for (int i = 0; i < 2; ++i) {
-      watches.putAll(Resources.TYPE_URLS.stream()
+      watches.putAll(Resources.V2_TYPE_URLS.stream()
           .collect(Collectors.toMap(
               typeUrl -> typeUrl,
               typeUrl -> {
@@ -207,12 +208,12 @@ public class SimpleCacheTest {
 
                 Watch watch = cache.createWatch(
                     ADS,
-                    DiscoveryRequest.newBuilder()
+                    XdsRequest.create(DiscoveryRequest.newBuilder()
                         .setNode(Node.getDefaultInstance())
                         .setTypeUrl(typeUrl)
                         .setVersionInfo(SNAPSHOT1.version(typeUrl))
                         .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                        .build(),
+                        .build()),
                     SNAPSHOT2.resources(typeUrl).keySet(),
                     r -> {
                       responseTracker.accept(r);
@@ -225,13 +226,13 @@ public class SimpleCacheTest {
     }
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT2);
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThatWatchReceivesSnapshot(watches.get(typeUrl), SNAPSHOT2);
     }
 
@@ -244,7 +245,7 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHints() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, MULTIPLE_RESOURCES_SNAPSHOT2);
 
@@ -253,7 +254,7 @@ public class SimpleCacheTest {
     //
     // Note how we're requesting the resources from MULTIPLE_RESOURCE_SNAPSHOT2 while claiming we
     // only know about the ones from SNAPSHOT2
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -261,12 +262,12 @@ public class SimpleCacheTest {
 
               Watch watch = cache.createWatch(
                   ADS,
-                  DiscoveryRequest.newBuilder()
+                  XdsRequest.create(DiscoveryRequest.newBuilder()
                       .setNode(Node.getDefaultInstance())
                       .setTypeUrl(typeUrl)
                       .setVersionInfo(MULTIPLE_RESOURCES_SNAPSHOT2.version(typeUrl))
                       .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
-                      .build(),
+                      .build()),
                   SNAPSHOT2.resources(typeUrl).keySet(),
                   responseTracker);
 
@@ -286,7 +287,7 @@ public class SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHintsNoChange() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT2);
 
@@ -297,7 +298,7 @@ public class SimpleCacheTest {
     // while we only know about the resources found in SNAPSHOT2. Since SNAPSHOT2 is the current
     // snapshot, we have nothing to respond with for the new resources so we should not trigger
     // the watch.
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -305,12 +306,12 @@ public class SimpleCacheTest {
 
               Watch watch = cache.createWatch(
                   ADS,
-                  DiscoveryRequest.newBuilder()
+                  XdsRequest.create(DiscoveryRequest.newBuilder()
                       .setNode(Node.getDefaultInstance())
                       .setTypeUrl(typeUrl)
                       .setVersionInfo(SNAPSHOT2.version(typeUrl))
                       .addAllResourceNames(MULTIPLE_RESOURCES_SNAPSHOT2.resources(typeUrl).keySet())
-                      .build(),
+                      .build()),
                   SNAPSHOT2.resources(typeUrl).keySet(),
                   responseTracker);
 
@@ -325,11 +326,11 @@ public class SimpleCacheTest {
 
   @Test
   public void setSnapshotWithVersionMatchingRequestShouldLeaveWatchOpenWithoutAdditionalResponse() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -337,12 +338,12 @@ public class SimpleCacheTest {
 
               Watch watch = cache.createWatch(
                   ADS,
-                  DiscoveryRequest.newBuilder()
+                  XdsRequest.create(DiscoveryRequest.newBuilder()
                       .setNode(Node.getDefaultInstance())
                       .setTypeUrl(typeUrl)
                       .setVersionInfo(SNAPSHOT1.version(typeUrl))
                       .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                      .build(),
+                      .build()),
                   SNAPSHOT1.resources(typeUrl).keySet(),
                   responseTracker);
 
@@ -350,23 +351,23 @@ public class SimpleCacheTest {
             }));
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     // The request version still matches the current snapshot version, so the watches shouldn't receive any responses.
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
   }
 
   @Test
   public void watchesAreReleasedAfterCancel() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
-    Map<String, WatchAndTracker> watches = Resources.TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -374,11 +375,11 @@ public class SimpleCacheTest {
 
               Watch watch = cache.createWatch(
                   ADS,
-                  DiscoveryRequest.newBuilder()
+                  XdsRequest.create(DiscoveryRequest.newBuilder()
                       .setNode(Node.getDefaultInstance())
                       .setTypeUrl(typeUrl)
                       .addAllResourceNames(SNAPSHOT1.resources(typeUrl).keySet())
-                      .build(),
+                      .build()),
                   Collections.emptySet(),
                   responseTracker);
 
@@ -398,18 +399,18 @@ public class SimpleCacheTest {
 
   @Test
   public void watchIsLeftOpenIfNotRespondedImmediately() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
-    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
+    cache.setSnapshot(SingleNodeGroup.GROUP, V2Snapshot.create(
         ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
 
     ResponseTracker responseTracker = new ResponseTracker();
     Watch watch = cache.createWatch(
         true,
-        DiscoveryRequest.newBuilder()
+        XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(ROUTE_TYPE_URL)
             .addAllResourceNames(Collections.singleton(ROUTE_NAME))
-            .build(),
+          .build()),
         Collections.singleton(ROUTE_NAME),
         responseTracker);
 
@@ -418,7 +419,7 @@ public class SimpleCacheTest {
 
   @Test
   public void getSnapshot() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -427,7 +428,7 @@ public class SimpleCacheTest {
 
   @Test
   public void clearSnapshot() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -438,14 +439,17 @@ public class SimpleCacheTest {
 
   @Test
   public void clearSnapshotWithWatches() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    final Watch watch = cache.createWatch(ADS, DiscoveryRequest.newBuilder()
+    // Create a watch with an arbitrary type URL and a versionInfo that matches the saved
+    // snapshot, so the watch doesn't immediately close.
+    final Watch watch = cache.createWatch(ADS, XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
-            .setTypeUrl("")
-            .build(),
+            .setTypeUrl(CLUSTER_TYPE_URL)
+            .setVersionInfo(SNAPSHOT1.version(CLUSTER_TYPE_URL))
+            .build()),
         Collections.emptySet(),
         r -> { });
 
@@ -464,14 +468,14 @@ public class SimpleCacheTest {
 
   @Test
   public void groups() {
-    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
     assertThat(cache.groups()).isEmpty();
 
-    cache.createWatch(ADS, DiscoveryRequest.newBuilder()
+    cache.createWatch(ADS, XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
-            .setTypeUrl("")
-            .build(),
+            .setTypeUrl(CLUSTER_TYPE_URL)
+            .build()),
         Collections.emptySet(),
         r -> { });
 
@@ -483,7 +487,7 @@ public class SimpleCacheTest {
     assertThat(watchAndTracker.tracker.responses).isEmpty();
   }
 
-  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
+  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, V2Snapshot snapshot) {
     assertThat(watchAndTracker.tracker.responses).isNotEmpty();
 
     Response response = watchAndTracker.tracker.responses.getFirst();
@@ -519,12 +523,17 @@ public class SimpleCacheTest {
     private static final String GROUP = "node";
 
     @Override
-    public String hash(Node node) {
+    public String hashV2(Node node) {
       if (node == null) {
         throw new IllegalArgumentException("node");
       }
 
       return GROUP;
+    }
+
+    @Override
+    public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+      throw new IllegalStateException("should not have received a v3 Node in a v2 Test");
     }
   }
 

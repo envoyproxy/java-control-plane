@@ -1,10 +1,16 @@
 package io.envoyproxy.controlplane.server.serializer;
 
+import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V2;
+import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V3;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.protobuf.Any;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.Resources.ApiVersion;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -16,19 +22,27 @@ import java.util.concurrent.ExecutionException;
  * for the same group, because the last serialized proto instance of {@link DiscoveryResponse} is set in
  * DiscoveryRequestStreamObserver#latestResponse.
  */
-public class CachedProtoResourcesSerializer implements ProtoResourcesSerializer {
+public class CachedProtoResourcesSerializer extends DefaultProtoResourcesSerializer {
 
-  private static final Cache<Message, Any> cache = CacheBuilder.newBuilder()
-      .weakValues()
-      .build();
+  private static final Map<ApiVersion, Cache<Message, Any>> caches =
+      new HashMap<ApiVersion, Cache<Message, Any>>() {
+    {
+      put(V2, CacheBuilder.newBuilder()
+          .weakValues()
+          .build());
+      put(V3, CacheBuilder.newBuilder()
+          .weakValues()
+          .build());
+    }};
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public Any serialize(Message resource) {
+  public Any serialize(Message resource, ApiVersion apiVersion) {
     try {
-      return cache.get(resource, () -> Any.pack(resource));
+      return caches.get(apiVersion).get(resource,
+          () -> super.maybeRewriteTypeUrl(Any.pack(resource), apiVersion));
     } catch (ExecutionException e) {
       throw new ProtoSerializerException("Error while serializing resources", e);
     }

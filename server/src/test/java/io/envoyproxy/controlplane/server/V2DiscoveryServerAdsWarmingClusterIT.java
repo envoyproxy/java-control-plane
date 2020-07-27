@@ -1,6 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.controlplane.server.TestSnapshots.createSnapshot;
+import static io.envoyproxy.controlplane.server.V2TestSnapshots.createSnapshot;
+import static io.envoyproxy.envoy.api.v2.core.ApiVersion.V2;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -10,9 +11,9 @@ import com.google.protobuf.util.Durations;
 import io.envoyproxy.controlplane.cache.CacheStatusInfo;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources;
-import io.envoyproxy.controlplane.cache.SimpleCache;
-import io.envoyproxy.controlplane.cache.Snapshot;
 import io.envoyproxy.controlplane.cache.TestResources;
+import io.envoyproxy.controlplane.cache.V2SimpleCache;
+import io.envoyproxy.controlplane.cache.V2Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
@@ -22,6 +23,7 @@ import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.core.AggregatedConfigSource;
 import io.envoyproxy.envoy.api.v2.core.ConfigSource;
 import io.envoyproxy.envoy.api.v2.core.Http2ProtocolOptions;
+import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.ConcurrentMap;
@@ -36,12 +38,20 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import org.testcontainers.shaded.org.apache.commons.lang.math.RandomUtils;
 
-public class DiscoveryServerAdsWarmingClusterIT {
+public class V2DiscoveryServerAdsWarmingClusterIT {
 
-  private static final String CONFIG = "envoy/ads.config.yaml";
+  private static final String CONFIG = "envoy/ads.v2.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
-  private static final CustomCache<String> cache = new CustomCache<>(node -> GROUP);
+  private static final CustomCache<String> cache = new CustomCache<>(new NodeGroup<String>() {
+    @Override public String hashV2(Node node) {
+      return GROUP;
+    }
+
+    @Override public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+      throw new IllegalStateException("unexpected v3 node for v2 test");
+    }
+  });
 
   private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(1);
   private static final CountDownLatch onStreamRequestLatch = new CountDownLatch(1);
@@ -51,25 +61,32 @@ public class DiscoveryServerAdsWarmingClusterIT {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
       ExecutorService executorService = Executors.newSingleThreadExecutor();
-      final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
-        @Override
-        public void onStreamOpen(long streamId, String typeUrl) {
-          onStreamOpenLatch.countDown();
-        }
+      final DiscoveryServerCallbacks callbacks =
+          new DiscoveryServerCallbacks() {
+            @Override
+            public void onStreamOpen(long streamId, String typeUrl) {
+              onStreamOpenLatch.countDown();
+            }
 
-        @Override
-        public void onStreamRequest(long streamId, DiscoveryRequest request) {
-          onStreamRequestLatch.countDown();
-        }
+            @Override
+            public void onStreamRequest(long streamId, DiscoveryRequest request) {
+              onStreamRequestLatch.countDown();
+            }
 
-        @Override
-        public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
-          // Here we update a Snapshot with working cluster, but we change only CDS version, not EDS version.
-          // This change allows to test if EDS will be sent anyway after CDS was sent.
-          createSnapshotWithWorkingClusterWithTheSameEdsVersion(request, executorService);
-          onStreamResponseLatch.countDown();
-        }
-      };
+            @Override
+            public void onV3StreamRequest(long streamId,
+                io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
+              throw new IllegalStateException("unexpected v3 request for v2 test");
+            }
+
+            @Override
+            public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
+              // Here we update a Snapshot with working cluster, but we change only CDS version, not EDS version.
+              // This change allows to test if EDS will be sent anyway after CDS was sent.
+              createSnapshotWithWorkingClusterWithTheSameEdsVersion(request, executorService);
+              onStreamResponseLatch.countDown();
+            }
+          };
 
       cache.setSnapshot(
           GROUP,
@@ -81,7 +98,7 @@ public class DiscoveryServerAdsWarmingClusterIT {
               LISTENER_PORT,
               "route0"));
 
-      DiscoveryServer server = new DiscoveryServer(callbacks, cache);
+      V2DiscoveryServer server = new V2DiscoveryServer(callbacks, cache);
 
       builder.addService(server.getAggregatedDiscoveryServiceImpl());
     }
@@ -139,7 +156,7 @@ public class DiscoveryServerAdsWarmingClusterIT {
     }
   }
 
-  private static Snapshot createSnapshotWithNotWorkingCluster(boolean ads,
+  private static V2Snapshot createSnapshotWithNotWorkingCluster(boolean ads,
                                                               String clusterName,
                                                               String endpointAddress,
                                                               int endpointPort,
@@ -162,11 +179,12 @@ public class DiscoveryServerAdsWarmingClusterIT {
         .setType(Cluster.DiscoveryType.EDS)
         .build();
     ClusterLoadAssignment endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListener(ads, listenerName, listenerPort, routeName);
+    Listener listener = TestResources.createListener(ads, V2, listenerName, listenerPort,
+        routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     // here we have new version of resources other than CDS.
-    return Snapshot.create(
+    return V2Snapshot.create(
         ImmutableList.of(cluster),
         "1",
         ImmutableList.of(endpoint),
@@ -186,15 +204,15 @@ public class DiscoveryServerAdsWarmingClusterIT {
    * responsible for responding for watches. Because to reproduce this problem we need a lot of connected Envoy's and
    * changes to snapshot it is easier to reproduce this way.
    */
-  static class CustomCache<T> extends SimpleCache<T> {
+  static class CustomCache<T> extends V2SimpleCache<T> {
 
     public CustomCache(NodeGroup<T> groups) {
       super(groups);
     }
 
     @Override
-    protected void respondWithSpecificOrder(T group, Snapshot snapshot,
-                                            ConcurrentMap<String, CacheStatusInfo<T>> status) {
+    protected void respondWithSpecificOrder(T group, V2Snapshot snapshot,
+        ConcurrentMap<Resources.ResourceType, CacheStatusInfo<T>> status) {
       // This code has been removed to show specific case which is hard to reproduce in integration test:
       //      1. Envoy connects to control-plane
       //      2. Snapshot already exists in control-plane <- other instance share same group

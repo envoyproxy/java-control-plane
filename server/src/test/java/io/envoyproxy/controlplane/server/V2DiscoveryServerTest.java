@@ -16,6 +16,7 @@ import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
+import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterDiscoveryServiceGrpc;
@@ -32,6 +33,7 @@ import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.RouteDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.api.v2.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceStub;
 import io.envoyproxy.envoy.api.v2.auth.Secret;
+import io.envoyproxy.envoy.api.v2.core.ApiVersion;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.discovery.v2.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
@@ -57,12 +59,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import org.assertj.core.api.Condition;
 import org.junit.Rule;
 import org.junit.Test;
 
-public class DiscoveryServerTest {
+public class V2DiscoveryServerTest {
 
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
 
@@ -83,7 +84,8 @@ public class DiscoveryServerTest {
 
   private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = TestResources.createListener(ADS, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+  private static final Listener LISTENER = TestResources.createListener(ADS, ApiVersion.V2,
+      LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
@@ -93,7 +95,7 @@ public class DiscoveryServerTest {
   @Test
   public void testAggregatedHandler() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
@@ -139,13 +141,13 @@ public class DiscoveryServerTest {
 
     responseObserver.assertThatNoErrors();
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThat(configWatcher.counts).containsEntry(typeUrl, 1);
     }
 
-    assertThat(configWatcher.counts).hasSize(Resources.TYPE_URLS.size());
+    assertThat(configWatcher.counts).hasSize(Resources.V2_TYPE_URLS.size());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       assertThat(responseObserver.responses).haveAtLeastOne(new Condition<>(
           r -> r.getTypeUrl().equals(typeUrl) && r.getVersionInfo().equals(VERSION),
           "missing expected response of type %s", typeUrl));
@@ -155,7 +157,7 @@ public class DiscoveryServerTest {
   @Test
   public void testSeparateHandlers() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
@@ -169,7 +171,7 @@ public class DiscoveryServerTest {
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
@@ -215,19 +217,19 @@ public class DiscoveryServerTest {
           "missing expected response of type %s", typeUrl));
     }
 
-    assertThat(configWatcher.counts).hasSize(Resources.TYPE_URLS.size());
+    assertThat(configWatcher.counts).hasSize(Resources.V2_TYPE_URLS.size());
   }
 
   @Test
   public void testWatchClosed() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(true, ImmutableTable.of());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
 
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -255,13 +257,13 @@ public class DiscoveryServerTest {
   @Test
   public void testSendError() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
       responseObserver.sendError = true;
 
@@ -283,13 +285,13 @@ public class DiscoveryServerTest {
   @Test
   public void testStaleNonce() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
@@ -330,7 +332,7 @@ public class DiscoveryServerTest {
   @Test
   public void testAggregateHandlerDefaultRequestType() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(true, ImmutableTable.of());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
@@ -356,7 +358,7 @@ public class DiscoveryServerTest {
   @Test
   public void testSeparateHandlersDefaultRequestType() throws InterruptedException {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
@@ -370,7 +372,7 @@ public class DiscoveryServerTest {
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
@@ -416,9 +418,9 @@ public class DiscoveryServerTest {
     final CountDownLatch streamCloseLatch = new CountDownLatch(1);
     final CountDownLatch streamOpenLatch = new CountDownLatch(1);
     final AtomicReference<CountDownLatch> streamRequestLatch =
-        new AtomicReference<>(new CountDownLatch(Resources.TYPE_URLS.size()));
+        new AtomicReference<>(new CountDownLatch(Resources.V2_TYPE_URLS.size()));
     final AtomicReference<CountDownLatch> streamResponseLatch =
-        new AtomicReference<>(new CountDownLatch(Resources.TYPE_URLS.size()));
+        new AtomicReference<>(new CountDownLatch(Resources.V2_TYPE_URLS.size()));
 
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
@@ -465,7 +467,7 @@ public class DiscoveryServerTest {
     };
 
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
@@ -517,7 +519,7 @@ public class DiscoveryServerTest {
 
     // Send another round of requests. These should not trigger any responses.
     streamResponseLatch.set(new CountDownLatch(1));
-    streamRequestLatch.set(new CountDownLatch(Resources.TYPE_URLS.size()));
+    streamRequestLatch.set(new CountDownLatch(Resources.V2_TYPE_URLS.size()));
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
@@ -576,8 +578,8 @@ public class DiscoveryServerTest {
     assertThat(callbacks.streamCloseCount).hasValue(1);
     assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
     assertThat(callbacks.streamOpenCount).hasValue(1);
-    assertThat(callbacks.streamRequestCount).hasValue(Resources.TYPE_URLS.size() * 2);
-    assertThat(callbacks.streamResponseCount).hasValue(Resources.TYPE_URLS.size());
+    assertThat(callbacks.streamRequestCount).hasValue(Resources.V2_TYPE_URLS.size() * 2);
+    assertThat(callbacks.streamResponseCount).hasValue(Resources.V2_TYPE_URLS.size());
   }
 
   @Test
@@ -587,7 +589,7 @@ public class DiscoveryServerTest {
     final Map<String, CountDownLatch> streamRequestLatches = new ConcurrentHashMap<>();
     final Map<String, CountDownLatch> streamResponseLatches = new ConcurrentHashMap<>();
 
-    Resources.TYPE_URLS.forEach(typeUrl -> {
+    Resources.V2_TYPE_URLS.forEach(typeUrl -> {
       streamCloseLatches.put(typeUrl, new CountDownLatch(1));
       streamOpenLatches.put(typeUrl, new CountDownLatch(1));
       streamRequestLatches.put(typeUrl, new CountDownLatch(1));
@@ -600,10 +602,10 @@ public class DiscoveryServerTest {
       public void onStreamClose(long streamId, String typeUrl) {
         super.onStreamClose(streamId, typeUrl);
 
-        if (!Resources.TYPE_URLS.contains(typeUrl)) {
+        if (!Resources.V2_TYPE_URLS.contains(typeUrl)) {
           this.assertionErrors.add(format(
               "onStreamClose#typeUrl => expected one of [%s], got %s",
-              String.join(",", Resources.TYPE_URLS),
+              String.join(",", Resources.V2_TYPE_URLS),
               typeUrl));
         }
 
@@ -614,10 +616,10 @@ public class DiscoveryServerTest {
       public void onStreamOpen(long streamId, String typeUrl) {
         super.onStreamOpen(streamId, typeUrl);
 
-        if (!Resources.TYPE_URLS.contains(typeUrl)) {
+        if (!Resources.V2_TYPE_URLS.contains(typeUrl)) {
           this.assertionErrors.add(format(
               "onStreamOpen#typeUrl => expected one of [%s], got %s",
-              String.join(",", Resources.TYPE_URLS),
+              String.join(",", Resources.V2_TYPE_URLS),
               typeUrl));
         }
 
@@ -640,7 +642,7 @@ public class DiscoveryServerTest {
     };
 
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getEndpointDiscoveryServiceImpl());
@@ -654,7 +656,7 @@ public class DiscoveryServerTest {
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub    = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.TYPE_URLS) {
+    for (String typeUrl : Resources.V2_TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
@@ -728,7 +730,7 @@ public class DiscoveryServerTest {
     };
 
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
 
@@ -756,7 +758,7 @@ public class DiscoveryServerTest {
   @Test
   public void callbackOnError_logsError_onException() {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase service =
         server.getAggregatedDiscoveryServiceImpl();
@@ -782,7 +784,7 @@ public class DiscoveryServerTest {
   @Test
   public void callbackOnError_doesNotLogError_whenCancelled() {
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(configWatcher);
 
     AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase service =
         server.getAggregatedDiscoveryServiceImpl();
@@ -823,14 +825,14 @@ public class DiscoveryServerTest {
 
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses()) {
       @Override
-      public Watch createWatch(boolean ads, DiscoveryRequest request, Set<String> knownResources,
+      public Watch createWatch(boolean ads, XdsRequest request, Set<String> knownResources,
                                Consumer<Response> responseConsumer, boolean hasClusterChanged) {
         watchCreated.countDown();
         watch.set(super.createWatch(ads, request, knownResources, responseConsumer, false));
         return watch.get();
       }
     };
-    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getClusterDiscoveryServiceImpl());
 
@@ -877,7 +879,7 @@ public class DiscoveryServerTest {
     };
 
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
@@ -919,7 +921,7 @@ public class DiscoveryServerTest {
     };
 
     MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
-    DiscoveryServer server = new DiscoveryServer(callbacks, configWatcher);
+    V2DiscoveryServer server = new V2DiscoveryServer(callbacks, configWatcher);
 
     grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
@@ -976,7 +978,7 @@ public class DiscoveryServerTest {
     @Override
     public Watch createWatch(
         boolean ads,
-        DiscoveryRequest request,
+        XdsRequest request,
         Set<String> knownResources,
         Consumer<Response> responseConsumer,
         boolean hasClusterChanged) {
@@ -1018,7 +1020,8 @@ public class DiscoveryServerTest {
     }
   }
 
-  private static class MockDiscoveryServerCallbacks implements DiscoveryServerCallbacks {
+  private static class MockDiscoveryServerCallbacks
+      implements DiscoveryServerCallbacks {
 
     private final AtomicInteger streamCloseCount = new AtomicInteger();
     private final AtomicInteger streamCloseWithErrorCount = new AtomicInteger();
@@ -1058,6 +1061,12 @@ public class DiscoveryServerTest {
     }
 
     @Override
+    public void onV3StreamRequest(long streamId,
+        io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
+      throw new IllegalStateException("Unexpected v3 request in v2 test");
+    }
+
+    @Override
     public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
       streamResponseCount.getAndIncrement();
 
@@ -1073,6 +1082,13 @@ public class DiscoveryServerTest {
       if (response == null) {
         this.assertionErrors.add("onStreamResponse#response => expected not null");
       }
+    }
+
+    @Override
+    public void onV3StreamResponse(long streamId,
+        io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request,
+        io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse response) {
+      throw new IllegalStateException("Unexpected v3 response in v2 test");
     }
 
     void assertThatNoErrors() {
