@@ -1,4 +1,4 @@
-package io.envoyproxy.controlplane.cache;
+package io.envoyproxy.controlplane.cache.v2;
 
 import static io.envoyproxy.controlplane.cache.Resources.TYPE_URLS_TO_RESOURCE_TYPE;
 
@@ -6,7 +6,11 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.ResourceVersionResolver;
+import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
+import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.SnapshotResources;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -22,10 +26,10 @@ import java.util.Set;
  * resources. Snapshots should have distinct versions per node group.
  */
 @AutoValue
-public abstract class V2Snapshot extends Snapshot {
+public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot {
 
   /**
-   * Returns a new {@link V2Snapshot} instance that is versioned uniformly across all resources.
+   * Returns a new {@link Snapshot} instance that is versioned uniformly across all resources.
    *
    * @param clusters the cluster resources in this snapshot
    * @param endpoints the endpoint resources in this snapshot
@@ -33,7 +37,7 @@ public abstract class V2Snapshot extends Snapshot {
    * @param routes the route resources in this snapshot
    * @param version the version associated with all resources in this snapshot
    */
-  public static V2Snapshot create(
+  public static Snapshot create(
       Iterable<Cluster> clusters,
       Iterable<ClusterLoadAssignment> endpoints,
       Iterable<Listener> listeners,
@@ -41,7 +45,7 @@ public abstract class V2Snapshot extends Snapshot {
       Iterable<Secret> secrets,
       String version) {
 
-    return new AutoValue_V2Snapshot(
+    return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, version),
         SnapshotResources.create(endpoints, version),
         SnapshotResources.create(listeners, version),
@@ -50,7 +54,7 @@ public abstract class V2Snapshot extends Snapshot {
   }
 
   /**
-   * Returns a new {@link V2Snapshot} instance that has separate versions for each resource type.
+   * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
    *
    * @param clusters the cluster resources in this snapshot
    * @param clustersVersion the version of the cluster resources
@@ -61,7 +65,7 @@ public abstract class V2Snapshot extends Snapshot {
    * @param routes the route resources in this snapshot
    * @param routesVersion the version of the route resources
    */
-  public static V2Snapshot create(
+  public static Snapshot create(
       Iterable<Cluster> clusters,
       String clustersVersion,
       Iterable<ClusterLoadAssignment> endpoints,
@@ -74,7 +78,7 @@ public abstract class V2Snapshot extends Snapshot {
       String secretsVersion) {
 
     // TODO(snowp): add a builder alternative
-    return new AutoValue_V2Snapshot(
+    return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, clustersVersion),
         SnapshotResources.create(endpoints, endpointsVersion),
         SnapshotResources.create(listeners, listenersVersion),
@@ -83,7 +87,7 @@ public abstract class V2Snapshot extends Snapshot {
   }
 
   /**
-   * Returns a new {@link V2Snapshot} instance that has separate versions for each resource type.
+   * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
    *
    * @param clusters the cluster resources in this snapshot
    * @param clusterVersionResolver version resolver of the clusters in this snapshot
@@ -96,7 +100,7 @@ public abstract class V2Snapshot extends Snapshot {
    * @param secrets the secret resources in this snapshot
    * @param secretVersionResolver version resolver of the secrets in this snapshot
    */
-  public static V2Snapshot create(
+  public static Snapshot create(
       Iterable<Cluster> clusters,
       ResourceVersionResolver clusterVersionResolver,
       Iterable<ClusterLoadAssignment> endpoints,
@@ -108,7 +112,7 @@ public abstract class V2Snapshot extends Snapshot {
       Iterable<Secret> secrets,
       ResourceVersionResolver secretVersionResolver) {
 
-    return new AutoValue_V2Snapshot(
+    return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, clusterVersionResolver),
         SnapshotResources.create(endpoints, endpointVersionResolver),
         SnapshotResources.create(listeners, listenerVersionResolver),
@@ -121,7 +125,7 @@ public abstract class V2Snapshot extends Snapshot {
    *
    * @param version the version of the snapshot resources
    */
-  public static V2Snapshot createEmpty(String version) {
+  public static Snapshot createEmpty(String version) {
     return create(Collections.emptySet(), Collections.emptySet(),
         Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), version);
   }

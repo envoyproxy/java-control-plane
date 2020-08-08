@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.TestResources;
-import io.envoyproxy.controlplane.cache.V2Snapshot;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -11,7 +11,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 class V2TestSnapshots {
 
-  static V2Snapshot createSnapshot(
+  static Snapshot createSnapshot(
       boolean ads,
       String clusterName,
       String endpointAddress,
@@ -27,7 +27,7 @@ class V2TestSnapshots {
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
-    return V2Snapshot.create(
+    return Snapshot.create(
         ImmutableList.of(cluster),
         ImmutableList.of(endpoint),
         ImmutableList.of(listener),
@@ -36,7 +36,7 @@ class V2TestSnapshots {
         version);
   }
 
-  static V2Snapshot createSnapshotNoEdsV3Transport(
+  static Snapshot createSnapshotNoEdsV3Transport(
       boolean ads,
       String clusterName,
       String endpointAddress,
@@ -49,7 +49,7 @@ class V2TestSnapshots {
         listenerName, listenerPort, routeName, version);
   }
 
-  static V2Snapshot createSnapshotNoEds(
+  static Snapshot createSnapshotNoEds(
       boolean ads,
       String clusterName,
       String endpointAddress,
@@ -62,7 +62,7 @@ class V2TestSnapshots {
         listenerName, listenerPort, routeName, version);
   }
 
-  private static V2Snapshot createSnapshotNoEds(
+  private static Snapshot createSnapshotNoEds(
       boolean ads,
       ApiVersion rdsTransportVersion,
       String clusterName,
@@ -78,7 +78,7 @@ class V2TestSnapshots {
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
-    return V2Snapshot.create(
+    return Snapshot.create(
         ImmutableList.of(cluster),
         ImmutableList.of(),
         ImmutableList.of(listener),

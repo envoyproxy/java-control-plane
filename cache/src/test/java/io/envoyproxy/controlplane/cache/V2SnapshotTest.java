@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -43,7 +44,7 @@ public class V2SnapshotTest {
   public void createSingleVersionSetsResourcesCorrectly() {
     final String version = UUID.randomUUID().toString();
 
-    V2Snapshot snapshot = V2Snapshot.create(
+    Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
@@ -81,7 +82,7 @@ public class V2SnapshotTest {
     final String routesVersion = UUID.randomUUID().toString();
     final String secretsVersion = UUID.randomUUID().toString();
 
-    V2Snapshot snapshot = V2Snapshot.create(
+    Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER), clustersVersion,
         ImmutableList.of(ENDPOINT), endpointsVersion,
         ImmutableList.of(LISTENER), listenersVersion,
@@ -114,7 +115,7 @@ public class V2SnapshotTest {
   @Test
   @SuppressWarnings("unchecked")
   public void resourcesReturnsExpectedResources() {
-    V2Snapshot snapshot = V2Snapshot.create(
+    Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
@@ -151,7 +152,7 @@ public class V2SnapshotTest {
   public void versionReturnsExpectedVersion() {
     final String version = UUID.randomUUID().toString();
 
-    V2Snapshot snapshot = V2Snapshot.create(
+    Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
@@ -172,7 +173,7 @@ public class V2SnapshotTest {
 
   @Test
   public void ensureConsistentReturnsWithoutExceptionForConsistentSnapshot() throws SnapshotConsistencyException {
-    V2Snapshot snapshot = V2Snapshot.create(
+    Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
@@ -185,7 +186,7 @@ public class V2SnapshotTest {
 
   @Test
   public void ensureConsistentThrowsIfEndpointOrRouteRefCountMismatch() {
-    V2Snapshot snapshot1 = V2Snapshot.create(
+    Snapshot snapshot1 = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(),
         ImmutableList.of(LISTENER),
@@ -201,7 +202,7 @@ public class V2SnapshotTest {
             ENDPOINT_TYPE_URL,
             CLUSTER_NAME));
 
-    V2Snapshot snapshot2 = V2Snapshot.create(
+    Snapshot snapshot2 = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
@@ -223,7 +224,7 @@ public class V2SnapshotTest {
     final String otherClusterName = "someothercluster0";
     final String otherRouteName = "someotherroute0";
 
-    V2Snapshot snapshot1 = V2Snapshot.create(
+    Snapshot snapshot1 = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(TestResources.createEndpoint(otherClusterName, ENDPOINT_PORT)),
         ImmutableList.of(LISTENER),
@@ -240,7 +241,7 @@ public class V2SnapshotTest {
             CLUSTER_TYPE_URL,
             otherClusterName));
 
-    V2Snapshot snapshot2 = V2Snapshot.create(
+    Snapshot snapshot2 = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),

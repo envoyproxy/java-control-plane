@@ -7,7 +7,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.V2SimpleCache;
+import io.envoyproxy.controlplane.cache.v2.SimpleCache;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.envoyproxy.envoy.api.v2.core.Node;
@@ -33,7 +33,7 @@ public class V2DiscoveryServerAdsIT {
   private static final NettyGrpcServerRule ADS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final V2SimpleCache<String> cache = new V2SimpleCache<>(new NodeGroup<String>() {
+      final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
         @Override public String hash(Node node) {
           return GROUP;
         }

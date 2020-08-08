@@ -7,6 +7,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.v3.SimpleCache;
+import io.envoyproxy.controlplane.cache.v3.Snapshot;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -36,7 +38,7 @@ public class V3SimpleCacheTest {
   private static final String VERSION1 = UUID.randomUUID().toString();
   private static final String VERSION2 = UUID.randomUUID().toString();
 
-  private static final V3Snapshot SNAPSHOT1 = V3Snapshot.create(
+  private static final Snapshot SNAPSHOT1 = Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
@@ -44,7 +46,7 @@ public class V3SimpleCacheTest {
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION1);
 
-  private static final V3Snapshot SNAPSHOT2 = V3Snapshot.create(
+  private static final Snapshot SNAPSHOT2 = Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
@@ -52,7 +54,7 @@ public class V3SimpleCacheTest {
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION2);
 
-  private static final V3Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = V3Snapshot.create(
+  private static final Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = Snapshot.create(
       ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build(),
           Cluster.newBuilder().setName(SECONDARY_CLUSTER_NAME).build()),
       ImmutableList.of(ClusterLoadAssignment.newBuilder().setClusterName(CLUSTER_NAME).build(),
@@ -64,7 +66,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponseInAdsMode() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -85,7 +87,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithResponseInXdsMode() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -107,7 +109,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatch() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -134,7 +136,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void shouldSendEdsWhenClusterChangedButEdsVersionDidnt() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -161,7 +163,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetAfterWatch() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     Map<String, WatchAndTracker> watches = Resources.V3.TYPE_URLS.stream()
         .collect(Collectors.toMap(
@@ -191,7 +193,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithRequestVersion() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -246,7 +248,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHints() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, MULTIPLE_RESOURCES_SNAPSHOT2);
 
@@ -290,7 +292,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void successfullyWatchAllResourceTypesWithSetBeforeWatchWithSameRequestVersionNewResourceHintsNoChange() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT2);
 
@@ -329,7 +331,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void setSnapshotWithVersionMatchingRequestShouldLeaveWatchOpenWithoutAdditionalResponse() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -368,7 +370,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void watchesAreReleasedAfterCancel() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     Map<String, WatchAndTracker> watches = Resources.V3.TYPE_URLS.stream()
         .collect(Collectors.toMap(
@@ -402,8 +404,8 @@ public class V3SimpleCacheTest {
 
   @Test
   public void watchIsLeftOpenIfNotRespondedImmediately() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
-    cache.setSnapshot(SingleNodeGroup.GROUP, V3Snapshot.create(
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
         ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
 
     ResponseTracker responseTracker = new ResponseTracker();
@@ -422,7 +424,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void getSnapshot() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -431,7 +433,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void clearSnapshot() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -442,7 +444,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void clearSnapshotWithWatches() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
@@ -471,7 +473,7 @@ public class V3SimpleCacheTest {
 
   @Test
   public void groups() {
-    V3SimpleCache<String> cache = new V3SimpleCache<>(new SingleNodeGroup());
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
     assertThat(cache.groups()).isEmpty();
 
@@ -490,7 +492,7 @@ public class V3SimpleCacheTest {
     assertThat(watchAndTracker.tracker.responses).isEmpty();
   }
 
-  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, V3Snapshot snapshot) {
+  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
     assertThat(watchAndTracker.tracker.responses).isNotEmpty();
 
     Response response = watchAndTracker.tracker.responses.getFirst();

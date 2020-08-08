@@ -3,8 +3,8 @@ package io.envoyproxy.controlplane.server;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Duration;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.V2SimpleCache;
-import io.envoyproxy.controlplane.cache.V2Snapshot;
+import io.envoyproxy.controlplane.cache.v2.SimpleCache;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
 import io.envoyproxy.envoy.api.v2.core.Address;
@@ -26,7 +26,7 @@ public class TestMain {
    * @param arg command-line args
    */
   public static void main(String[] arg) throws IOException, InterruptedException {
-    V2SimpleCache<String> cache = new V2SimpleCache<>(new NodeGroup<String>() {
+    SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
       @Override public String hash(Node node) {
         return GROUP;
       }
@@ -38,7 +38,7 @@ public class TestMain {
 
     cache.setSnapshot(
         GROUP,
-        V2Snapshot.create(
+        Snapshot.create(
             ImmutableList.of(
                 Cluster.newBuilder()
                     .setName("cluster0")
@@ -80,7 +80,7 @@ public class TestMain {
 
     cache.setSnapshot(
         GROUP,
-        V2Snapshot.create(
+        Snapshot.create(
             ImmutableList.of(
                 Cluster.newBuilder()
                     .setName("cluster1")

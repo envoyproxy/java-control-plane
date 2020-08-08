@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.V2SimpleCache;
-import io.envoyproxy.controlplane.cache.V2Snapshot;
+import io.envoyproxy.controlplane.cache.v2.SimpleCache;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import java.time.Clock;
@@ -32,15 +32,15 @@ public class SnapshotCollectingCallbackTest {
     }
   };
   private final ArrayList<String> collectedGroups = new ArrayList<>();
-  private SnapshotCollectingCallback<String, V2Snapshot> callback;
-  private V2SimpleCache<String> cache;
+  private SnapshotCollectingCallback<String, Snapshot> callback;
+  private SimpleCache<String> cache;
 
   @Before
   public void setUp() {
     collectedGroups.clear();
-    cache = new V2SimpleCache<>(NODE_GROUP);
-    cache.setSnapshot("group", V2Snapshot.createEmpty(""));
-    callback = new SnapshotCollectingCallback<String, V2Snapshot>(cache, NODE_GROUP, CLOCK,
+    cache = new SimpleCache<>(NODE_GROUP);
+    cache.setSnapshot("group", Snapshot.createEmpty(""));
+    callback = new SnapshotCollectingCallback<String, Snapshot>(cache, NODE_GROUP, CLOCK,
         Collections.singleton(collectedGroups::add), 3, 100);
   }
 
@@ -76,7 +76,7 @@ public class SnapshotCollectingCallbackTest {
     CountDownLatch deleteUnreferencedLatch = new CountDownLatch(1);
 
     // Create a cache with 0 expiry delay, which means the snapshot should get collected immediately.
-    callback = new SnapshotCollectingCallback<String, V2Snapshot>(cache, NODE_GROUP, CLOCK,
+    callback = new SnapshotCollectingCallback<String, Snapshot>(cache, NODE_GROUP, CLOCK,
         ImmutableSet.of(collectedGroups::add, group -> snapshotCollectedLatch.countDown()), -3, 1) {
       @Override synchronized void deleteUnreferenced(Clock clock) {
         super.deleteUnreferenced(clock);

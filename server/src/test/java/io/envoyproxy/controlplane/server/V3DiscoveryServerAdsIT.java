@@ -7,7 +7,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.V3SimpleCache;
+import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
@@ -33,7 +33,7 @@ public class V3DiscoveryServerAdsIT {
   private static final NettyGrpcServerRule ADS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final V3SimpleCache<String> cache = new V3SimpleCache<>(
+      final SimpleCache<String> cache = new SimpleCache<>(
           new NodeGroup<String>() {
             @Override public String hash(Node node) {
               throw new IllegalStateException("unexpected v2 node in v3 test");

@@ -1,4 +1,4 @@
-package io.envoyproxy.controlplane.cache;
+package io.envoyproxy.controlplane.cache.v3;
 
 import static io.envoyproxy.controlplane.cache.Resources.TYPE_URLS_TO_RESOURCE_TYPE;
 
@@ -6,7 +6,10 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
+import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.SnapshotResources;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
@@ -22,9 +25,10 @@ import java.util.Set;
  * resources. Snapshots should have distinct versions per node group.
  */
 @AutoValue
-public abstract class V3Snapshot extends Snapshot {
+public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot {
   /**
-   * Returns a new {@link V2Snapshot} instance that is versioned uniformly across all resources.
+   * Returns a new {@link io.envoyproxy.controlplane.cache.v2.Snapshot} instance that is versioned
+   * uniformly across all resources.
    *
    * @param clusters the cluster resources in this snapshot
    * @param endpoints the endpoint resources in this snapshot
@@ -32,7 +36,7 @@ public abstract class V3Snapshot extends Snapshot {
    * @param routes the route resources in this snapshot
    * @param version the version associated with all resources in this snapshot
    */
-  public static V3Snapshot create(
+  public static Snapshot create(
       Iterable<Cluster> clusters,
       Iterable<ClusterLoadAssignment> endpoints,
       Iterable<Listener> listeners,
@@ -40,7 +44,7 @@ public abstract class V3Snapshot extends Snapshot {
       Iterable<Secret> secrets,
       String version) {
 
-    return new AutoValue_V3Snapshot(
+    return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, version),
         SnapshotResources.create(endpoints, version),
         SnapshotResources.create(listeners, version),
@@ -49,7 +53,8 @@ public abstract class V3Snapshot extends Snapshot {
   }
 
   /**
-   * Returns a new {@link V2Snapshot} instance that has separate versions for each resource type.
+   * Returns a new {@link io.envoyproxy.controlplane.cache.v2.Snapshot} instance that has separate
+   * versions for each resource type.
    *
    * @param clusters the cluster resources in this snapshot
    * @param clustersVersion the version of the cluster resources
@@ -60,7 +65,7 @@ public abstract class V3Snapshot extends Snapshot {
    * @param routes the route resources in this snapshot
    * @param routesVersion the version of the route resources
    */
-  public static V3Snapshot create(
+  public static Snapshot create(
       Iterable<Cluster> clusters,
       String clustersVersion,
       Iterable<ClusterLoadAssignment> endpoints,
@@ -73,7 +78,7 @@ public abstract class V3Snapshot extends Snapshot {
       String secretsVersion) {
 
     // TODO(snowp): add a builder alternative
-    return new AutoValue_V3Snapshot(
+    return new AutoValue_Snapshot(
         SnapshotResources.create(clusters, clustersVersion),
         SnapshotResources.create(endpoints, endpointsVersion),
         SnapshotResources.create(listeners, listenersVersion),

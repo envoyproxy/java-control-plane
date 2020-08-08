@@ -12,8 +12,8 @@ import io.envoyproxy.controlplane.cache.CacheStatusInfo;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.TestResources;
-import io.envoyproxy.controlplane.cache.V2SimpleCache;
-import io.envoyproxy.controlplane.cache.V2Snapshot;
+import io.envoyproxy.controlplane.cache.v2.SimpleCache;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
@@ -156,7 +156,7 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
     }
   }
 
-  private static V2Snapshot createSnapshotWithNotWorkingCluster(boolean ads,
+  private static Snapshot createSnapshotWithNotWorkingCluster(boolean ads,
                                                               String clusterName,
                                                               String endpointAddress,
                                                               int endpointPort,
@@ -184,7 +184,7 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     // here we have new version of resources other than CDS.
-    return V2Snapshot.create(
+    return Snapshot.create(
         ImmutableList.of(cluster),
         "1",
         ImmutableList.of(endpoint),
@@ -204,14 +204,14 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
    * responsible for responding for watches. Because to reproduce this problem we need a lot of connected Envoy's and
    * changes to snapshot it is easier to reproduce this way.
    */
-  static class CustomCache<T> extends V2SimpleCache<T> {
+  static class CustomCache<T> extends SimpleCache<T> {
 
     public CustomCache(NodeGroup<T> groups) {
       super(groups);
     }
 
     @Override
-    protected void respondWithSpecificOrder(T group, V2Snapshot snapshot,
+    protected void respondWithSpecificOrder(T group, Snapshot snapshot,
         ConcurrentMap<Resources.ResourceType, CacheStatusInfo<T>> status) {
       // This code has been removed to show specific case which is hard to reproduce in integration test:
       //      1. Envoy connects to control-plane

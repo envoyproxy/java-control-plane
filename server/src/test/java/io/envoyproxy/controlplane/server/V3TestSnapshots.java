@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.TestResources;
-import io.envoyproxy.controlplane.cache.V3Snapshot;
+import io.envoyproxy.controlplane.cache.v3.Snapshot;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -11,7 +11,7 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 class V3TestSnapshots {
 
-  static V3Snapshot createSnapshot(
+  static Snapshot createSnapshot(
       boolean ads,
       String clusterName,
       String endpointAddress,
@@ -28,7 +28,7 @@ class V3TestSnapshots {
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
 
-    return V3Snapshot.create(
+    return Snapshot.create(
         ImmutableList.of(cluster),
         ImmutableList.of(endpoint),
         ImmutableList.of(listener),
@@ -37,7 +37,7 @@ class V3TestSnapshots {
         version);
   }
 
-  static V3Snapshot createSnapshotNoEdsV2Transport(
+  static Snapshot createSnapshotNoEdsV2Transport(
       boolean ads,
       String clusterName,
       String endpointAddress,
@@ -50,7 +50,7 @@ class V3TestSnapshots {
         listenerName, listenerPort, routeName, version);
   }
 
-  static V3Snapshot createSnapshotNoEds(
+  static Snapshot createSnapshotNoEds(
       boolean ads,
       String clusterName,
       String endpointAddress,
@@ -63,7 +63,7 @@ class V3TestSnapshots {
         listenerName, listenerPort, routeName, version);
   }
 
-  private static V3Snapshot createSnapshotNoEds(
+  private static Snapshot createSnapshotNoEds(
       boolean ads,
       ApiVersion rdsTransportVersion,
       String clusterName,
@@ -79,7 +79,7 @@ class V3TestSnapshots {
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
 
-    return V3Snapshot.create(
+    return Snapshot.create(
         ImmutableList.of(cluster),
         ImmutableList.of(),
         ImmutableList.of(listener),

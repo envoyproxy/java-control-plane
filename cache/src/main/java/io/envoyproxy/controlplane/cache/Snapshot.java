@@ -8,9 +8,9 @@ import java.util.Set;
 
 public abstract class Snapshot {
 
-  abstract String version(ResourceType resourceType, List<String> resourceNames);
+  public abstract String version(ResourceType resourceType, List<String> resourceNames);
 
-  abstract Map<String, ? extends Message> resources(ResourceType resourceType);
+  public abstract Map<String, ? extends Message> resources(ResourceType resourceType);
 
   /**
    * Asserts that all of the given resource names have corresponding values in the given resources collection.

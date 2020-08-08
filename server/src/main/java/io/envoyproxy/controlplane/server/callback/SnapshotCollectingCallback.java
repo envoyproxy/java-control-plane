@@ -3,9 +3,8 @@ package io.envoyproxy.controlplane.server.callback;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.Snapshot;
 import io.envoyproxy.controlplane.cache.SnapshotCache;
-import io.envoyproxy.controlplane.cache.V2Snapshot;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.controlplane.server.DiscoveryServerCallbacks;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.time.Clock;
@@ -22,7 +21,7 @@ import java.util.function.Consumer;
 
 /**
  * Callback that keeps track of the number of streams associated with each node group and periodically clears
- * out {@link V2Snapshot}s from the cache that are no longer referenced by any streams.
+ * out {@link Snapshot}s from the cache that are no longer referenced by any streams.
  *
  * <p>Works by monitoring the stream to determine what group they belong to and keeps a running count as well
  * as when a request is seen that targets a given node group.
@@ -41,7 +40,8 @@ import java.util.function.Consumer;
  * causing it to get cleaned up and wipe the state of the other callback even though we now have an active stream
  * for that group.
  */
-public class SnapshotCollectingCallback<T, X extends Snapshot> implements DiscoveryServerCallbacks {
+public class SnapshotCollectingCallback<T, X extends io.envoyproxy.controlplane.cache.Snapshot>
+    implements DiscoveryServerCallbacks {
   private static class SnapshotState {
     int streamCount;
     Instant lastSeen;
