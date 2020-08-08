@@ -54,8 +54,7 @@ public interface DiscoveryServerCallbacks {
    * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
    *     will be returned to the client and the stream will be closed with error.
    */
-  default void onStreamRequest(long streamId, DiscoveryRequest request) {
-  }
+  void onV2StreamRequest(long streamId, DiscoveryRequest request);
 
   /**
    * {@code onV3StreamRequest} is called for each {@link io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest}
@@ -67,8 +66,8 @@ public interface DiscoveryServerCallbacks {
    * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
    *     will be returned to the client and the stream will be closed with error.
    */
-  default void onV3StreamRequest(long streamId, io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
-  }
+  void onV3StreamRequest(long streamId,
+      io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request);
 
   /**
    * {@code onStreamResponse} is called just before each {@link DiscoveryResponse} that is sent
