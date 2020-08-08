@@ -1,4 +1,4 @@
-package io.envoyproxy.controlplane.cache;
+package io.envoyproxy.controlplane.cache.v2;
 
 import static io.envoyproxy.controlplane.cache.Resources.V2.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V2.ENDPOINT_TYPE_URL;
@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Message;
-import io.envoyproxy.controlplane.cache.v2.Snapshot;
+import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -22,7 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.Test;
 
-public class V2SnapshotTest {
+public class SnapshotTest {
 
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
   private static final String CLUSTER_NAME = "cluster0";
@@ -172,7 +173,8 @@ public class V2SnapshotTest {
   }
 
   @Test
-  public void ensureConsistentReturnsWithoutExceptionForConsistentSnapshot() throws SnapshotConsistencyException {
+  public void ensureConsistentReturnsWithoutExceptionForConsistentSnapshot() throws
+      SnapshotConsistencyException {
     Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),

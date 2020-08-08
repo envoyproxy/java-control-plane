@@ -1,4 +1,4 @@
-package io.envoyproxy.controlplane.cache;
+package io.envoyproxy.controlplane.cache.v3;
 
 import static io.envoyproxy.controlplane.cache.Resources.V3.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ENDPOINT_TYPE_URL;
@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Message;
-import io.envoyproxy.controlplane.cache.v3.Snapshot;
+import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
@@ -22,7 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.Test;
 
-public class V3SnapshotTest {
+public class SnapshotTest {
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
   private static final String CLUSTER_NAME = "cluster0";
   private static final String LISTENER_NAME = "listener0";
