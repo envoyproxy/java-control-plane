@@ -81,14 +81,14 @@ public class SnapshotCollectingCallback<T, X extends Snapshot> implements Discov
 
   @Override
   public synchronized void onStreamRequest(long streamId, DiscoveryRequest request) {
-    T groupIdentifier = nodeGroup.hashV2(request.getNode());
+    T groupIdentifier = nodeGroup.hash(request.getNode());
     updateState(streamId, groupIdentifier);
   }
 
   @Override
   public synchronized void onV3StreamRequest(long streamId,
       io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
-    T groupIdentifier = nodeGroup.hashV3(request.getNode());
+    T groupIdentifier = nodeGroup.hash(request.getNode());
     updateState(streamId, groupIdentifier);
   }
 

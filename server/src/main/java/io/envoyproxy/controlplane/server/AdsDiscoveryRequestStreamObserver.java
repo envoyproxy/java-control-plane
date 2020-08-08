@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.server;
 
 import static io.envoyproxy.controlplane.server.DiscoveryServer.ANY_TYPE_URL;
 
+import com.google.common.base.Preconditions;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.grpc.Status;
@@ -29,11 +30,10 @@ public class AdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStr
       DiscoveryServer discoveryServer) {
     super(ANY_TYPE_URL, responseObserver, streamId, executor, discoveryServer);
 
-    // NOTE: while V2 URLs are referenced here, the size of V2_TYPE_URLS and V3_TYPE_URLS is the
-    // same, so this isn't actually pinning to a version.
-    this.watches = new ConcurrentHashMap<>(Resources.V2_TYPE_URLS.size());
-    this.latestResponse = new ConcurrentHashMap<>(Resources.V2_TYPE_URLS.size());
-    this.ackedResources = new ConcurrentHashMap<>(Resources.V2_TYPE_URLS.size());
+    Preconditions.checkState(Resources.V2.TYPE_URLS.size() == Resources.V3.TYPE_URLS.size());
+    this.watches = new ConcurrentHashMap<>(Resources.V2.TYPE_URLS.size());
+    this.latestResponse = new ConcurrentHashMap<>(Resources.V2.TYPE_URLS.size());
+    this.ackedResources = new ConcurrentHashMap<>(Resources.V2.TYPE_URLS.size());
     this.discoveryServer = discoveryServer;
   }
 
@@ -69,9 +69,9 @@ public class AdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStr
   @Override
   void setLatestResponse(String typeUrl, LatestDiscoveryResponse response) {
     latestResponse.put(typeUrl, response);
-    if (typeUrl.equals(Resources.CLUSTER_TYPE_URL) || typeUrl.equals(Resources.V3_CLUSTER_TYPE_URL)) {
+    if (typeUrl.equals(Resources.V2.CLUSTER_TYPE_URL) || typeUrl.equals(Resources.V3.CLUSTER_TYPE_URL)) {
       hasClusterChanged = true;
-    } else if (typeUrl.equals(Resources.ENDPOINT_TYPE_URL) || typeUrl.equals(Resources.V3_ENDPOINT_TYPE_URL)) {
+    } else if (typeUrl.equals(Resources.V2.ENDPOINT_TYPE_URL) || typeUrl.equals(Resources.V3.ENDPOINT_TYPE_URL)) {
       hasClusterChanged = false;
     }
   }

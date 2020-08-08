@@ -110,29 +110,29 @@ public class V3DiscoveryServerTest {
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_LISTENER_TYPE_URL)
+        .setTypeUrl(Resources.V3.LISTENER_TYPE_URL)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_CLUSTER_TYPE_URL)
+        .setTypeUrl(Resources.V3.CLUSTER_TYPE_URL)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_ENDPOINT_TYPE_URL)
+        .setTypeUrl(Resources.V3.ENDPOINT_TYPE_URL)
         .addResourceNames(CLUSTER_NAME)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_ROUTE_TYPE_URL)
+        .setTypeUrl(Resources.V3.ROUTE_TYPE_URL)
         .addResourceNames(ROUTE_NAME)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_SECRET_TYPE_URL)
+        .setTypeUrl(Resources.V3.SECRET_TYPE_URL)
         .addResourceNames(SECRET_NAME)
         .build());
 
@@ -144,13 +144,13 @@ public class V3DiscoveryServerTest {
 
     responseObserver.assertThatNoErrors();
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       assertThat(configWatcher.counts).containsEntry(typeUrl, 1);
     }
 
-    assertThat(configWatcher.counts).hasSize(Resources.V3_TYPE_URLS.size());
+    assertThat(configWatcher.counts).hasSize(Resources.V3.TYPE_URLS.size());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       assertThat(responseObserver.responses).haveAtLeastOne(new Condition<>(
           r -> r.getTypeUrl().equals(typeUrl) && r.getVersionInfo().equals(VERSION),
           "missing expected response of type %s", typeUrl));
@@ -174,7 +174,7 @@ public class V3DiscoveryServerTest {
     RouteDiscoveryServiceStub routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
@@ -183,21 +183,21 @@ public class V3DiscoveryServerTest {
           .setTypeUrl(typeUrl);
 
       switch (typeUrl) {
-        case Resources.V3_CLUSTER_TYPE_URL:
+        case Resources.V3.CLUSTER_TYPE_URL:
           requestObserver = clusterStub.streamClusters(responseObserver);
           break;
-        case Resources.V3_ENDPOINT_TYPE_URL:
+        case Resources.V3.ENDPOINT_TYPE_URL:
           requestObserver = endpointStub.streamEndpoints(responseObserver);
           discoveryRequestBuilder.addResourceNames(CLUSTER_NAME);
           break;
-        case Resources.V3_LISTENER_TYPE_URL:
+        case Resources.V3.LISTENER_TYPE_URL:
           requestObserver = listenerStub.streamListeners(responseObserver);
           break;
-        case Resources.V3_ROUTE_TYPE_URL:
+        case Resources.V3.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
           discoveryRequestBuilder.addResourceNames(ROUTE_NAME);
           break;
-        case Resources.V3_SECRET_TYPE_URL:
+        case Resources.V3.SECRET_TYPE_URL:
           requestObserver = secretStub.streamSecrets(responseObserver);
           discoveryRequestBuilder.addResourceNames(SECRET_NAME);
           break;
@@ -220,7 +220,7 @@ public class V3DiscoveryServerTest {
           "missing expected response of type %s", typeUrl));
     }
 
-    assertThat(configWatcher.counts).hasSize(Resources.V3_TYPE_URLS.size());
+    assertThat(configWatcher.counts).hasSize(Resources.V3.TYPE_URLS.size());
   }
 
   @Test
@@ -232,7 +232,7 @@ public class V3DiscoveryServerTest {
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
 
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
@@ -266,7 +266,7 @@ public class V3DiscoveryServerTest {
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
       responseObserver.sendError = true;
 
@@ -294,7 +294,7 @@ public class V3DiscoveryServerTest {
 
     AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
@@ -375,25 +375,25 @@ public class V3DiscoveryServerTest {
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
 
       switch (typeUrl) {
-        case Resources.V3_CLUSTER_TYPE_URL:
+        case Resources.V3.CLUSTER_TYPE_URL:
           requestObserver = clusterStub.streamClusters(responseObserver);
           break;
-        case Resources.V3_ENDPOINT_TYPE_URL:
+        case Resources.V3.ENDPOINT_TYPE_URL:
           requestObserver = endpointStub.streamEndpoints(responseObserver);
           break;
-        case Resources.V3_LISTENER_TYPE_URL:
+        case Resources.V3.LISTENER_TYPE_URL:
           requestObserver = listenerStub.streamListeners(responseObserver);
           break;
-        case Resources.V3_ROUTE_TYPE_URL:
+        case Resources.V3.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
           break;
-        case Resources.V3_SECRET_TYPE_URL:
+        case Resources.V3.SECRET_TYPE_URL:
           requestObserver = secretStub.streamSecrets(responseObserver);
           break;
         default:
@@ -421,9 +421,9 @@ public class V3DiscoveryServerTest {
     final CountDownLatch streamCloseLatch = new CountDownLatch(1);
     final CountDownLatch streamOpenLatch = new CountDownLatch(1);
     final AtomicReference<CountDownLatch> streamRequestLatch =
-        new AtomicReference<>(new CountDownLatch(Resources.V3_TYPE_URLS.size()));
+        new AtomicReference<>(new CountDownLatch(Resources.V3.TYPE_URLS.size()));
     final AtomicReference<CountDownLatch> streamResponseLatch =
-        new AtomicReference<>(new CountDownLatch(Resources.V3_TYPE_URLS.size()));
+        new AtomicReference<>(new CountDownLatch(Resources.V3.TYPE_URLS.size()));
 
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
@@ -482,7 +482,7 @@ public class V3DiscoveryServerTest {
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_LISTENER_TYPE_URL)
+        .setTypeUrl(Resources.V3.LISTENER_TYPE_URL)
         .build());
 
     if (!streamOpenLatch.await(1, TimeUnit.SECONDS)) {
@@ -491,24 +491,24 @@ public class V3DiscoveryServerTest {
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_CLUSTER_TYPE_URL)
+        .setTypeUrl(Resources.V3.CLUSTER_TYPE_URL)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_ENDPOINT_TYPE_URL)
+        .setTypeUrl(Resources.V3.ENDPOINT_TYPE_URL)
         .addResourceNames(CLUSTER_NAME)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_ROUTE_TYPE_URL)
+        .setTypeUrl(Resources.V3.ROUTE_TYPE_URL)
         .addResourceNames(ROUTE_NAME)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_SECRET_TYPE_URL)
+        .setTypeUrl(Resources.V3.SECRET_TYPE_URL)
         .addResourceNames(SECRET_NAME)
         .build());
 
@@ -522,26 +522,26 @@ public class V3DiscoveryServerTest {
 
     // Send another round of requests. These should not trigger any responses.
     streamResponseLatch.set(new CountDownLatch(1));
-    streamRequestLatch.set(new CountDownLatch(Resources.V3_TYPE_URLS.size()));
+    streamRequestLatch.set(new CountDownLatch(Resources.V3.TYPE_URLS.size()));
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
         .setResponseNonce("0")
         .setVersionInfo(VERSION)
-        .setTypeUrl(Resources.V3_LISTENER_TYPE_URL)
+        .setTypeUrl(Resources.V3.LISTENER_TYPE_URL)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
         .setResponseNonce("1")
-        .setTypeUrl(Resources.V3_CLUSTER_TYPE_URL)
+        .setTypeUrl(Resources.V3.CLUSTER_TYPE_URL)
         .setVersionInfo(VERSION)
         .build());
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
         .setResponseNonce("2")
-        .setTypeUrl(Resources.V3_ENDPOINT_TYPE_URL)
+        .setTypeUrl(Resources.V3.ENDPOINT_TYPE_URL)
         .addResourceNames(CLUSTER_NAME)
         .setVersionInfo(VERSION)
         .build());
@@ -549,7 +549,7 @@ public class V3DiscoveryServerTest {
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
         .setResponseNonce("3")
-        .setTypeUrl(Resources.V3_ROUTE_TYPE_URL)
+        .setTypeUrl(Resources.V3.ROUTE_TYPE_URL)
         .addResourceNames(ROUTE_NAME)
         .setVersionInfo(VERSION)
         .build());
@@ -557,7 +557,7 @@ public class V3DiscoveryServerTest {
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
         .setResponseNonce("4")
-        .setTypeUrl(Resources.V3_SECRET_TYPE_URL)
+        .setTypeUrl(Resources.V3.SECRET_TYPE_URL)
         .addResourceNames(SECRET_NAME)
         .setVersionInfo(VERSION)
         .build());
@@ -581,8 +581,8 @@ public class V3DiscoveryServerTest {
     assertThat(callbacks.streamCloseCount).hasValue(1);
     assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
     assertThat(callbacks.streamOpenCount).hasValue(1);
-    assertThat(callbacks.streamRequestCount).hasValue(Resources.V3_TYPE_URLS.size() * 2);
-    assertThat(callbacks.streamResponseCount).hasValue(Resources.V3_TYPE_URLS.size());
+    assertThat(callbacks.streamRequestCount).hasValue(Resources.V3.TYPE_URLS.size() * 2);
+    assertThat(callbacks.streamResponseCount).hasValue(Resources.V3.TYPE_URLS.size());
   }
 
   @Test
@@ -592,7 +592,7 @@ public class V3DiscoveryServerTest {
     final Map<String, CountDownLatch> streamRequestLatches = new ConcurrentHashMap<>();
     final Map<String, CountDownLatch> streamResponseLatches = new ConcurrentHashMap<>();
 
-    Resources.V3_TYPE_URLS.forEach(typeUrl -> {
+    Resources.V3.TYPE_URLS.forEach(typeUrl -> {
       streamCloseLatches.put(typeUrl, new CountDownLatch(1));
       streamOpenLatches.put(typeUrl, new CountDownLatch(1));
       streamRequestLatches.put(typeUrl, new CountDownLatch(1));
@@ -605,10 +605,10 @@ public class V3DiscoveryServerTest {
       public void onStreamClose(long streamId, String typeUrl) {
         super.onStreamClose(streamId, typeUrl);
 
-        if (!Resources.V3_TYPE_URLS.contains(typeUrl)) {
+        if (!Resources.V3.TYPE_URLS.contains(typeUrl)) {
           this.assertionErrors.add(format(
               "onStreamClose#typeUrl => expected one of [%s], got %s",
-              String.join(",", Resources.V3_TYPE_URLS),
+              String.join(",", Resources.V3.TYPE_URLS),
               typeUrl));
         }
 
@@ -619,10 +619,10 @@ public class V3DiscoveryServerTest {
       public void onStreamOpen(long streamId, String typeUrl) {
         super.onStreamOpen(streamId, typeUrl);
 
-        if (!Resources.V3_TYPE_URLS.contains(typeUrl)) {
+        if (!Resources.V3.TYPE_URLS.contains(typeUrl)) {
           this.assertionErrors.add(format(
               "onStreamOpen#typeUrl => expected one of [%s], got %s",
-              String.join(",", Resources.V3_TYPE_URLS),
+              String.join(",", Resources.V3.TYPE_URLS),
               typeUrl));
         }
 
@@ -660,25 +660,25 @@ public class V3DiscoveryServerTest {
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub    = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
-    for (String typeUrl : Resources.V3_TYPE_URLS) {
+    for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
 
       StreamObserver<DiscoveryRequest> requestObserver = null;
 
       switch (typeUrl) {
-        case Resources.V3_CLUSTER_TYPE_URL:
+        case Resources.V3.CLUSTER_TYPE_URL:
           requestObserver = clusterStub.streamClusters(responseObserver);
           break;
-        case Resources.V3_ENDPOINT_TYPE_URL:
+        case Resources.V3.ENDPOINT_TYPE_URL:
           requestObserver = endpointStub.streamEndpoints(responseObserver);
           break;
-        case Resources.V3_LISTENER_TYPE_URL:
+        case Resources.V3.LISTENER_TYPE_URL:
           requestObserver = listenerStub.streamListeners(responseObserver);
           break;
-        case Resources.V3_ROUTE_TYPE_URL:
+        case Resources.V3.ROUTE_TYPE_URL:
           requestObserver = routeStub.streamRoutes(responseObserver);
           break;
-        case Resources.V3_SECRET_TYPE_URL:
+        case Resources.V3.SECRET_TYPE_URL:
           requestObserver = secretStub.streamSecrets(responseObserver);
           break;
         default:
@@ -849,7 +849,7 @@ public class V3DiscoveryServerTest {
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
         .setResponseNonce("1")
-        .setTypeUrl(Resources.V3_CLUSTER_TYPE_URL)
+        .setTypeUrl(Resources.V3.CLUSTER_TYPE_URL)
         .setVersionInfo(VERSION)
         .build());
 
@@ -893,7 +893,7 @@ public class V3DiscoveryServerTest {
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_LISTENER_TYPE_URL)
+        .setTypeUrl(Resources.V3.LISTENER_TYPE_URL)
         .build());
 
     if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
@@ -935,7 +935,7 @@ public class V3DiscoveryServerTest {
 
     requestObserver.onNext(DiscoveryRequest.newBuilder()
         .setNode(NODE)
-        .setTypeUrl(Resources.V3_LISTENER_TYPE_URL)
+        .setTypeUrl(Resources.V3.LISTENER_TYPE_URL)
         .build());
 
     if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
@@ -958,11 +958,11 @@ public class V3DiscoveryServerTest {
 
   private static Table<String, String, Collection<? extends Message>> createResponses() {
     return ImmutableTable.<String, String, Collection<? extends Message>>builder()
-        .put(Resources.V3_CLUSTER_TYPE_URL, VERSION, ImmutableList.of(CLUSTER))
-        .put(Resources.V3_ENDPOINT_TYPE_URL, VERSION, ImmutableList.of(ENDPOINT))
-        .put(Resources.V3_LISTENER_TYPE_URL, VERSION, ImmutableList.of(LISTENER))
-        .put(Resources.V3_ROUTE_TYPE_URL, VERSION, ImmutableList.of(ROUTE))
-        .put(Resources.V3_SECRET_TYPE_URL, VERSION, ImmutableList.of(SECRET))
+        .put(Resources.V3.CLUSTER_TYPE_URL, VERSION, ImmutableList.of(CLUSTER))
+        .put(Resources.V3.ENDPOINT_TYPE_URL, VERSION, ImmutableList.of(ENDPOINT))
+        .put(Resources.V3.LISTENER_TYPE_URL, VERSION, ImmutableList.of(LISTENER))
+        .put(Resources.V3.ROUTE_TYPE_URL, VERSION, ImmutableList.of(ROUTE))
+        .put(Resources.V3.SECRET_TYPE_URL, VERSION, ImmutableList.of(SECRET))
         .build();
   }
 

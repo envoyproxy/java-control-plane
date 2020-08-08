@@ -14,7 +14,7 @@ public interface StatusInfo<T> {
 
   /**
    * Returns the node grouping represented by this status, generated via
-   * {@link NodeGroup#hashv3(Node)} or {@link NodeGroup#hashV2(io.envoyproxy.envoy.api.v2.core.Node)}.
+   * {@link NodeGroup#hash(Node)} or {@link NodeGroup#hash(io.envoyproxy.envoy.api.v2.core.Node)}.
    */
   T nodeGroup();
 

@@ -119,13 +119,13 @@ public abstract class V3Snapshot extends Snapshot {
     Set<String> clusterEndpointRefs =
         Resources.getResourceReferences(clusters().resources().values());
 
-    ensureAllResourceNamesExist(Resources.V3_CLUSTER_TYPE_URL, Resources.V3_ENDPOINT_TYPE_URL,
+    ensureAllResourceNamesExist(Resources.V3.CLUSTER_TYPE_URL, Resources.V3.ENDPOINT_TYPE_URL,
         clusterEndpointRefs, endpoints().resources());
 
     Set<String> listenerRouteRefs =
         Resources.getResourceReferences(listeners().resources().values());
 
-    ensureAllResourceNamesExist(Resources.V3_LISTENER_TYPE_URL, Resources.V3_ROUTE_TYPE_URL,
+    ensureAllResourceNamesExist(Resources.V3.LISTENER_TYPE_URL, Resources.V3.ROUTE_TYPE_URL,
         listenerRouteRefs, routes().resources());
   }
 

@@ -1,9 +1,9 @@
 package io.envoyproxy.controlplane.cache;
 
-import static io.envoyproxy.controlplane.cache.Resources.V3_CLUSTER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.V3_ENDPOINT_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.V3_LISTENER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.V3_ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.ROUTE_TYPE_URL;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,19 +127,19 @@ public class V3SnapshotTest {
     // due to limitations with
     // generic type constraints.
 
-    assertThat((Map<String, Message>) snapshot.resources(V3_CLUSTER_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(CLUSTER_TYPE_URL))
         .containsEntry(CLUSTER_NAME, CLUSTER)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(V3_ENDPOINT_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(ENDPOINT_TYPE_URL))
         .containsEntry(CLUSTER_NAME, ENDPOINT)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(V3_LISTENER_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(LISTENER_TYPE_URL))
         .containsEntry(LISTENER_NAME, LISTENER)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(V3_ROUTE_TYPE_URL))
+    assertThat((Map<String, Message>) snapshot.resources(ROUTE_TYPE_URL))
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
@@ -161,10 +161,10 @@ public class V3SnapshotTest {
         ImmutableList.of(SECRET),
         version);
 
-    assertThat(snapshot.version(V3_CLUSTER_TYPE_URL)).isEqualTo(version);
-    assertThat(snapshot.version(V3_ENDPOINT_TYPE_URL)).isEqualTo(version);
-    assertThat(snapshot.version(V3_LISTENER_TYPE_URL)).isEqualTo(version);
-    assertThat(snapshot.version(V3_ROUTE_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(CLUSTER_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(ENDPOINT_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(LISTENER_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(ROUTE_TYPE_URL)).isEqualTo(version);
 
     String nullString = null;
     assertThat(snapshot.resources(nullString)).isEmpty();
@@ -200,8 +200,8 @@ public class V3SnapshotTest {
         .isInstanceOf(SnapshotConsistencyException.class)
         .hasMessage(format(
             "Mismatched %s -> %s reference and resource lengths, [%s] != 0",
-            V3_CLUSTER_TYPE_URL,
-            V3_ENDPOINT_TYPE_URL,
+            CLUSTER_TYPE_URL,
+            ENDPOINT_TYPE_URL,
             CLUSTER_NAME));
 
     V3Snapshot snapshot2 = V3Snapshot.create(
@@ -216,8 +216,8 @@ public class V3SnapshotTest {
         .isInstanceOf(SnapshotConsistencyException.class)
         .hasMessage(format(
             "Mismatched %s -> %s reference and resource lengths, [%s] != 0",
-            V3_LISTENER_TYPE_URL,
-            V3_ROUTE_TYPE_URL,
+            LISTENER_TYPE_URL,
+            ROUTE_TYPE_URL,
             ROUTE_NAME));
   }
 
@@ -238,9 +238,9 @@ public class V3SnapshotTest {
         .isInstanceOf(SnapshotConsistencyException.class)
         .hasMessage(format(
             "%s named '%s', referenced by a %s, not listed in [%s]",
-            V3_ENDPOINT_TYPE_URL,
+            ENDPOINT_TYPE_URL,
             CLUSTER_NAME,
-            V3_CLUSTER_TYPE_URL,
+            CLUSTER_TYPE_URL,
             otherClusterName));
 
     V3Snapshot snapshot2 = V3Snapshot.create(
@@ -255,9 +255,9 @@ public class V3SnapshotTest {
         .isInstanceOf(SnapshotConsistencyException.class)
         .hasMessage(format(
             "%s named '%s', referenced by a %s, not listed in [%s]",
-            V3_ROUTE_TYPE_URL,
+            ROUTE_TYPE_URL,
             ROUTE_NAME,
-            V3_LISTENER_TYPE_URL,
+            LISTENER_TYPE_URL,
             otherRouteName));
   }
 }

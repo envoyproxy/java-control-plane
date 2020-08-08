@@ -164,12 +164,12 @@ public abstract class V2Snapshot extends Snapshot {
   public void ensureConsistent() throws SnapshotConsistencyException {
     Set<String> clusterEndpointRefs = Resources.getResourceReferences(clusters().resources().values());
 
-    ensureAllResourceNamesExist(Resources.CLUSTER_TYPE_URL, Resources.ENDPOINT_TYPE_URL,
+    ensureAllResourceNamesExist(Resources.V2.CLUSTER_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL,
         clusterEndpointRefs, endpoints().resources());
 
     Set<String> listenerRouteRefs = Resources.getResourceReferences(listeners().resources().values());
 
-    ensureAllResourceNamesExist(Resources.LISTENER_TYPE_URL, Resources.ROUTE_TYPE_URL,
+    ensureAllResourceNamesExist(Resources.V2.LISTENER_TYPE_URL, Resources.V2.ROUTE_TYPE_URL,
         listenerRouteRefs, routes().resources());
   }
 

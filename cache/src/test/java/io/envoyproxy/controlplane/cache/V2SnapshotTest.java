@@ -1,9 +1,9 @@
 package io.envoyproxy.controlplane.cache;
 
-import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.ENDPOINT_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.LISTENER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.ROUTE_TYPE_URL;
 import static io.envoyproxy.envoy.api.v2.core.ApiVersion.V2;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -66,7 +66,7 @@ public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
       public StreamObserver<DiscoveryRequest> streamClusters(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, false, Resources.CLUSTER_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.V2.CLUSTER_TYPE_URL);
       }
     };
   }
@@ -80,7 +80,7 @@ public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
       public StreamObserver<DiscoveryRequest> streamEndpoints(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, false, Resources.ENDPOINT_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.V2.ENDPOINT_TYPE_URL);
       }
     };
   }
@@ -94,7 +94,7 @@ public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
       public StreamObserver<DiscoveryRequest> streamListeners(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, false, Resources.LISTENER_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.V2.LISTENER_TYPE_URL);
       }
     };
   }
@@ -108,7 +108,7 @@ public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
       public StreamObserver<DiscoveryRequest> streamRoutes(
           StreamObserver<DiscoveryResponse> responseObserver) {
 
-        return createRequestHandler(responseObserver, false, Resources.ROUTE_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.V2.ROUTE_TYPE_URL);
       }
     };
   }
@@ -121,7 +121,7 @@ public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
       @Override
       public StreamObserver<DiscoveryRequest> streamSecrets(
           StreamObserver<DiscoveryResponse> responseObserver) {
-        return createRequestHandler(responseObserver, false, Resources.SECRET_TYPE_URL);
+        return createRequestHandler(responseObserver, false, Resources.V2.SECRET_TYPE_URL);
       }
     };
   }

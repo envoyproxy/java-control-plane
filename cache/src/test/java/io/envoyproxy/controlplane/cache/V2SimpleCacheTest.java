@@ -1,7 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
-import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.ROUTE_TYPE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
@@ -74,7 +74,7 @@ public class V2SimpleCacheTest {
         true,
         XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
-            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+            .setTypeUrl(Resources.V2.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
             .build()),
         Collections.emptySet(),
@@ -95,7 +95,7 @@ public class V2SimpleCacheTest {
         false,
         XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
-            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
+            .setTypeUrl(Resources.V2.ENDPOINT_TYPE_URL)
             .addResourceNames("none")
             .build()),
         Collections.emptySet(),
@@ -111,7 +111,7 @@ public class V2SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    for (String typeUrl : Resources.V2_TYPE_URLS) {
+    for (String typeUrl : Resources.V2.TYPE_URLS) {
       ResponseTracker responseTracker = new ResponseTracker();
 
       Watch watch = cache.createWatch(
@@ -145,16 +145,16 @@ public class V2SimpleCacheTest {
         XdsRequest.create(DiscoveryRequest.newBuilder()
             .setNode(Node.getDefaultInstance())
             .setVersionInfo(VERSION1)
-            .setTypeUrl(Resources.ENDPOINT_TYPE_URL)
-            .addAllResourceNames(SNAPSHOT1.resources(Resources.ENDPOINT_TYPE_URL).keySet())
+            .setTypeUrl(Resources.V2.ENDPOINT_TYPE_URL)
+            .addAllResourceNames(SNAPSHOT1.resources(Resources.V2.ENDPOINT_TYPE_URL).keySet())
             .build()),
         Sets.newHashSet(""),
         responseTracker,
         true);
 
-    assertThat(watch.request().getTypeUrl()).isEqualTo(Resources.ENDPOINT_TYPE_URL);
+    assertThat(watch.request().getTypeUrl()).isEqualTo(Resources.V2.ENDPOINT_TYPE_URL);
     assertThat(watch.request().getResourceNamesList()).containsExactlyElementsOf(
-        SNAPSHOT1.resources(Resources.ENDPOINT_TYPE_URL).keySet());
+        SNAPSHOT1.resources(Resources.V2.ENDPOINT_TYPE_URL).keySet());
 
     assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
   }
@@ -163,7 +163,7 @@ public class V2SimpleCacheTest {
   public void successfullyWatchAllResourceTypesWithSetAfterWatch() {
     V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
-    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -184,7 +184,7 @@ public class V2SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    for (String typeUrl : Resources.V2_TYPE_URLS) {
+    for (String typeUrl : Resources.V2.TYPE_URLS) {
       assertThatWatchReceivesSnapshot(watches.get(typeUrl), SNAPSHOT1);
     }
   }
@@ -200,7 +200,7 @@ public class V2SimpleCacheTest {
     HashMap<String, WatchAndTracker> watches = new HashMap<>();
 
     for (int i = 0; i < 2; ++i) {
-      watches.putAll(Resources.V2_TYPE_URLS.stream()
+      watches.putAll(Resources.V2.TYPE_URLS.stream()
           .collect(Collectors.toMap(
               typeUrl -> typeUrl,
               typeUrl -> {
@@ -226,21 +226,21 @@ public class V2SimpleCacheTest {
     }
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
-    for (String typeUrl : Resources.V2_TYPE_URLS) {
+    for (String typeUrl : Resources.V2.TYPE_URLS) {
       assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT2);
 
-    for (String typeUrl : Resources.V2_TYPE_URLS) {
+    for (String typeUrl : Resources.V2.TYPE_URLS) {
       assertThatWatchReceivesSnapshot(watches.get(typeUrl), SNAPSHOT2);
     }
 
     // Verify that CDS and LDS always get triggered before EDS and RDS respectively.
-    assertThat(responseOrderTracker.responseTypes).containsExactly(Resources.CLUSTER_TYPE_URL,
-        Resources.CLUSTER_TYPE_URL, Resources.ENDPOINT_TYPE_URL, Resources.ENDPOINT_TYPE_URL,
-        Resources.LISTENER_TYPE_URL, Resources.LISTENER_TYPE_URL, Resources.ROUTE_TYPE_URL,
-        Resources.ROUTE_TYPE_URL, Resources.SECRET_TYPE_URL, Resources.SECRET_TYPE_URL);
+    assertThat(responseOrderTracker.responseTypes).containsExactly(Resources.V2.CLUSTER_TYPE_URL,
+        Resources.V2.CLUSTER_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL,
+        Resources.V2.LISTENER_TYPE_URL, Resources.V2.LISTENER_TYPE_URL, Resources.V2.ROUTE_TYPE_URL,
+        Resources.V2.ROUTE_TYPE_URL, Resources.V2.SECRET_TYPE_URL, Resources.V2.SECRET_TYPE_URL);
   }
 
   @Test
@@ -254,7 +254,7 @@ public class V2SimpleCacheTest {
     //
     // Note how we're requesting the resources from MULTIPLE_RESOURCE_SNAPSHOT2 while claiming we
     // only know about the ones from SNAPSHOT2
-    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -276,8 +276,8 @@ public class V2SimpleCacheTest {
 
     // The snapshot version matches for all resources, but for eds and cds there are new resources present
     // for the same version, so we expect the watches to trigger.
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.CLUSTER_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
-    assertThatWatchReceivesSnapshot(watches.remove(Resources.ENDPOINT_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
+    assertThatWatchReceivesSnapshot(watches.remove(Resources.V2.CLUSTER_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
+    assertThatWatchReceivesSnapshot(watches.remove(Resources.V2.ENDPOINT_TYPE_URL), MULTIPLE_RESOURCES_SNAPSHOT2);
 
     // Remaining watches should not trigger
     for (WatchAndTracker watchAndTracker : watches.values()) {
@@ -298,7 +298,7 @@ public class V2SimpleCacheTest {
     // while we only know about the resources found in SNAPSHOT2. Since SNAPSHOT2 is the current
     // snapshot, we have nothing to respond with for the new resources so we should not trigger
     // the watch.
-    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -330,7 +330,7 @@ public class V2SimpleCacheTest {
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
-    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -351,14 +351,14 @@ public class V2SimpleCacheTest {
             }));
 
     // The request version matches the current snapshot version, so the watches shouldn't receive any responses.
-    for (String typeUrl : Resources.V2_TYPE_URLS) {
+    for (String typeUrl : Resources.V2.TYPE_URLS) {
       assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
 
     cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
 
     // The request version still matches the current snapshot version, so the watches shouldn't receive any responses.
-    for (String typeUrl : Resources.V2_TYPE_URLS) {
+    for (String typeUrl : Resources.V2.TYPE_URLS) {
       assertThatWatchIsOpenWithNoResponses(watches.get(typeUrl));
     }
   }
@@ -367,7 +367,7 @@ public class V2SimpleCacheTest {
   public void watchesAreReleasedAfterCancel() {
     V2SimpleCache<String> cache = new V2SimpleCache<>(new SingleNodeGroup());
 
-    Map<String, WatchAndTracker> watches = Resources.V2_TYPE_URLS.stream()
+    Map<String, WatchAndTracker> watches = Resources.V2.TYPE_URLS.stream()
         .collect(Collectors.toMap(
             typeUrl -> typeUrl,
             typeUrl -> {
@@ -523,7 +523,7 @@ public class V2SimpleCacheTest {
     private static final String GROUP = "node";
 
     @Override
-    public String hashV2(Node node) {
+    public String hash(Node node) {
       if (node == null) {
         throw new IllegalArgumentException("node");
       }
@@ -532,7 +532,7 @@ public class V2SimpleCacheTest {
     }
 
     @Override
-    public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+    public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
       throw new IllegalStateException("should not have received a v3 Node in a v2 Test");
     }
   }

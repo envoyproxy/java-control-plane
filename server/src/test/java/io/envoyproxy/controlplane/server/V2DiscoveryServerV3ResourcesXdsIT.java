@@ -39,11 +39,11 @@ public class V2DiscoveryServerV3ResourcesXdsIT {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
       final V3SimpleCache<String> cache = new V3SimpleCache<>(new NodeGroup<String>() {
-        @Override public String hashV2(Node node) {
+        @Override public String hash(Node node) {
           return GROUP;
         }
 
-        @Override public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+        @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
           throw new IllegalStateException("Unexpected v3 request in v2 test");
         }
       });

@@ -59,37 +59,42 @@ public class Resources {
   static final String FILTER_ENVOY_ROUTER = "envoy.router";
   static final String FILTER_HTTP_CONNECTION_MANAGER = "envoy.http_connection_manager";
 
-  public static final String V3_CLUSTER_TYPE_URL = "type.googleapis.com/envoy.config.cluster.v3"
-      + ".Cluster";
-  public static final String V3_ENDPOINT_TYPE_URL = "type.googleapis.com/envoy.config.endpoint.v3"
-      + ".ClusterLoadAssignment";
-  public static final String V3_LISTENER_TYPE_URL = "type.googleapis.com/envoy.config.listener.v3"
-      + ".Listener";
-  public static final String V3_ROUTE_TYPE_URL = "type.googleapis.com/envoy.config.route.v3"
-      + ".RouteConfiguration";
-  public static final String V3_SECRET_TYPE_URL = "type.googleapis.com/envoy.extensions"
-      + ".transport_sockets.tls.v3.Secret";
+  public static class V2 {
+    private static final String TYPE_URL_PREFIX = "type.googleapis.com/envoy.api.v2.";
+    public static final String SECRET_TYPE_URL = TYPE_URL_PREFIX + "auth.Secret";
+    public static final String ROUTE_TYPE_URL = TYPE_URL_PREFIX + "RouteConfiguration";
+    public static final String LISTENER_TYPE_URL = TYPE_URL_PREFIX + "Listener";
+    public static final String ENDPOINT_TYPE_URL = TYPE_URL_PREFIX + "ClusterLoadAssignment";
+    public static final String CLUSTER_TYPE_URL = TYPE_URL_PREFIX + "Cluster";
 
-  private static final String V2_TYPE_URL_PREFIX = "type.googleapis.com/envoy.api.v2.";
-  public static final String CLUSTER_TYPE_URL = V2_TYPE_URL_PREFIX + "Cluster";
-  public static final String ENDPOINT_TYPE_URL = V2_TYPE_URL_PREFIX + "ClusterLoadAssignment";
-  public static final String LISTENER_TYPE_URL = V2_TYPE_URL_PREFIX + "Listener";
-  public static final String ROUTE_TYPE_URL = V2_TYPE_URL_PREFIX + "RouteConfiguration";
-  public static final String SECRET_TYPE_URL = V2_TYPE_URL_PREFIX + "auth.Secret";
+    public static final List<String> TYPE_URLS = ImmutableList.of(
+        CLUSTER_TYPE_URL,
+        ENDPOINT_TYPE_URL,
+        LISTENER_TYPE_URL,
+        ROUTE_TYPE_URL,
+        SECRET_TYPE_URL);
+  }
 
-  public static final List<String> V2_TYPE_URLS = ImmutableList.of(
-      CLUSTER_TYPE_URL,
-      ENDPOINT_TYPE_URL,
-      LISTENER_TYPE_URL,
-      ROUTE_TYPE_URL,
-      SECRET_TYPE_URL);
+  public static class V3 {
 
-  public static final List<String> V3_TYPE_URLS = ImmutableList.of(
-      V3_CLUSTER_TYPE_URL,
-      V3_ENDPOINT_TYPE_URL,
-      V3_LISTENER_TYPE_URL,
-      V3_ROUTE_TYPE_URL,
-      V3_SECRET_TYPE_URL);
+    public static final String CLUSTER_TYPE_URL = "type.googleapis.com/envoy.config.cluster.v3"
+        + ".Cluster";
+    public static final String ENDPOINT_TYPE_URL = "type.googleapis.com/envoy.config.endpoint.v3"
+        + ".ClusterLoadAssignment";
+    public static final String LISTENER_TYPE_URL = "type.googleapis.com/envoy.config.listener.v3"
+        + ".Listener";
+    public static final String ROUTE_TYPE_URL = "type.googleapis.com/envoy.config.route.v3"
+        + ".RouteConfiguration";
+    public static final String SECRET_TYPE_URL = "type.googleapis.com/envoy.extensions"
+        + ".transport_sockets.tls.v3.Secret";
+
+    public static final List<String> TYPE_URLS = ImmutableList.of(
+        CLUSTER_TYPE_URL,
+        ENDPOINT_TYPE_URL,
+        LISTENER_TYPE_URL,
+        ROUTE_TYPE_URL,
+        SECRET_TYPE_URL);
+  }
 
   public static final List<ResourceType> RESOURCE_TYPES_IN_ORDER = ImmutableList.of(
       CLUSTER,
@@ -99,45 +104,45 @@ public class Resources {
       SECRET);
 
   public static final Map<String, String> V3_TYPE_URLS_TO_V2 = ImmutableMap.of(
-      V3_CLUSTER_TYPE_URL, CLUSTER_TYPE_URL,
-      V3_ENDPOINT_TYPE_URL, ENDPOINT_TYPE_URL,
-      V3_LISTENER_TYPE_URL, LISTENER_TYPE_URL,
-      V3_ROUTE_TYPE_URL, ROUTE_TYPE_URL,
-      V3_SECRET_TYPE_URL, SECRET_TYPE_URL);
+      Resources.V3.CLUSTER_TYPE_URL, Resources.V2.CLUSTER_TYPE_URL,
+      Resources.V3.ENDPOINT_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL,
+      Resources.V3.LISTENER_TYPE_URL, Resources.V2.LISTENER_TYPE_URL,
+      Resources.V3.ROUTE_TYPE_URL, Resources.V2.ROUTE_TYPE_URL,
+      Resources.V3.SECRET_TYPE_URL, Resources.V2.SECRET_TYPE_URL);
 
   public static final Map<String, String> V2_TYPE_URLS_TO_V3 = ImmutableMap.of(
-      CLUSTER_TYPE_URL, V3_CLUSTER_TYPE_URL,
-      ENDPOINT_TYPE_URL, V3_ENDPOINT_TYPE_URL,
-      LISTENER_TYPE_URL, V3_LISTENER_TYPE_URL,
-      ROUTE_TYPE_URL, V3_ROUTE_TYPE_URL,
-      SECRET_TYPE_URL, V3_SECRET_TYPE_URL);
+      Resources.V2.CLUSTER_TYPE_URL, Resources.V3.CLUSTER_TYPE_URL,
+      Resources.V2.ENDPOINT_TYPE_URL, Resources.V3.ENDPOINT_TYPE_URL,
+      Resources.V2.LISTENER_TYPE_URL, Resources.V3.LISTENER_TYPE_URL,
+      Resources.V2.ROUTE_TYPE_URL, Resources.V3.ROUTE_TYPE_URL,
+      Resources.V2.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL);
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
-          .put(V3_CLUSTER_TYPE_URL, CLUSTER)
-          .put(CLUSTER_TYPE_URL, CLUSTER)
-          .put(V3_ENDPOINT_TYPE_URL, ENDPOINT)
-          .put(ENDPOINT_TYPE_URL, ENDPOINT)
-          .put(V3_LISTENER_TYPE_URL, LISTENER)
-          .put(LISTENER_TYPE_URL, LISTENER)
-          .put(V3_ROUTE_TYPE_URL, ROUTE)
-          .put(ROUTE_TYPE_URL, ROUTE)
-          .put(V3_SECRET_TYPE_URL, SECRET)
-          .put(SECRET_TYPE_URL, SECRET)
+          .put(Resources.V3.CLUSTER_TYPE_URL, CLUSTER)
+          .put(Resources.V2.CLUSTER_TYPE_URL, CLUSTER)
+          .put(Resources.V3.ENDPOINT_TYPE_URL, ENDPOINT)
+          .put(Resources.V2.ENDPOINT_TYPE_URL, ENDPOINT)
+          .put(Resources.V3.LISTENER_TYPE_URL, LISTENER)
+          .put(Resources.V2.LISTENER_TYPE_URL, LISTENER)
+          .put(Resources.V3.ROUTE_TYPE_URL, ROUTE)
+          .put(Resources.V2.ROUTE_TYPE_URL, ROUTE)
+          .put(Resources.V3.SECRET_TYPE_URL, SECRET)
+          .put(Resources.V2.SECRET_TYPE_URL, SECRET)
           .build();
 
   public static final Map<String, Class<? extends Message>> RESOURCE_TYPE_BY_URL =
       new ImmutableMap.Builder<String, Class<? extends Message>>()
-          .put(CLUSTER_TYPE_URL, Cluster.class)
-          .put(ENDPOINT_TYPE_URL, ClusterLoadAssignment.class)
-          .put(LISTENER_TYPE_URL, Listener.class)
-          .put(ROUTE_TYPE_URL, RouteConfiguration.class)
-          .put(SECRET_TYPE_URL, Secret.class)
-          .put(V3_CLUSTER_TYPE_URL, io.envoyproxy.envoy.config.cluster.v3.Cluster.class)
-          .put(V3_ENDPOINT_TYPE_URL, io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment.class)
-          .put(V3_LISTENER_TYPE_URL, io.envoyproxy.envoy.config.listener.v3.Listener.class)
-          .put(V3_ROUTE_TYPE_URL, io.envoyproxy.envoy.config.route.v3.RouteConfiguration.class)
-          .put(V3_SECRET_TYPE_URL, io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret.class)
+          .put(Resources.V2.CLUSTER_TYPE_URL, Cluster.class)
+          .put(Resources.V2.ENDPOINT_TYPE_URL, ClusterLoadAssignment.class)
+          .put(Resources.V2.LISTENER_TYPE_URL, Listener.class)
+          .put(Resources.V2.ROUTE_TYPE_URL, RouteConfiguration.class)
+          .put(Resources.V2.SECRET_TYPE_URL, Secret.class)
+          .put(Resources.V3.CLUSTER_TYPE_URL, io.envoyproxy.envoy.config.cluster.v3.Cluster.class)
+          .put(Resources.V3.ENDPOINT_TYPE_URL, io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment.class)
+          .put(Resources.V3.LISTENER_TYPE_URL, io.envoyproxy.envoy.config.listener.v3.Listener.class)
+          .put(Resources.V3.ROUTE_TYPE_URL, io.envoyproxy.envoy.config.route.v3.RouteConfiguration.class)
+          .put(Resources.V3.SECRET_TYPE_URL, io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret.class)
           .build();
 
   /**
@@ -267,7 +272,8 @@ public class Resources {
               }
             } catch (InvalidProtocolBufferException e) {
               LOGGER.error(
-                  "Failed to convert HTTP connection manager config struct into protobuf message for listener {}",
+                  "Failed to convert v2 HTTP connection manager config struct into protobuf "
+                      + "message for listener {}",
                   getResourceName(l),
                   e);
             }
@@ -299,7 +305,8 @@ public class Resources {
               }
             } catch (InvalidProtocolBufferException e) {
               LOGGER.error(
-                  "Failed to convert HTTP connection manager config struct into protobuf message for listener {}",
+                  "Failed to convert v3 HTTP connection manager config struct into protobuf "
+                      + "message for listener {}",
                   getResourceName(l),
                   e);
             }
@@ -315,9 +322,9 @@ public class Resources {
    * Returns the API version (v2 or v3) for a given type URL.
    */
   public static ApiVersion getResourceApiVersion(String typeUrl) {
-    if (V2_TYPE_URLS.contains(typeUrl)) {
+    if (Resources.V2.TYPE_URLS.contains(typeUrl)) {
       return V2;
-    } else if (V3_TYPE_URLS.contains(typeUrl)) {
+    } else if (Resources.V3.TYPE_URLS.contains(typeUrl)) {
       return V3;
     }
 

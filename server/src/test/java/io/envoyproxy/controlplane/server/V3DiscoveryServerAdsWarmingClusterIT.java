@@ -44,11 +44,11 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
   private static final CustomCache<String> cache = new CustomCache<>(new NodeGroup<String>() {
-    @Override public String hashV2(Node node) {
+    @Override public String hash(Node node) {
       throw new IllegalStateException("Unexpected v2 request in v3 test");
     }
 
-    @Override public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+    @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
       return GROUP;
     }
   });
@@ -146,7 +146,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
   private static void createSnapshotWithWorkingClusterWithTheSameEdsVersion(DiscoveryRequest request,
       ExecutorService executorService) {
-    if (request.getTypeUrl().equals(Resources.CLUSTER_TYPE_URL)) {
+    if (request.getTypeUrl().equals(Resources.V2.CLUSTER_TYPE_URL)) {
       executorService.submit(() -> cache.setSnapshot(
           GROUP,
           createSnapshot(true,

@@ -23,11 +23,11 @@ public class SnapshotCollectingCallbackTest {
 
   private static final Clock CLOCK = Clock.fixed(Instant.now(), ZoneId.systemDefault());
   private static final NodeGroup<String> NODE_GROUP = new NodeGroup<String>() {
-    @Override public String hashV2(Node node) {
+    @Override public String hash(Node node) {
       return "group";
     }
 
-    @Override public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+    @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
       return "group";
     }
   };

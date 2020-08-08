@@ -27,11 +27,11 @@ public class TestMain {
    */
   public static void main(String[] arg) throws IOException, InterruptedException {
     V2SimpleCache<String> cache = new V2SimpleCache<>(new NodeGroup<String>() {
-      @Override public String hashV2(Node node) {
+      @Override public String hash(Node node) {
         return GROUP;
       }
 
-      @Override public String hashV3(io.envoyproxy.envoy.config.core.v3.Node node) {
+      @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
         return GROUP;
       }
     });
