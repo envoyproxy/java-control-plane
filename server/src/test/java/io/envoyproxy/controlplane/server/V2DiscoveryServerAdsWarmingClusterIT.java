@@ -69,7 +69,7 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
             }
 
             @Override
-            public void onStreamRequest(long streamId, DiscoveryRequest request) {
+            public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
               onStreamRequestLatch.countDown();
             }
 

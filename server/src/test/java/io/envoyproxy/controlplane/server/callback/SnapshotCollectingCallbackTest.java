@@ -46,8 +46,8 @@ public class SnapshotCollectingCallbackTest {
 
   @Test
   public void testSingleSnapshot() {
-    callback.onStreamRequest(0, DiscoveryRequest.getDefaultInstance());
-    callback.onStreamRequest(1, DiscoveryRequest.getDefaultInstance());
+    callback.onV2StreamRequest(0, DiscoveryRequest.getDefaultInstance());
+    callback.onV2StreamRequest(1, DiscoveryRequest.getDefaultInstance());
 
     // We have 2 references to the snapshot, this should do nothing.
     callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(5)));
@@ -84,7 +84,7 @@ public class SnapshotCollectingCallbackTest {
       }
     };
 
-    callback.onStreamRequest(0, DiscoveryRequest.getDefaultInstance());
+    callback.onV2StreamRequest(0, DiscoveryRequest.getDefaultInstance());
     assertThat(deleteUnreferencedLatch.await(100, TimeUnit.MILLISECONDS)).isTrue();
     assertThat(collectedGroups).isEmpty();
 

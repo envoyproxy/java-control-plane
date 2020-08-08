@@ -55,7 +55,8 @@ public class V3DiscoveryServerV2ResourcesXdsIT {
         }
 
         @Override
-        public void onStreamRequest(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
+        public void onV2StreamRequest(long streamId,
+            io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
           onStreamRequestLatch.countDown();
         }
 

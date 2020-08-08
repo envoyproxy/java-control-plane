@@ -134,7 +134,7 @@ public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   @Override
   protected void runStreamRequestCallbacks(long streamId, DiscoveryRequest discoveryRequest) {
     callbacks.forEach(
-        cb -> cb.onStreamRequest(streamId, discoveryRequest));
+        cb -> cb.onV2StreamRequest(streamId, discoveryRequest));
   }
 
   @Override

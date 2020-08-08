@@ -68,7 +68,8 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         }
 
         @Override
-        public void onStreamRequest(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
+        public void onV2StreamRequest(long streamId,
+            io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
           throw new IllegalStateException("Unexpected v2 request in v3 test");
         }
 

@@ -50,7 +50,7 @@ public class V2DiscoveryServerXdsIT {
         }
 
         @Override
-        public void onStreamRequest(long streamId, DiscoveryRequest request) {
+        public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
           onStreamRequestLatch.countDown();
         }
 

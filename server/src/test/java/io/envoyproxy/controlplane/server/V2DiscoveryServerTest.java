@@ -452,8 +452,8 @@ public class V2DiscoveryServerTest {
       }
 
       @Override
-      public void onStreamRequest(long streamId, DiscoveryRequest request) {
-        super.onStreamRequest(streamId, request);
+      public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
+        super.onV2StreamRequest(streamId, request);
 
         streamRequestLatch.get().countDown();
       }
@@ -627,8 +627,8 @@ public class V2DiscoveryServerTest {
       }
 
       @Override
-      public void onStreamRequest(long streamId, DiscoveryRequest request) {
-        super.onStreamRequest(streamId, request);
+      public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
+        super.onV2StreamRequest(streamId, request);
 
         streamRequestLatches.get(request.getTypeUrl()).countDown();
       }
@@ -872,8 +872,8 @@ public class V2DiscoveryServerTest {
   public void testCallbacksRequestException() throws InterruptedException {
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
-      public void onStreamRequest(long streamId, DiscoveryRequest request) {
-        super.onStreamRequest(streamId, request);
+      public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
+        super.onV2StreamRequest(streamId, request);
         throw new RequestException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
       }
     };
@@ -914,8 +914,8 @@ public class V2DiscoveryServerTest {
   public void testCallbacksOtherStatusException() throws InterruptedException {
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
-      public void onStreamRequest(long streamId, DiscoveryRequest request) {
-        super.onStreamRequest(streamId, request);
+      public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
+        super.onV2StreamRequest(streamId, request);
         throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
       }
     };
@@ -1047,7 +1047,7 @@ public class V2DiscoveryServerTest {
     }
 
     @Override
-    public void onStreamRequest(long streamId, DiscoveryRequest request) {
+    public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
       streamRequestCount.getAndIncrement();
 
       if (request == null) {

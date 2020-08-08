@@ -80,7 +80,7 @@ public class SnapshotCollectingCallback<T, X extends io.envoyproxy.controlplane.
   }
 
   @Override
-  public synchronized void onStreamRequest(long streamId, DiscoveryRequest request) {
+  public synchronized void onV2StreamRequest(long streamId, DiscoveryRequest request) {
     T groupIdentifier = nodeGroup.hash(request.getNode());
     updateState(streamId, groupIdentifier);
   }
