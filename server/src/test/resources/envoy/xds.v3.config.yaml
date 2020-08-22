@@ -10,6 +10,7 @@ dynamic_resources:
         envoy_grpc:
           cluster_name: xds_cluster
       transport_api_version: V3
+    resource_api_version: V3
   lds_config:
     api_config_source:
       api_type: GRPC
@@ -17,6 +18,7 @@ dynamic_resources:
         envoy_grpc:
           cluster_name: xds_cluster
       transport_api_version: V3
+    resource_api_version: V3
 node:
   cluster: test-cluster
   id: test-id

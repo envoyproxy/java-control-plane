@@ -1,5 +1,8 @@
 package io.envoyproxy.controlplane.server;
 
+import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V2;
+import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
+
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
@@ -24,7 +27,7 @@ class V3TestSnapshots {
     Cluster cluster = TestResources.createClusterV3(clusterName);
     ClusterLoadAssignment
         endpoint = TestResources.createEndpointV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, ApiVersion.V3, listenerName,
+    Listener listener = TestResources.createListenerV3(ads, V3, V3, listenerName,
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
 
@@ -46,8 +49,8 @@ class V3TestSnapshots {
       int listenerPort,
       String routeName,
       String version) {
-    return createSnapshotNoEds(ads, ApiVersion.V2, clusterName, endpointAddress, endpointPort,
-        listenerName, listenerPort, routeName, version);
+    return createSnapshotNoEds(ads, V2, V2, clusterName, endpointAddress,
+        endpointPort, listenerName, listenerPort, routeName, version);
   }
 
   static Snapshot createSnapshotNoEds(
@@ -59,13 +62,14 @@ class V3TestSnapshots {
       int listenerPort,
       String routeName,
       String version) {
-    return createSnapshotNoEds(ads, ApiVersion.V3, clusterName, endpointAddress, endpointPort,
-        listenerName, listenerPort, routeName, version);
+    return createSnapshotNoEds(ads, V3, V3, clusterName, endpointAddress,
+        endpointPort, listenerName, listenerPort, routeName, version);
   }
 
   private static Snapshot createSnapshotNoEds(
       boolean ads,
       ApiVersion rdsTransportVersion,
+      ApiVersion rdsResourceVersion,
       String clusterName,
       String endpointAddress,
       int endpointPort,
@@ -75,8 +79,8 @@ class V3TestSnapshots {
       String version) {
 
     Cluster cluster = TestResources.createClusterV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, rdsTransportVersion, listenerName,
-        listenerPort, routeName);
+    Listener listener = TestResources.createListenerV3(ads, rdsTransportVersion, rdsResourceVersion,
+        listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
 
     return Snapshot.create(

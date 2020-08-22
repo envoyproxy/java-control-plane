@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.controlplane.server.util.V3TestSnapshots.createSnapshotNoEds;
+import static io.envoyproxy.controlplane.server.V3TestSnapshots.createSnapshotNoEds;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;

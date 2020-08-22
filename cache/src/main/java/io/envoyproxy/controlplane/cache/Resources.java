@@ -262,10 +262,15 @@ public class Resources {
             }
 
             try {
-              HttpConnectionManager.Builder config = HttpConnectionManager.newBuilder();
+              HttpConnectionManager config;
 
-              // TODO: Filter#getConfig() is deprecated, migrate to use Filter#getTypedConfig().
-              structAsMessage(filter.getConfig(), config);
+              if (filter.hasTypedConfig()) {
+                config = filter.getTypedConfig().unpack(HttpConnectionManager.class);
+              } else {
+                HttpConnectionManager.Builder builder = HttpConnectionManager.newBuilder();
+                structAsMessage(filter.getConfig(), builder);
+                config = builder.build();
+              }
 
               if (config.getRouteSpecifierCase() == RDS && !isNullOrEmpty(config.getRds().getRouteConfigName())) {
                 refs.add(config.getRds().getRouteConfigName());

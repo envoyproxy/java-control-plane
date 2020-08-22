@@ -1,6 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.controlplane.server.util.V3TestSnapshots.createSnapshot;
+import static io.envoyproxy.controlplane.server.V3TestSnapshots.createSnapshot;
+import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -16,7 +17,6 @@ import io.envoyproxy.controlplane.cache.v3.Snapshot;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
-import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import io.envoyproxy.envoy.config.core.v3.ConfigSource;
 import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -147,7 +147,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
   private static void createSnapshotWithWorkingClusterWithTheSameEdsVersion(DiscoveryRequest request,
       ExecutorService executorService) {
-    if (request.getTypeUrl().equals(Resources.V2.CLUSTER_TYPE_URL)) {
+    if (request.getTypeUrl().equals(Resources.V3.CLUSTER_TYPE_URL)) {
       executorService.submit(() -> cache.setSnapshot(
           GROUP,
           createSnapshot(true,
@@ -186,7 +186,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         .build();
     ClusterLoadAssignment
         endpoint = TestResources.createEndpointV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, ApiVersion.V3, listenerName,
+    Listener listener = TestResources.createListenerV3(ads, V3, V3, listenerName,
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
 

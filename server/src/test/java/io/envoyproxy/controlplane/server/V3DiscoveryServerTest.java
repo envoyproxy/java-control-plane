@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
+import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -19,7 +20,6 @@ import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
-import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import io.envoyproxy.envoy.config.core.v3.Node;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
@@ -86,7 +86,7 @@ public class V3DiscoveryServerTest {
   private static final ClusterLoadAssignment
       ENDPOINT = TestResources.createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener
-      LISTENER = TestResources.createListenerV3(ADS, ApiVersion.V3, LISTENER_NAME, LISTENER_PORT,
+      LISTENER = TestResources.createListenerV3(ADS, V3, V3, LISTENER_NAME, LISTENER_PORT,
       ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRouteV3(ROUTE_NAME,
       CLUSTER_NAME);

@@ -11,17 +11,24 @@ dynamic_resources:
     transport_api_version: V3
   cds_config:
     ads: {}
+    resource_api_version: V3
   lds_config:
     ads: {}
+    resource_api_version: V3
 node:
   cluster: test-cluster
   id: test-id
 static_resources:
   clusters:
   - connect_timeout: 1s
-    hosts:
-    - socket_address:
-        address: HOST_IP
-        port_value: HOST_PORT
+    load_assignment:
+      cluster_name: ads_server
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: HOST_IP
+                  port_value: HOST_PORT
     http2_protocol_options: {}
     name: ads_cluster

@@ -36,8 +36,8 @@ public class SnapshotTest {
 
   private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = TestResources.createListener(ADS, V2, LISTENER_NAME,
-      LISTENER_PORT, ROUTE_NAME);
+  private static final Listener LISTENER = TestResources.createListener(ADS, V2, V2,
+      LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 

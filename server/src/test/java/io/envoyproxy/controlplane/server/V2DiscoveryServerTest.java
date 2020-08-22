@@ -84,7 +84,7 @@ public class V2DiscoveryServerTest {
 
   private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = TestResources.createListener(ADS, ApiVersion.V2,
+  private static final Listener LISTENER = TestResources.createListener(ADS, ApiVersion.V2, ApiVersion.V2,
       LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);

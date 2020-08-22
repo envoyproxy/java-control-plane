@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -16,7 +17,6 @@ import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
 import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.auth.Secret;
-import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +41,9 @@ public class ResourcesTest {
   private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener LISTENER = TestResources.createListener(ADS,
-      io.envoyproxy.envoy.api.v2.core.ApiVersion.V2, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+      io.envoyproxy.envoy.api.v2.core.ApiVersion.V2, io.envoyproxy.envoy.api.v2.core.ApiVersion.V2,
+      LISTENER_NAME, LISTENER_PORT,
+      ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
@@ -50,7 +52,7 @@ public class ResourcesTest {
   private static final io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment V3_ENDPOINT =
       TestResources.createEndpointV3(V3_CLUSTER_NAME, ENDPOINT_PORT);
   private static final io.envoyproxy.envoy.config.listener.v3.Listener
-      V3_LISTENER = TestResources.createListenerV3(ADS, ApiVersion.V3, V3_LISTENER_NAME,
+      V3_LISTENER = TestResources.createListenerV3(ADS, V3, V3, V3_LISTENER_NAME,
       LISTENER_PORT, V3_ROUTE_NAME);
   private static final io.envoyproxy.envoy.config.route.v3.RouteConfiguration V3_ROUTE =
       TestResources.createRouteV3(V3_ROUTE_NAME, V3_CLUSTER_NAME);

@@ -18,9 +18,14 @@ node:
 static_resources:
   clusters:
   - connect_timeout: 1s
-    hosts:
-    - socket_address:
-        address: HOST_IP
-        port_value: HOST_PORT
+    load_assignment:
+      cluster_name: ads_server
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  address: HOST_IP
+                  port_value: HOST_PORT
     http2_protocol_options: {}
     name: ads_cluster
