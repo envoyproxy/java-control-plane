@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.controlplane.server.V3TestSnapshots.createSnapshotNoEds;
+import static io.envoyproxy.controlplane.server.util.V3TestSnapshots.createSnapshotNoEds;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -9,8 +9,6 @@ import static org.hamcrest.Matchers.containsString;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.envoy.api.v2.core.Node;
-import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
-import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
@@ -43,35 +41,9 @@ public class V3DiscoveryServerXdsIT {
         }
       });
 
-      final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
-        @Override
-        public void onStreamOpen(long streamId, String typeUrl) {
-          onStreamOpenLatch.countDown();
-        }
-
-        @Override
-        public void onV2StreamRequest(long streamId,
-            io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-          throw new IllegalStateException("Unexpected v2 request in v3 test");
-        }
-
-        @Override
-        public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
-          onStreamRequestLatch.countDown();
-        }
-
-        @Override
-        public void onStreamResponse(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-            io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-          throw new IllegalStateException("Unexpected v2 response in v3 test");
-        }
-
-        @Override
-        public void onV3StreamResponse(long streamId, DiscoveryRequest request,
-            DiscoveryResponse response) {
-          onStreamResponseLatch.countDown();
-        }
-      };
+      final DiscoveryServerCallbacks callbacks =
+          new V3OnlyDiscoveryServerCallbacks(onStreamOpenLatch, onStreamRequestLatch,
+              onStreamResponseLatch);
 
       cache.setSnapshot(
           GROUP,

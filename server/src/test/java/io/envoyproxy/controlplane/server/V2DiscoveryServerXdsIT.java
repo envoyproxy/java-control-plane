@@ -8,8 +8,6 @@ import static org.hamcrest.Matchers.containsString;
 
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.v2.SimpleCache;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
@@ -43,35 +41,9 @@ public class V2DiscoveryServerXdsIT {
         }
       });
 
-      final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
-        @Override
-        public void onStreamOpen(long streamId, String typeUrl) {
-          onStreamOpenLatch.countDown();
-        }
-
-        @Override
-        public void onV2StreamRequest(long streamId, DiscoveryRequest request) {
-          onStreamRequestLatch.countDown();
-        }
-
-        @Override
-        public void onV3StreamRequest(long streamId,
-            io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
-          throw new IllegalStateException("Unexpected v3 request in v2 test");
-        }
-
-        @Override
-        public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
-          onStreamResponseLatch.countDown();
-        }
-
-        @Override
-        public void onV3StreamResponse(long streamId,
-            io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request,
-            io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse response) {
-          throw new IllegalStateException("Unexpected v3 response in v2 test");
-        }
-      };
+      final DiscoveryServerCallbacks callbacks =
+          new V2OnlyDiscoveryServerCallbacks(onStreamOpenLatch, onStreamRequestLatch,
+              onStreamResponseLatch);
 
       cache.setSnapshot(
           GROUP,

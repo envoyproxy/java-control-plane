@@ -61,8 +61,7 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
       ExecutorService executorService = Executors.newSingleThreadExecutor();
-      final DiscoveryServerCallbacks callbacks =
-          new DiscoveryServerCallbacks() {
+      final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
             @Override
             public void onStreamOpen(long streamId, String typeUrl) {
               onStreamOpenLatch.countDown();
