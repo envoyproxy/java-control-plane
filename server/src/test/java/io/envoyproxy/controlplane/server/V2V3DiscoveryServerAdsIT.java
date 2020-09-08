@@ -1,8 +1,7 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.SimpleCache;
-import io.envoyproxy.controlplane.cache.Snapshot;
+import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
@@ -23,8 +22,7 @@ public class V2V3DiscoveryServerAdsIT {
 
   private static final String CONFIG_V2 = "envoy/ads.v2.config.yaml";
   private static final String CONFIG_V3 = "envoy/ads.v3.config.yaml";
-  private static final String GROUP_V2 = "key_v2";
-  private static final String GROUP_V3 = "key_v3";
+  private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
 
   private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(1);
@@ -36,14 +34,14 @@ public class V2V3DiscoveryServerAdsIT {
   private static final NettyGrpcServerRule ADS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final SimpleCache<String, Snapshot> cache = new SimpleCache<>(
+      final SimpleCache<String> cache = new SimpleCache<>(
           new NodeGroup<String>() {
             @Override public String hash(Node node) {
-              return GROUP_V2;
+              return GROUP;
             }
 
             @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
-              return GROUP_V3;
+              return GROUP;
             }
           }
       );
@@ -58,7 +56,7 @@ public class V2V3DiscoveryServerAdsIT {
           );
 
       cache.setSnapshot(
-              GROUP_V2,
+              GROUP,
               createSnapshot(true,
                       "upstream",
                       UPSTREAM.ipAddress(),
@@ -70,8 +68,8 @@ public class V2V3DiscoveryServerAdsIT {
       );
 
       cache.setSnapshot(
-              GROUP_V2,
-              V2TestSnapshots.createSnapshot(true,
+              GROUP,
+              createSnapshot(true,
                       "upstream",
                       UPSTREAM.ipAddress(),
                       EchoContainer.PORT,
@@ -82,7 +80,7 @@ public class V2V3DiscoveryServerAdsIT {
       );
 
       cache.setSnapshot(
-              GROUP_V3,
+              GROUP,
           createSnapshot(true,
               "upstream",
               UPSTREAM.ipAddress(),

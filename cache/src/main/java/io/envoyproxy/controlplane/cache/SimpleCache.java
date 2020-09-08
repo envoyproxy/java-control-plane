@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The snapshot can be partial, e.g. only include RDS or EDS resources.
  */
-public class SimpleCache<T, U extends Snapshot> implements SnapshotCache<T, U> {
+public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCache<T, U> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SimpleCache.class);
 
@@ -56,7 +56,7 @@ public class SimpleCache<T, U extends Snapshot> implements SnapshotCache<T, U> {
    *
    * @param groups maps an envoy host to a node group
    */
-  public SimpleCache(NodeGroup<T> groups) {
+  protected SimpleCache(NodeGroup<T> groups) {
     this.groups = groups;
   }
 
