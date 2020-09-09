@@ -1,5 +1,11 @@
 package io.envoyproxy.controlplane.server;
 
+import static io.envoyproxy.controlplane.server.V3TestSnapshots.createSnapshot;
+import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.containsString;
+
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.envoy.api.v2.core.Node;
@@ -11,12 +17,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
-
-import static io.envoyproxy.controlplane.server.V3TestSnapshots.createSnapshot;
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.hamcrest.Matchers.containsString;
 
 public class V2V3DiscoveryServerAdsIT {
 
@@ -146,9 +146,9 @@ public class V2V3DiscoveryServerAdsIT {
             .and().body(containsString(UPSTREAM.response)));
 
     await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
-            () -> given().baseUri(baseV3Uri).contentType(ContentType.TEXT)
-                    .when().get("/")
-                    .then().statusCode(200)
-                    .and().body(containsString(UPSTREAM.response)));
+        () -> given().baseUri(baseV3Uri).contentType(ContentType.TEXT)
+            .when().get("/")
+            .then().statusCode(200)
+            .and().body(containsString(UPSTREAM.response)));
   }
 }
