@@ -14,10 +14,12 @@ import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
 
+@Ignore
 public class V3DiscoveryServerAdsIT {
 
   private static final String CONFIG = "envoy/ads.v3.config.yaml";
