@@ -32,12 +32,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import org.testcontainers.shaded.org.apache.commons.lang.math.RandomUtils;
 
+@Ignore
 public class V2DiscoveryServerAdsWarmingClusterIT {
 
   private static final String CONFIG = "envoy/ads.v2.config.yaml";
