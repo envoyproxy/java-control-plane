@@ -93,7 +93,7 @@ public class V3DiscoveryServerAdsIT {
 
     String baseUri = String.format("http://%s:%d", ENVOY.getContainerIpAddress(), ENVOY.getMappedPort(LISTENER_PORT));
 
-    await().atMost(60, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
+    await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
         () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
             .when().get("/")
             .then().statusCode(200)
