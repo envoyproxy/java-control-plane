@@ -1,15 +1,18 @@
-package io.envoyproxy.controlplane.cache;
+package io.envoyproxy.controlplane.cache.v2;
 
-import static io.envoyproxy.controlplane.cache.Resources.CLUSTER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.ENDPOINT_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.LISTENER_TYPE_URL;
-import static io.envoyproxy.controlplane.cache.Resources.ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V2.ROUTE_TYPE_URL;
+import static io.envoyproxy.envoy.api.v2.core.ApiVersion.V2;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -33,7 +36,8 @@ public class SnapshotTest {
 
   private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = TestResources.createListener(ADS, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+  private static final Listener LISTENER = TestResources.createListener(ADS, V2, V2,
+      LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME, CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
@@ -139,7 +143,8 @@ public class SnapshotTest {
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
-    assertThat(snapshot.resources(null)).isEmpty();
+    String nullString = null;
+    assertThat(snapshot.version(nullString)).isEmpty();
     assertThat(snapshot.resources("")).isEmpty();
     assertThat(snapshot.resources(UUID.randomUUID().toString())).isEmpty();
   }
@@ -161,13 +166,15 @@ public class SnapshotTest {
     assertThat(snapshot.version(LISTENER_TYPE_URL)).isEqualTo(version);
     assertThat(snapshot.version(ROUTE_TYPE_URL)).isEqualTo(version);
 
-    assertThat(snapshot.version(null)).isEmpty();
+    String nullString = null;
+    assertThat(snapshot.version(nullString)).isEmpty();
     assertThat(snapshot.version("")).isEmpty();
     assertThat(snapshot.version(UUID.randomUUID().toString())).isEmpty();
   }
 
   @Test
-  public void ensureConsistentReturnsWithoutExceptionForConsistentSnapshot() throws SnapshotConsistencyException {
+  public void ensureConsistentReturnsWithoutExceptionForConsistentSnapshot() throws
+      SnapshotConsistencyException {
     Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),

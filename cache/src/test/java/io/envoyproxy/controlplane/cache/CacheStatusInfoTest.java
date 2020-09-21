@@ -50,12 +50,14 @@ public class CacheStatusInfoTest {
 
     assertThat(info.numWatches()).isZero();
 
-    info.setWatch(watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId1, new Watch(ads,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { }));
 
     assertThat(info.numWatches()).isEqualTo(1);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1);
 
-    info.setWatch(watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId2, new Watch(ads,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { }));
 
     assertThat(info.numWatches()).isEqualTo(2);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1, watchId2);
@@ -74,8 +76,10 @@ public class CacheStatusInfoTest {
 
     CacheStatusInfo<Node> info = new CacheStatusInfo<>(Node.getDefaultInstance());
 
-    info.setWatch(watchId1, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
-    info.setWatch(watchId2, new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { }));
+    info.setWatch(watchId1, new Watch(ads,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { }));
+    info.setWatch(watchId2, new Watch(ads,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { }));
 
     assertThat(info.numWatches()).isEqualTo(2);
     assertThat(info.watchIds()).containsExactlyInAnyOrder(watchId1, watchId2);
@@ -96,7 +100,8 @@ public class CacheStatusInfoTest {
     Collection<Long> watchIds = LongStream.range(0, watchCount).boxed().collect(Collectors.toList());
 
     watchIds.parallelStream().forEach(watchId -> {
-      Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { });
+      Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
+          r -> { });
 
       info.setWatch(watchId, watch);
     });

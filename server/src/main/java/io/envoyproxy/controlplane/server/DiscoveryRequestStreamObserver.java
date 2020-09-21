@@ -6,9 +6,8 @@ import com.google.protobuf.Any;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.Watch;
+import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -23,8 +22,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * {@code DiscoveryRequestStreamObserver} provides the base implementation for XDS stream handling.
+ * The proto message types are abstracted so it can be used with different xDS versions.
  */
-public abstract class DiscoveryRequestStreamObserver implements StreamObserver<DiscoveryRequest> {
+public abstract class DiscoveryRequestStreamObserver<T, U> implements StreamObserver<T> {
   private static final AtomicLongFieldUpdater<DiscoveryRequestStreamObserver> streamNonceUpdater =
       AtomicLongFieldUpdater.newUpdater(DiscoveryRequestStreamObserver.class, "streamNonce");
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
@@ -32,28 +32,29 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   final long streamId;
   volatile boolean hasClusterChanged;
   private final String defaultTypeUrl;
-  private final StreamObserver<DiscoveryResponse> responseObserver;
+  private final StreamObserver<U> responseObserver;
   private final Executor executor;
-  private final DiscoveryServer discoverySever;
+  private final DiscoveryServer<T, U> discoveryServer;
   private volatile long streamNonce;
   private volatile boolean isClosing;
 
   DiscoveryRequestStreamObserver(String defaultTypeUrl,
-                                 StreamObserver<DiscoveryResponse> responseObserver,
-                                 long streamId,
-                                 Executor executor,
-                                 DiscoveryServer discoveryServer) {
+      StreamObserver<U> responseObserver,
+      long streamId,
+      Executor executor,
+      DiscoveryServer<T, U> discoveryServer) {
     this.defaultTypeUrl = defaultTypeUrl;
     this.responseObserver = responseObserver;
     this.streamId = streamId;
     this.executor = executor;
     this.streamNonce = 0;
-    this.discoverySever = discoveryServer;
+    this.discoveryServer = discoveryServer;
     this.hasClusterChanged = false;
   }
 
   @Override
-  public void onNext(DiscoveryRequest request) {
+  public void onNext(T rawRequest) {
+    XdsRequest request = discoveryServer.wrapXdsRequest(rawRequest);
     String requestTypeUrl = request.getTypeUrl().isEmpty() ? defaultTypeUrl : request.getTypeUrl();
     String nonce = request.getResponseNonce();
 
@@ -67,7 +68,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     }
 
     try {
-      discoverySever.callbacks.forEach(cb -> cb.onStreamRequest(streamId, request));
+      discoveryServer.runStreamRequestCallbacks(streamId, rawRequest);
     } catch (RequestException e) {
       closeWithError(e);
       return;
@@ -81,7 +82,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
         setAckedResources(requestTypeUrl, latestDiscoveryResponse.resourceNames());
       }
 
-      computeWatch(requestTypeUrl, () -> discoverySever.configWatcher.createWatch(
+      computeWatch(requestTypeUrl, () -> discoveryServer.configWatcher.createWatch(
           ads(),
           request,
           ackedResources(requestTypeUrl),
@@ -98,7 +99,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     }
 
     try {
-      discoverySever.callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
+      discoveryServer.callbacks.forEach(cb -> cb.onStreamCloseWithError(streamId, defaultTypeUrl, t));
       closeWithError(Status.fromThrowable(t).asException());
     } finally {
       cancel();
@@ -110,7 +111,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
     LOGGER.debug("[{}] stream closed", streamId);
 
     try {
-      discoverySever.callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
+      discoveryServer.callbacks.forEach(cb -> cb.onStreamClose(streamId, defaultTypeUrl));
       synchronized (responseObserver) {
         if (!isClosing) {
           isClosing = true;
@@ -140,17 +141,16 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
   private void send(Response response, String typeUrl) {
     String nonce = Long.toString(streamNonceUpdater.getAndIncrement(this));
 
-    Collection<Any> resources = discoverySever.protoResourcesSerializer.serialize(response.resources());
-    DiscoveryResponse discoveryResponse = DiscoveryResponse.newBuilder()
-        .setVersionInfo(response.version())
-        .addAllResources(resources)
-        .setTypeUrl(typeUrl)
-        .setNonce(nonce)
-        .build();
+    Collection<Any> resources =
+        discoveryServer.protoResourcesSerializer.serialize(response.resources(),
+            Resources.getResourceApiVersion(typeUrl));
 
-    LOGGER.debug("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce, response.version());
+    LOGGER.debug("[{}] response {} with nonce {} version {}", streamId, typeUrl, nonce,
+        response.version());
 
-    discoverySever.callbacks.forEach(cb -> cb.onStreamResponse(streamId, response.request(), discoveryResponse));
+    U discoveryResponse = discoveryServer.makeResponse(response.version(), resources, typeUrl,
+        nonce);
+    discoveryServer.runStreamResponseCallbacks(streamId, response.request(), discoveryResponse);
 
     // Store the latest response *before* we send the response. This ensures that by the time the request
     // is processed the map is guaranteed to be updated. Doing it afterwards leads to a race conditions
@@ -162,6 +162,7 @@ public abstract class DiscoveryRequestStreamObserver implements StreamObserver<D
             response.resources().stream().map(Resources::getResourceName).collect(Collectors.toSet())
         )
     );
+
     synchronized (responseObserver) {
       if (!isClosing) {
         try {

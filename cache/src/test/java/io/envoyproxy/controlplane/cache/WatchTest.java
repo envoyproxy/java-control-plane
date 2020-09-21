@@ -19,7 +19,8 @@ public class WatchTest {
   public void adsReturnsGivenValue() {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
 
-    Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { });
+    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
+        r -> { });
 
     assertThat(watch.ads()).isEqualTo(ads);
   }
@@ -28,7 +29,7 @@ public class WatchTest {
   public void isCancelledTrueAfterCancel() {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
 
-    Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { });
+    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
 
     assertThat(watch.isCancelled()).isFalse();
 
@@ -43,7 +44,7 @@ public class WatchTest {
 
     AtomicInteger stopCount = new AtomicInteger();
 
-    Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), r -> { });
+    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
 
     watch.setStop(stopCount::getAndIncrement);
 
@@ -62,23 +63,23 @@ public class WatchTest {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
 
     Response response1 = Response.create(
-        DiscoveryRequest.newBuilder().build(),
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
         ImmutableList.of(),
         UUID.randomUUID().toString());
 
     Response response2 = Response.create(
-        DiscoveryRequest.newBuilder().build(),
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
         ImmutableList.of(),
         UUID.randomUUID().toString());
 
     Response response3 = Response.create(
-        DiscoveryRequest.newBuilder().build(),
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
         ImmutableList.of(),
         UUID.randomUUID().toString());
 
     List<Response> responses = new LinkedList<>();
 
-    Watch watch = new Watch(ads, DiscoveryRequest.getDefaultInstance(), responses::add);
+    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()), responses::add);
 
     try {
       watch.respond(response1);

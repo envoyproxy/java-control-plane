@@ -3,8 +3,8 @@ package io.envoyproxy.controlplane.server.callback;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.Snapshot;
 import io.envoyproxy.controlplane.cache.SnapshotCache;
+import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.controlplane.server.DiscoveryServerCallbacks;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.time.Clock;
@@ -40,13 +40,14 @@ import java.util.function.Consumer;
  * causing it to get cleaned up and wipe the state of the other callback even though we now have an active stream
  * for that group.
  */
-public class SnapshotCollectingCallback<T> implements DiscoveryServerCallbacks {
+public class SnapshotCollectingCallback<T, X extends io.envoyproxy.controlplane.cache.Snapshot>
+    implements DiscoveryServerCallbacks {
   private static class SnapshotState {
     int streamCount;
     Instant lastSeen;
   }
 
-  private final SnapshotCache<T> snapshotCache;
+  private final SnapshotCache<T, X> snapshotCache;
   private final NodeGroup<T> nodeGroup;
   private final Clock clock;
   private final Set<Consumer<T>> collectorCallbacks;
@@ -64,7 +65,7 @@ public class SnapshotCollectingCallback<T> implements DiscoveryServerCallbacks {
    * @param collectAfterMillis how long a snapshot must be referenced for before being collected
    * @param collectionIntervalMillis how often the collection background action should run
    */
-  public SnapshotCollectingCallback(SnapshotCache<T> snapshotCache,
+  public SnapshotCollectingCallback(SnapshotCache<T, X> snapshotCache,
       NodeGroup<T> nodeGroup, Clock clock, Set<Consumer<T>> collectorCallbacks,
       long collectAfterMillis, long collectionIntervalMillis) {
     this.snapshotCache = snapshotCache;
@@ -79,9 +80,19 @@ public class SnapshotCollectingCallback<T> implements DiscoveryServerCallbacks {
   }
 
   @Override
-  public synchronized void onStreamRequest(long streamId, DiscoveryRequest request) {
+  public synchronized void onV2StreamRequest(long streamId, DiscoveryRequest request) {
     T groupIdentifier = nodeGroup.hash(request.getNode());
+    updateState(streamId, groupIdentifier);
+  }
 
+  @Override
+  public synchronized void onV3StreamRequest(long streamId,
+      io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
+    T groupIdentifier = nodeGroup.hash(request.getNode());
+    updateState(streamId, groupIdentifier);
+  }
+
+  private void updateState(long streamId, T groupIdentifier) {
     SnapshotState snapshotState =
         this.snapshotStates.computeIfAbsent(groupIdentifier, x -> new SnapshotState());
     snapshotState.lastSeen = clock.instant();

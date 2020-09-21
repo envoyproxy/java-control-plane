@@ -1,6 +1,5 @@
 package io.envoyproxy.controlplane.cache;
 
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 
@@ -12,7 +11,7 @@ public class Watch {
   private static final AtomicIntegerFieldUpdater<Watch> isCancelledUpdater =
       AtomicIntegerFieldUpdater.newUpdater(Watch.class, "isCancelled");
   private final boolean ads;
-  private final DiscoveryRequest request;
+  private final XdsRequest request;
   private final Consumer<Response> responseConsumer;
   private volatile int isCancelled = 0;
   private Runnable stop;
@@ -24,7 +23,7 @@ public class Watch {
    * @param request          the original request for the watch
    * @param responseConsumer handler for outgoing response messages
    */
-  public Watch(boolean ads, DiscoveryRequest request, Consumer<Response> responseConsumer) {
+  public Watch(boolean ads, XdsRequest request, Consumer<Response> responseConsumer) {
     this.ads = ads;
     this.request = request;
     this.responseConsumer = responseConsumer;
@@ -59,7 +58,7 @@ public class Watch {
   /**
    * Returns the original request for the watch.
    */
-  public DiscoveryRequest request() {
+  public XdsRequest request() {
     return request;
   }
 

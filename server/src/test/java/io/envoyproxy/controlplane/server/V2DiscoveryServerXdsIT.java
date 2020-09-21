@@ -1,14 +1,14 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.controlplane.server.TestSnapshots.createSnapshotNoEds;
+import static io.envoyproxy.controlplane.server.V2TestSnapshots.createSnapshotNoEds;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
-import io.envoyproxy.controlplane.cache.SimpleCache;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
+import io.envoyproxy.controlplane.cache.NodeGroup;
+import io.envoyproxy.controlplane.cache.v2.SimpleCache;
+import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
@@ -18,9 +18,9 @@ import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
 
-public class DiscoveryServerXdsIT {
+public class V2DiscoveryServerXdsIT {
 
-  private static final String CONFIG = "envoy/xds.config.yaml";
+  private static final String CONFIG = "envoy/xds.v2.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
 
@@ -31,24 +31,19 @@ public class DiscoveryServerXdsIT {
   private static final NettyGrpcServerRule XDS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
-
-      final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
-        @Override
-        public void onStreamOpen(long streamId, String typeUrl) {
-          onStreamOpenLatch.countDown();
+      final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
+        @Override public String hash(Node node) {
+          return GROUP;
         }
 
-        @Override
-        public void onStreamRequest(long streamId, DiscoveryRequest request) {
-          onStreamRequestLatch.countDown();
+        @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
+          throw new IllegalStateException("Unexpected v3 request in v2 test");
         }
+      });
 
-        @Override
-        public void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
-          onStreamResponseLatch.countDown();
-        }
-      };
+      final DiscoveryServerCallbacks callbacks =
+          new V2OnlyDiscoveryServerCallbacks(onStreamOpenLatch, onStreamRequestLatch,
+              onStreamResponseLatch);
 
       cache.setSnapshot(
           GROUP,
@@ -62,7 +57,7 @@ public class DiscoveryServerXdsIT {
               "1")
       );
 
-      DiscoveryServer server = new DiscoveryServer(callbacks, cache);
+      V2DiscoveryServer server = new V2DiscoveryServer(callbacks, cache);
 
       builder.addService(server.getClusterDiscoveryServiceImpl());
       builder.addService(server.getEndpointDiscoveryServiceImpl());

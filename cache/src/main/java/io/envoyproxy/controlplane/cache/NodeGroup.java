@@ -15,4 +15,11 @@ public interface NodeGroup<T> {
    * @param node identifier for the envoy instance that is requesting config
    */
   T hash(Node node);
+
+  /**
+   * Returns a consistent identifier of the given {@link io.envoyproxy.envoy.config.core.v3.Node}.
+   *
+   * @param node identifier for the envoy instance that is requesting config
+   */
+  T hash(io.envoyproxy.envoy.config.core.v3.Node node);
 }
