@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Any;
+import com.google.protobuf.Duration;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.Struct;
@@ -30,6 +31,7 @@ import io.envoyproxy.envoy.api.v2.endpoint.LbEndpoint;
 import io.envoyproxy.envoy.api.v2.endpoint.LocalityLbEndpoints;
 import io.envoyproxy.envoy.api.v2.listener.Filter;
 import io.envoyproxy.envoy.api.v2.listener.FilterChain;
+import io.envoyproxy.envoy.api.v2.route.RetryPolicy;
 import io.envoyproxy.envoy.api.v2.route.Route;
 import io.envoyproxy.envoy.api.v2.route.RouteAction;
 import io.envoyproxy.envoy.api.v2.route.RouteMatch;
@@ -338,6 +340,14 @@ public class TestResources {
                 .setMatch(RouteMatch.newBuilder()
                     .setPrefix("/"))
                 .setRoute(RouteAction.newBuilder()
+                        .setRetryPolicy(
+                                RetryPolicy.newBuilder()
+                                        .setRetryBackOff(
+                                                RetryPolicy.RetryBackOff.newBuilder()
+                                                        .setBaseInterval(Duration.newBuilder().setSeconds(1))
+                                                        .build()
+                                        )
+                        )
                     .setCluster(clusterName))))
         .build();
   }
@@ -359,6 +369,13 @@ public class TestResources {
                 .setMatch(io.envoyproxy.envoy.config.route.v3.RouteMatch.newBuilder()
                     .setPrefix("/"))
                 .setRoute(io.envoyproxy.envoy.config.route.v3.RouteAction.newBuilder()
+                        .setRetryPolicy(
+                                io.envoyproxy.envoy.config.route.v3.RetryPolicy.newBuilder().setRetryBackOff(
+                                        io.envoyproxy.envoy.config.route.v3.RetryPolicy.RetryBackOff.newBuilder()
+                                                .setBaseInterval(Duration.newBuilder().setSeconds(1))
+                                                .build()
+                                )
+                        )
                     .setCluster(clusterName))))
         .build();
   }
