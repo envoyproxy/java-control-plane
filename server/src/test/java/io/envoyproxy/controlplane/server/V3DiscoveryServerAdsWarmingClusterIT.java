@@ -8,7 +8,6 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
 import com.google.protobuf.util.Durations;
-import io.envoyproxy.controlplane.cache.CacheStatusInfo;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.TestResources;
@@ -26,7 +25,6 @@ import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -138,26 +136,34 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
     String baseUri = String.format("http://%s:%d", ENVOY.getContainerIpAddress(), ENVOY.getMappedPort(LISTENER_PORT));
 
-    await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
+    await().atMost(15, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
         () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
             .when().get("/")
             .then().statusCode(200)
             .and().body(containsString(UPSTREAM.response)));
   }
 
-  private static void createSnapshotWithWorkingClusterWithTheSameEdsVersion(DiscoveryRequest request,
-      ExecutorService executorService) {
+  private static void createSnapshotWithWorkingClusterWithTheSameEdsVersion(
+      DiscoveryRequest request,
+      ExecutorService executorService
+  ) {
     if (request.getTypeUrl().equals(Resources.V3.CLUSTER_TYPE_URL)) {
-      executorService.submit(() -> cache.setSnapshot(
-          GROUP,
-          createSnapshot(true,
-              "upstream",
-              UPSTREAM.ipAddress(),
-              EchoContainer.PORT,
-              "listener0",
-              LISTENER_PORT,
-              "route0",
-              "2"))
+      executorService.submit(() -> {
+            try {
+              Thread.sleep(5000);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+            cache.setSnapshot(GROUP,
+                createSnapshot(true,
+                    "upstream",
+                    UPSTREAM.ipAddress(),
+                    EchoContainer.PORT,
+                    "listener0",
+                    LISTENER_PORT,
+                    "route0",
+                    "2"));
+          }
       );
     }
   }
@@ -217,22 +223,19 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
       super(groups);
     }
 
-    @Override
-    protected void respondWithSpecificOrder(T group, Snapshot snapshot,
-        ConcurrentMap<Resources.ResourceType, CacheStatusInfo<T>> status) {
-      // This code has been removed to show specific case which is hard to reproduce in integration test:
-      //      1. Envoy connects to control-plane
-      //      2. Snapshot already exists in control-plane <- other instance share same group
-      //      3. Control-plane respond with CDS in createWatch method
-      //      4. There is snapshot update which change CDS and EDS versions
-      //      5. Envoy sends EDS request
-      //      6. Control-plane respond with EDS in createWatch method
-      //      7. Envoy resume CDS and EDS requests.
-      //      8. Envoy sends request CDS
-      //      9. Control plane respond with CDS in createWatch method
-      //      10. Envoy sends EDS requests
-      //      11. Control plane doesn't respond because version hasn't changed
-      //      12. Cluster of service stays in warming phase
-    }
+    // With new versions of Envoy hitting this edge-case became highly improbable
+    // Now this test checks only if a CDS change will also send EDS
+    // 1. Envoy connects to control-plane
+    // 2. Snapshot already exists in control-plane <- other instance share same group
+    // 3. Control-plane respond with CDS in createWatch method
+    // 4. There is snapshot update which change CDS and EDS versions
+    // 5. Envoy sends EDS request
+    // 6. Control-plane respond with EDS in createWatch method
+    // 7. Envoy resume CDS and EDS requests.
+    // 8. Envoy sends request CDS
+    // 9. Control plane respond with CDS in createWatch method
+    // 10. Envoy sends EDS requests
+    // 11. Control plane doesn't respond because version hasn't changed
+    // 12. Cluster of service stays in warming phase
   }
 }
