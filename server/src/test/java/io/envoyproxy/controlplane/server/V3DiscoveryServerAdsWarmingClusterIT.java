@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.containsString;
 
 import com.google.protobuf.util.Durations;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
@@ -26,8 +25,6 @@ import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -41,7 +38,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
   private static final String CONFIG = "envoy/ads.v3.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
-  private static final CustomCache<String> cache = new CustomCache<>(new NodeGroup<String>() {
+  private static final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
     @Override public String hash(Node node) {
       throw new IllegalStateException("Unexpected v2 request in v3 test");
     }
@@ -58,7 +55,6 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
   private static final NettyGrpcServerRule ADS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      ExecutorService executorService = Executors.newSingleThreadExecutor();
       final DiscoveryServerCallbacks callbacks = new DiscoveryServerCallbacks() {
         @Override
         public void onStreamOpen(long streamId, String typeUrl) {
@@ -85,9 +81,6 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         @Override
         public void onV3StreamResponse(long streamId, DiscoveryRequest request,
             DiscoveryResponse response) {
-          // Here we update a Snapshot with working cluster, but we change only CDS version, not EDS version.
-          // This change allows to test if EDS will be sent anyway after CDS was sent.
-          createSnapshotWithWorkingClusterWithTheSameEdsVersion(request, executorService);
           onStreamResponseLatch.countDown();
         }
       };
@@ -136,36 +129,33 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
     String baseUri = String.format("http://%s:%d", ENVOY.getContainerIpAddress(), ENVOY.getMappedPort(LISTENER_PORT));
 
-    await().atMost(15, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
+    await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
+        () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
+            .when().get("/")
+            .then().statusCode(503));
+
+    // Here we update a Snapshot with working cluster, but we change only CDS version, not EDS version.
+    // This change allows to test if EDS will be sent anyway after CDS was sent.
+    createSnapshotWithWorkingClusterWithTheSameEdsVersion();
+
+    await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
         () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
             .when().get("/")
             .then().statusCode(200)
             .and().body(containsString(UPSTREAM.response)));
   }
 
-  private static void createSnapshotWithWorkingClusterWithTheSameEdsVersion(
-      DiscoveryRequest request,
-      ExecutorService executorService
-  ) {
-    if (request.getTypeUrl().equals(Resources.V3.CLUSTER_TYPE_URL)) {
-      executorService.submit(() -> {
-            try {
-              Thread.sleep(5000);
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-            cache.setSnapshot(GROUP,
-                createSnapshot(true,
-                    "upstream",
-                    UPSTREAM.ipAddress(),
-                    EchoContainer.PORT,
-                    "listener0",
-                    LISTENER_PORT,
-                    "route0",
-                    "2"));
-          }
-      );
-    }
+  private static void createSnapshotWithWorkingClusterWithTheSameEdsVersion() {
+    cache.setSnapshot(
+        GROUP,
+        createSnapshot(true,
+            "upstream",
+            UPSTREAM.ipAddress(),
+            EchoContainer.PORT,
+            "listener0",
+            LISTENER_PORT,
+            "route0",
+            "2"));
   }
 
   private static Snapshot createSnapshotWithNotWorkingCluster(boolean ads,
@@ -210,32 +200,21 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         "2");
   }
 
-
-  /**
-   * Code has been copied from io.envoyproxy.controlplane.cache.SimpleCache to show specific case when
-   * Envoy might stuck with warming cluster. Class has changed lines from method respondWithSpecificOrder which are
-   * responsible for responding for watches. Because to reproduce this problem we need a lot of connected Envoy's and
-   * changes to snapshot it is easier to reproduce this way.
+  /*
+   * In the previous versions of this tests we had a copied SimpleCache with respondWithSpecificOrder removed.
+   * With new versions of Envoy hitting this edge-case became highly improbable.
+   * Now this test checks only if a CDS change will also send EDS.
+   * 1. Envoy connects to control-plane
+   * 2. Snapshot already exists in control-plane <- other instance share same group
+   * 3. Control-plane respond with CDS in createWatch method
+   * 4. There is snapshot update which change CDS and EDS versions
+   * 5. Envoy sends EDS request
+   * 6. Control-plane respond with EDS in createWatch method
+   * 7. Envoy resume CDS and EDS requests.
+   * 8. Envoy sends request CDS
+   * 9. Control plane respond with CDS in createWatch method
+   * 10. Envoy sends EDS requests
+   * 11. Control plane doesn't respond because version hasn't changed
+   * 12. Cluster of service stays in warming phase
    */
-  static class CustomCache<T> extends SimpleCache<T> {
-
-    public CustomCache(NodeGroup<T> groups) {
-      super(groups);
-    }
-
-    // With new versions of Envoy hitting this edge-case became highly improbable
-    // Now this test checks only if a CDS change will also send EDS
-    // 1. Envoy connects to control-plane
-    // 2. Snapshot already exists in control-plane <- other instance share same group
-    // 3. Control-plane respond with CDS in createWatch method
-    // 4. There is snapshot update which change CDS and EDS versions
-    // 5. Envoy sends EDS request
-    // 6. Control-plane respond with EDS in createWatch method
-    // 7. Envoy resume CDS and EDS requests.
-    // 8. Envoy sends request CDS
-    // 9. Control plane respond with CDS in createWatch method
-    // 10. Envoy sends EDS requests
-    // 11. Control plane doesn't respond because version hasn't changed
-    // 12. Cluster of service stays in warming phase
-  }
 }
