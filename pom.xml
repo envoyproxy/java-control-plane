@@ -4,7 +4,7 @@
 
     <groupId>io.envoyproxy.controlplane</groupId>
     <artifactId>java-control-plane</artifactId>
-    <version>0.1.24-SNAPSHOT</version>
+    <version>0.1.24-cache-status-info-in-a-map-by-type-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
