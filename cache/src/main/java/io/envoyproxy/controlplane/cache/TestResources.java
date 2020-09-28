@@ -34,6 +34,7 @@ import io.envoyproxy.envoy.api.v2.route.Route;
 import io.envoyproxy.envoy.api.v2.route.RouteAction;
 import io.envoyproxy.envoy.api.v2.route.RouteMatch;
 import io.envoyproxy.envoy.api.v2.route.VirtualHost;
+import io.envoyproxy.envoy.config.cluster.v3.TrackClusterStats;
 import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager;
 import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager.CodecType;
@@ -142,6 +143,7 @@ public class TestResources {
                                 .setProtocolValue(Protocol.TCP_VALUE)))))
             )
         )
+        .setTrackClusterStats(TrackClusterStats.newBuilder().setRequestResponseSizes(true).build())
         .build();
   }
 
