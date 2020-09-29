@@ -8,6 +8,7 @@ import "envoy/config/cluster/v3/outlier_detection.proto";
 import "envoy/config/core/v3/address.proto";
 import "envoy/config/core/v3/base.proto";
 import "envoy/config/core/v3/config_source.proto";
+import "envoy/config/core/v3/extension.proto";
 import "envoy/config/core/v3/health_check.proto";
 import "envoy/config/core/v3/protocol.proto";
 import "envoy/config/endpoint/v3/endpoint.proto";
@@ -798,8 +799,31 @@ message Cluster {
   // of 100 would indicate that the request took the entirety of the timeout given to it.
   bool track_timeout_budgets = 47;
 
+  // Optional customization and configuration of upstream connection pool, and upstream type.
+  //
+  // Currently this field only applies for HTTP traffic but is designed for eventual use for custom
+  // TCP upstreams.
+  //
+  // For HTTP traffic, Envoy will generally take downstream HTTP and send it upstream as upstream
+  // HTTP, using the http connection pool and the codec from `http2_protocol_options`
+  //
+  // For routes where CONNECT termination is configured, Envoy will take downstream CONNECT
+  // requests and forward the CONNECT payload upstream over raw TCP using the tcp connection pool.
+  //
+  // The default pool used is the generic connection pool which creates the HTTP upstream for most
+  // HTTP requests, and the TCP upstream if CONNECT termination is configured.
+  //
+  // If users desire custom connection pool or upstream behavior, for example terminating
+  // CONNECT only if a custom filter indicates it is appropriate, the custom factories
+  // can be registered and configured here.
+  core.v3.TypedExtensionConfig upstream_config = 48;
+
   // Configuration to track optional cluster stats.
   TrackClusterStats track_cluster_stats = 49;
+
+  // If `connection_pool_per_downstream_connection` is true, the cluster will use a separate
+  // connection pool for every downstream connection
+  bool connection_pool_per_downstream_connection = 51;
 }
 
 // [#not-implemented-hide:] Extensible load balancing policy configuration.
