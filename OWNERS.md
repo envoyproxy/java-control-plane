@@ -8,7 +8,7 @@
 * Rama Chavali ([ramaraochavali](https://github.com/ramaraochavali)) (rama.rao@salesforce.com)
 * Ben Hoyt ([b-hoyt](https://github.com/b-hoyt)) (bhoyt@salesforce.com)
 * Snow Pettersen ([snowp](https://github.com/snowp)) (snowp@squareup.com)
-* Garett Bourg ([baojr](https://github.com/baojr)) (bourg@squareup.com)
+* Garrett Bourg ([baojr](https://github.com/baojr)) (bourg@squareup.com)
 * Michael Puncel ([mpuncel](https://github.com/mpuncel)) (mpuncel@squareup.com)
 * Dariusz Jędrzejczyk ([chemicL](https://github.com/chemicL)) (dariusz.jedrzejczyk@allegro.pl)
 * Jakub Dyszkiewicz ([jakubdyszkiewicz](https://github.com/jakubdyszkiewicz)) (jakub.dyszkiewicz@gmail.com)
