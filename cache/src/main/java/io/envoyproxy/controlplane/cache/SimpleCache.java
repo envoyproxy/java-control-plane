@@ -364,10 +364,11 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
   public synchronized void setSnapshot(T group, U snapshot) {
     // we take a writeLock to prevent watches from being created while we update the snapshot
     ConcurrentMap<ResourceType, CacheStatusInfo<T>> status;
+    U previousSnapshot;
     writeLock.lock();
     try {
       // Update the existing snapshot entry.
-      snapshots.put(group, snapshot);
+      previousSnapshot = snapshots.put(group, snapshot);
       status = statuses.get(group);
     } finally {
       writeLock.unlock();
@@ -379,7 +380,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
 
     // Responses should be in specific order and typeUrls has a list of resources in the right
     // order.
-    respondWithSpecificOrder(group, snapshot, status);
+    respondWithSpecificOrder(group, previousSnapshot, snapshot, status);
   }
 
   /**
@@ -403,7 +404,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
 
   @VisibleForTesting
   protected void respondWithSpecificOrder(T group,
-                                          U snapshot,
+                                          U previousSnapshot, U snapshot,
                                           ConcurrentMap<ResourceType, CacheStatusInfo<T>> statusMap) {
     for (ResourceType resourceType : RESOURCE_TYPES_IN_ORDER) {
       CacheStatusInfo<T> status = statusMap.get(resourceType);
@@ -430,6 +431,53 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
 
           // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
           return true;
+        }
+
+        // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
+        return false;
+      });
+
+      Map<String, SnapshotResource<?>> previousResources = previousSnapshot == null
+          ? Collections.emptyMap()
+          : previousSnapshot.resources(resourceType);
+      Map<String, SnapshotResource<?>> snapshotResources = snapshot.resources(resourceType);
+
+      Map<String, SnapshotResource<?>> snapshotChangedResources = snapshotResources.entrySet()
+          .stream()
+          .filter(entry -> {
+            SnapshotResource<?> snapshotResource = previousResources.get(entry.getKey());
+            return snapshotResource == null || !snapshotResource.version().equals(entry.getValue().version());
+          })
+          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+      Set<String> snapshotRemovedResources = previousResources.keySet()
+          .stream()
+          .filter(s -> !snapshotResources.containsKey(s))
+          .collect(Collectors.toSet());
+
+      status.deltaWatchesRemoveIf((id, watch) -> {
+        String version = snapshot.version(watch.request().getResourceType(), Collections.emptyList());
+
+        if (!watch.version().equals(version)) {
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("responding to open watch {}[{}] with new version {}",
+                id,
+                String.join(", ", watch.trackedResources().keySet()),
+                version);
+          }
+
+          List<String> removedResources = snapshotRemovedResources.stream()
+              .filter(s -> watch.trackedResources().get(s) != null)
+              .collect(Collectors.toList());
+
+          ResponseState responseState = respondDeltaTracked(watch,
+              snapshotChangedResources,
+              removedResources,
+              version,
+              group);
+          // Discard the watch if it was responded or cancelled.
+          // A new watch will be created for future snapshots once envoy ACKs the response.
+          return ResponseState.RESPONDED.equals(responseState) || ResponseState.CANCELLED.equals(responseState);
         }
 
         // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
