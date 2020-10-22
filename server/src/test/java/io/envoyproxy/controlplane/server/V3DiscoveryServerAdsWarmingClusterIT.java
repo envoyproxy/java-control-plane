@@ -9,9 +9,11 @@ import static org.hamcrest.Matchers.containsString;
 
 import com.google.protobuf.util.Durations;
 import io.envoyproxy.controlplane.cache.NodeGroup;
+import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
+import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
@@ -70,6 +72,17 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         @Override
         public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
           onStreamRequestLatch.countDown();
+        }
+
+        @Override
+        public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
+          throw new IllegalStateException("Unexpected v2 request in v3 test");
+        }
+
+        @Override
+        public void onV3StreamDeltaRequest(long streamId,
+                                           io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
+          throw new IllegalStateException("Unexpected delta request");
         }
 
         @Override
@@ -188,13 +201,13 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
     // here we have new version of resources other than CDS.
     return Snapshot.create(
-        ImmutableList.of(cluster),
+        ImmutableList.of(SnapshotResource.create(cluster, "1")),
         "1",
-        ImmutableList.of(endpoint),
+        ImmutableList.of(SnapshotResource.create(endpoint, "2")),
         "2",
-        ImmutableList.of(listener),
+        ImmutableList.of(SnapshotResource.create(listener, "2")),
         "2",
-        ImmutableList.of(route),
+        ImmutableList.of(SnapshotResource.create(route, "2")),
         "2",
         ImmutableList.of(),
         "2");

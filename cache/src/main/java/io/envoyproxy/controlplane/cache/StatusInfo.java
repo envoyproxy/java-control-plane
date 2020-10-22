@@ -13,6 +13,11 @@ public interface StatusInfo<T> {
   long lastWatchRequestTime();
 
   /**
+   * Returns the timestamp of the last discovery delta watch request.
+   */
+  long lastDeltaWatchRequestTime();
+
+  /**
    * Returns the node grouping represented by this status, generated via
    * {@link NodeGroup#hash(Node)} or {@link NodeGroup#hash(io.envoyproxy.envoy.api.v2.core.Node)}.
    */
@@ -22,4 +27,9 @@ public interface StatusInfo<T> {
    * Returns the number of open watches.
    */
   int numWatches();
+
+  /**
+   * Returns the number of open delta watches.
+   */
+  int numDeltaWatches();
 }

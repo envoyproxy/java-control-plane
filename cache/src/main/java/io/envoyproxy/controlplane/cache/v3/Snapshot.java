@@ -5,10 +5,10 @@ import static io.envoyproxy.controlplane.cache.Resources.TYPE_URLS_TO_RESOURCE_T
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
 import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.SnapshotResources;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -30,18 +30,18 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns a new {@link io.envoyproxy.controlplane.cache.v2.Snapshot} instance that is versioned
    * uniformly across all resources.
    *
-   * @param clusters the cluster resources in this snapshot
+   * @param clusters  the cluster resources in this snapshot
    * @param endpoints the endpoint resources in this snapshot
    * @param listeners the listener resources in this snapshot
-   * @param routes the route resources in this snapshot
-   * @param version the version associated with all resources in this snapshot
+   * @param routes    the route resources in this snapshot
+   * @param version   the version associated with all resources in this snapshot
    */
   public static Snapshot create(
-      Iterable<Cluster> clusters,
-      Iterable<ClusterLoadAssignment> endpoints,
-      Iterable<Listener> listeners,
-      Iterable<RouteConfiguration> routes,
-      Iterable<Secret> secrets,
+      Iterable<SnapshotResource<Cluster>> clusters,
+      Iterable<SnapshotResource<ClusterLoadAssignment>> endpoints,
+      Iterable<SnapshotResource<Listener>> listeners,
+      Iterable<SnapshotResource<RouteConfiguration>> routes,
+      Iterable<SnapshotResource<Secret>> secrets,
       String version) {
 
     return new AutoValue_Snapshot(
@@ -56,25 +56,25 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns a new {@link io.envoyproxy.controlplane.cache.v2.Snapshot} instance that has separate
    * versions for each resource type.
    *
-   * @param clusters the cluster resources in this snapshot
-   * @param clustersVersion the version of the cluster resources
-   * @param endpoints the endpoint resources in this snapshot
+   * @param clusters         the cluster resources in this snapshot
+   * @param clustersVersion  the version of the cluster resources
+   * @param endpoints        the endpoint resources in this snapshot
    * @param endpointsVersion the version of the endpoint resources
-   * @param listeners the listener resources in this snapshot
+   * @param listeners        the listener resources in this snapshot
    * @param listenersVersion the version of the listener resources
-   * @param routes the route resources in this snapshot
-   * @param routesVersion the version of the route resources
+   * @param routes           the route resources in this snapshot
+   * @param routesVersion    the version of the route resources
    */
   public static Snapshot create(
-      Iterable<Cluster> clusters,
+      Iterable<SnapshotResource<Cluster>> clusters,
       String clustersVersion,
-      Iterable<ClusterLoadAssignment> endpoints,
+      Iterable<SnapshotResource<ClusterLoadAssignment>> endpoints,
       String endpointsVersion,
-      Iterable<Listener> listeners,
+      Iterable<SnapshotResource<Listener>> listeners,
       String listenersVersion,
-      Iterable<RouteConfiguration> routes,
+      Iterable<SnapshotResource<RouteConfiguration>> routes,
       String routesVersion,
-      Iterable<Secret> secrets,
+      Iterable<SnapshotResource<Secret>> secrets,
       String secretsVersion) {
 
     // TODO(snowp): add a builder alternative
@@ -139,7 +139,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    *
    * @param typeUrl the type URL of the requested resource type
    */
-  public Map<String, ? extends Message> resources(String typeUrl) {
+  public Map<String, SnapshotResource<?>> resources(String typeUrl) {
     if (Strings.isNullOrEmpty(typeUrl)) {
       return ImmutableMap.of();
     }
@@ -157,18 +157,18 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    *
    * @param resourceType the requested resource type
    */
-  public Map<String, ? extends Message> resources(ResourceType resourceType) {
+  public Map<String, SnapshotResource<?>> resources(ResourceType resourceType) {
     switch (resourceType) {
       case CLUSTER:
-        return clusters().resources();
+        return (Map) clusters().resources();
       case ENDPOINT:
-        return endpoints().resources();
+        return (Map) endpoints().resources();
       case LISTENER:
-        return listeners().resources();
+        return (Map) listeners().resources();
       case ROUTE:
-        return routes().resources();
+        return (Map) routes().resources();
       case SECRET:
-        return secrets().resources();
+        return (Map) secrets().resources();
       default:
         return ImmutableMap.of();
     }
@@ -186,7 +186,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   /**
    * Returns the version in this snapshot for the given resource type.
    *
-   * @param typeUrl the type URL of the requested resource type
+   * @param typeUrl       the type URL of the requested resource type
    * @param resourceNames list of requested resource names,
    *                      used to calculate a version for the given resources
    */
@@ -209,7 +209,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   /**
    * Returns the version in this snapshot for the given resource type.
    *
-   * @param resourceType the the requested resource type
+   * @param resourceType  the the requested resource type
    * @param resourceNames list of requested resource names,
    *                      used to calculate a version for the given resources
    */

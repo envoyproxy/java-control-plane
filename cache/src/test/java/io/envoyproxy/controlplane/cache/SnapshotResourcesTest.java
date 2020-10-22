@@ -15,8 +15,10 @@ public class SnapshotResourcesTest {
   private static final String CLUSTER0_NAME  = "cluster0";
   private static final String CLUSTER1_NAME  = "cluster1";
 
-  private static final Cluster CLUSTER0 = TestResources.createCluster(CLUSTER0_NAME);
-  private static final Cluster CLUSTER1 = TestResources.createCluster(CLUSTER1_NAME);
+  private static final SnapshotResource<Cluster> CLUSTER0 = SnapshotResource.create(
+      TestResources.createCluster(CLUSTER0_NAME), UUID.randomUUID().toString());
+  private static final SnapshotResource<Cluster> CLUSTER1 = SnapshotResource.create(
+      TestResources.createCluster(CLUSTER1_NAME), UUID.randomUUID().toString());
 
   @Test
   public void createBuildsResourcesMapWithNameAndPopulatesVersion() {

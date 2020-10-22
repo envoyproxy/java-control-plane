@@ -19,7 +19,9 @@ public abstract class SnapshotResources<T extends Message> {
    * @param version the version associated with the resources in this collection
    * @param <T> the type of resources in this collection
    */
-  public static <T extends Message> SnapshotResources<T> create(Iterable<T> resources, String version) {
+  public static <T extends Message> SnapshotResources<T> create(
+      Iterable<SnapshotResource<T>> resources,
+      String version) {
     return new AutoValue_SnapshotResources<>(
         resourcesMap(resources),
         (r) -> version
@@ -34,19 +36,20 @@ public abstract class SnapshotResources<T extends Message> {
    * @param <T> the type of resources in this collection
    */
   public static <T extends Message> SnapshotResources<T> create(
-      Iterable<T> resources,
+      Iterable<SnapshotResource<T>> resources,
       ResourceVersionResolver versionResolver) {
     return new AutoValue_SnapshotResources<>(
         resourcesMap(resources),
         versionResolver);
   }
 
-  private static <T extends Message> ImmutableMap<String, T> resourcesMap(Iterable<T> resources) {
+  private static <T extends Message> ImmutableMap<String, SnapshotResource<T>> resourcesMap(
+      Iterable<SnapshotResource<T>> resources) {
     return StreamSupport.stream(resources.spliterator(), false)
         .collect(
             Collector.of(
-                ImmutableMap.Builder<String, T>::new,
-                (b, e) -> b.put(Resources.getResourceName(e), e),
+                ImmutableMap.Builder<String, SnapshotResource<T>>::new,
+                (b, e) -> b.put(Resources.getResourceName(e.resource()), e),
                 (b1, b2) -> b1.putAll(b2.build()),
                 ImmutableMap.Builder::build));
   }
@@ -54,7 +57,7 @@ public abstract class SnapshotResources<T extends Message> {
   /**
    * Returns a map of the resources in this collection, where the key is the name of the resource.
    */
-  public abstract Map<String, T> resources();
+  public abstract Map<String, SnapshotResource<T>> resources();
 
   /**
    * Returns the version associated with this all resources in this collection.
