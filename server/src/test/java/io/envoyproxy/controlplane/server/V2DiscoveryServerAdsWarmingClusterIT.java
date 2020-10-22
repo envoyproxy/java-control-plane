@@ -8,11 +8,13 @@ import static org.hamcrest.Matchers.containsString;
 
 import com.google.protobuf.util.Durations;
 import io.envoyproxy.controlplane.cache.NodeGroup;
+import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v2.SimpleCache;
 import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
+import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -68,6 +70,17 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
             @Override
             public void onV3StreamRequest(long streamId,
                 io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
+              throw new IllegalStateException("unexpected v3 request for v2 test");
+            }
+
+            @Override
+            public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
+              throw new IllegalStateException("unexpected delta request for test");
+            }
+
+            @Override
+            public void onV3StreamDeltaRequest(long streamId,
+                                               io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
               throw new IllegalStateException("unexpected v3 request for v2 test");
             }
 
@@ -181,13 +194,13 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
 
     // here we have new version of resources other than CDS.
     return Snapshot.create(
-        ImmutableList.of(cluster),
+        ImmutableList.of(SnapshotResource.create(cluster, "1")),
         "1",
-        ImmutableList.of(endpoint),
+        ImmutableList.of(SnapshotResource.create(endpoint, "2")),
         "2",
-        ImmutableList.of(listener),
+        ImmutableList.of(SnapshotResource.create(listener, "2")),
         "2",
-        ImmutableList.of(route),
+        ImmutableList.of(SnapshotResource.create(route, "2")),
         "2",
         ImmutableList.of(),
         "2");

@@ -12,6 +12,9 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
+import io.envoyproxy.controlplane.cache.DeltaResponse;
+import io.envoyproxy.controlplane.cache.DeltaWatch;
+import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.TestResources;
@@ -19,6 +22,7 @@ import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
+import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -1022,6 +1026,16 @@ public class V3DiscoveryServerTest {
 
       return watch;
     }
+
+    @Override
+    public DeltaWatch createDeltaWatch(DeltaXdsRequest request, String requesterVersion,
+                                       Map<String, String> resourceVersions,
+                                       Set<String> pendingResources,
+                                       boolean isWildcard,
+                                       Consumer<DeltaResponse> responseConsumer,
+                                       boolean hasClusterChanged) {
+      throw new IllegalStateException("not implemented");
+    }
   }
 
   private static class MockDiscoveryServerCallbacks
@@ -1068,6 +1082,17 @@ public class V3DiscoveryServerTest {
             NODE,
             request.getNode()));
       }
+    }
+
+    @Override
+    public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
+      throw new IllegalStateException("Unexpected v2 request in v3 test");
+    }
+
+    @Override
+    public void onV3StreamDeltaRequest(long streamId,
+                                       io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
+      throw new IllegalStateException("Unexpected delta request");
     }
 
     @Override
