@@ -280,9 +280,14 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
             return watch;
           }
         } else if (hasClusterChanged && requestResourceType.equals(ResourceType.ENDPOINT)) {
-          ResponseState responseState = respondDeltaTracked(
+          Map<String, SnapshotResource<?>> snapshotResources = snapshot.resources(request.getResourceType());
+          List<String> removedResources = findRemovedResources(watch,
+              snapshotResources);
+          Map<String, SnapshotResource<?>> changedResources = findChangedResources(watch, snapshotResources);
+          ResponseState responseState = respondDelta(
               watch,
-              snapshot.resources(request.getResourceType()),
+              changedResources,
+              removedResources,
               version,
               group);
           if (responseState.equals(ResponseState.RESPONDED) || responseState.equals(ResponseState.CANCELLED)) {
@@ -304,8 +309,13 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       }
 
       // Otherwise, version is different, the watch may be responded immediately
-      ResponseState responseState = respondDeltaTracked(watch,
-          snapshot.resources(request.getResourceType()),
+      Map<String, SnapshotResource<?>> snapshotResources = snapshot.resources(request.getResourceType());
+      List<String> removedResources = findRemovedResources(watch,
+          snapshotResources);
+      Map<String, SnapshotResource<?>> changedResources = findChangedResources(watch, snapshotResources);
+      ResponseState responseState = respondDelta(watch,
+          changedResources,
+          removedResources,
           version,
           group);
       if (responseState.equals(ResponseState.RESPONDED) || responseState.equals(ResponseState.CANCELLED)) {
@@ -470,8 +480,10 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
               .filter(s -> watch.trackedResources().get(s) != null)
               .collect(Collectors.toList());
 
-          ResponseState responseState = respondDeltaTracked(watch,
-              snapshotChangedResources,
+          Map<String, SnapshotResource<?>> changedResources = findChangedResources(watch, snapshotChangedResources);
+
+          ResponseState responseState = respondDelta(watch,
+              changedResources,
               removedResources,
               version,
               group);
@@ -551,22 +563,30 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
     return false;
   }
 
-  /**
-   * Responds a delta watch using resource version comparison.
-   *
-   * @return if the watch has been responded.
-   */
-  private ResponseState respondDeltaTracked(DeltaWatch watch,
-                                            Map<String, SnapshotResource<?>> snapshotResources,
-                                            String version,
-                                            T group) {
+  private List<String> findRemovedResources(DeltaWatch watch, Map<String, SnapshotResource<?>> snapshotResources) {
     // remove resources for which client has a tracked version but do not exist in snapshot
-    List<String> removedResources = watch.trackedResources().keySet()
+    return watch.trackedResources().keySet()
         .stream()
         .filter(s -> !snapshotResources.containsKey(s))
         .collect(Collectors.toList());
+  }
 
-    return respondDeltaTracked(watch, snapshotResources, removedResources, version, group);
+  private Map<String, SnapshotResource<?>> findChangedResources(DeltaWatch watch,
+                                                                Map<String, SnapshotResource<?>> snapshotResources) {
+    return snapshotResources.entrySet()
+        .stream()
+        .filter(entry -> {
+          if (watch.pendingResources().contains(entry.getKey())) {
+            return true;
+          }
+          String resourceVersion = watch.trackedResources().get(entry.getKey());
+          if (resourceVersion == null) {
+            // resource is not tracked, should respond it only if watch is wildcard
+            return watch.isWildcard();
+          }
+          return !entry.getValue().version().equals(resourceVersion);
+        })
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private ResponseState respondDeltaTracked(DeltaWatch watch,
