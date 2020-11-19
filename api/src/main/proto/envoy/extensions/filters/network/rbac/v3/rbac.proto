@@ -4,13 +4,14 @@ package envoy.extensions.filters.network.rbac.v3;
 
 import "envoy/config/rbac/v3/rbac.proto";
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.extensions.filters.network.rbac.v3";
 option java_outer_classname = "RbacProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: RBAC]
 // Role-Based Access Control :ref:`configuration overview <config_network_filters_rbac>`.
@@ -45,7 +46,7 @@ message RBAC {
   config.rbac.v3.RBAC shadow_rules = 2;
 
   // The prefix to use when emitting statistics.
-  string stat_prefix = 3 [(validate.rules).string = {min_bytes: 1}];
+  string stat_prefix = 3 [(validate.rules).string = {min_len: 1}];
 
   // RBAC enforcement strategy. By default RBAC will be enforced only once
   // when the first byte of data arrives from the downstream. When used in

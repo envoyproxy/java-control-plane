@@ -2,13 +2,14 @@ syntax = "proto3";
 
 package envoy.type.metadata.v3;
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.type.metadata.v3";
 option java_outer_classname = "MetadataProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: Metadata]
 
@@ -48,13 +49,13 @@ message MetadataKey {
       option (validate.required) = true;
 
       // If specified, use the key to retrieve the value in a Struct.
-      string key = 1 [(validate.rules).string = {min_bytes: 1}];
+      string key = 1 [(validate.rules).string = {min_len: 1}];
     }
   }
 
   // The key name of Metadata to retrieve the Struct from the metadata.
   // Typically, it represents a builtin subsystem or custom extension.
-  string key = 1 [(validate.rules).string = {min_bytes: 1}];
+  string key = 1 [(validate.rules).string = {min_len: 1}];
 
   // The path to retrieve the Value from the Struct. It can be a prefix or a full path,
   // e.g. ``[prop, xyz]`` for a struct or ``[prop, foo]`` for a string in the example,

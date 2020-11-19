@@ -1,11 +1,11 @@
 # Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
-ENVOY_SHA="38fe5e1ec115c0b2e83921211c2646f160a91681" # Feb 13, 2020
+ENVOY_SHA="9ccd778d4d7ccd986419620ed2e93b9796116863" # Nov 11, 2020
 
 # dependencies (source: https://github.com/envoyproxy/envoy/blob/38fe5e1ec115c0b2e83921211c2646f160a91681/api/bazel/repository_locations.bzl)
 GOOGLEAPIS_SHA="82944da21578a53b74e547774cf62ed31a05b841"  # Dec 2, 2019
-OPENCENSUS_SHA="be218fb6bd674af7519b1850cdf8410d8cbd48e8"  # Dec 20, 2019
-PGV_GIT_SHA="973ea075fe989fd7878619845d1e532e5bfe7115"  # Dec 26, 2019
-PROMETHEUS_SHA="99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c" # Nov 17, 2017
-UDPA_SHA="edbea6a78f6d1ba34edc69c53a396b1d88d59651"  # Dec 30, 2019
+OPENCENSUS_SHA="4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89"  # Jul 21, 2020
+PGV_GIT_SHA="278964a8052f96a2f514add0298098f63fb7f47f"  # Jun 08, 2020
+PROMETHEUS_SHA="60555c9708c786597e6b07bf846d0dc5c2a46f54" # Jun 23, 2020
+UDPA_SHA="efcf912fb35470672231c7b7bef620f3d17f655a"  # Jun 29, 2020

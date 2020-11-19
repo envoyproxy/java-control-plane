@@ -4,13 +4,14 @@ package envoy.extensions.filters.http.dynamic_forward_proxy.v3;
 
 import "envoy/extensions/common/dynamic_forward_proxy/v3/dns_cache.proto";
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.extensions.filters.http.dynamic_forward_proxy.v3";
 option java_outer_classname = "DynamicForwardProxyProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: Dynamic forward proxy]
 
@@ -54,6 +55,10 @@ message PerRouteConfig {
     // :ref:`HCM host rewrite header <envoy_api_field_config.route.v3.RouteAction.auto_host_rewrite>`
     // given that the value set here would be used for DNS lookups whereas the value set in the HCM
     // would be used for host header forwarding which is not the desired outcome.
+    //
+    // .. note::
+    //
+    //   If the header appears multiple times only the first value is used.
     string host_rewrite_header = 2;
   }
 }
