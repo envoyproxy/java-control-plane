@@ -11,7 +11,7 @@ Both v2 and v3 resources as well as transport versions are supported. Migrating
 to v3 is recommended as Envoy will drop v2 support at EOY 2020 (see
 [API_VERSIONING.md](https://github.com/envoyproxy/envoy/blob/4c6206865061591155d18b55972b4d626e1703dd/api/API_VERSIONING.md))
 
-See the (v2-to-v3 migration guide)[V2_TO_V3_GUIDE.md] for an exmplanation of migration paths.
+See the [v2-to-v3 migration guide](V2_TO_V3_GUIDE.md) for an exmplanation of migration paths.
 
 ### Requirements
 
