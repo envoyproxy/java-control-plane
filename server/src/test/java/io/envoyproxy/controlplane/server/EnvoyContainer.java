@@ -24,7 +24,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   private final Supplier<Integer> controlPlanePortSupplier;
 
   EnvoyContainer(String config, Supplier<Integer> controlPlanePortSupplier) {
-    super("envoyproxy/envoy-alpine-dev:latest");
+    super("envoyproxy/envoy-alpine-dev:v1.16.0");
 
     this.config = config;
     this.controlPlanePortSupplier = controlPlanePortSupplier;
@@ -42,7 +42,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
         "/bin/sh", "/usr/local/bin/launch_envoy.sh",
         Integer.toString(controlPlanePortSupplier.get()),
         CONFIG_DEST,
-        "-l", "debug");
+        "-l", "debug", "--bootstrap-version 2");
 
     getExposedPorts().add(0, ADMIN_PORT);
   }
