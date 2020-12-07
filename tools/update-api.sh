@@ -39,20 +39,21 @@ mkdir -p "${protodir}/google/api/expr/v1alpha1"
 mkdir -p "${protodir}/google/rpc"
 cp googleapis-*/google/api/annotations.proto googleapis-*/google/api/http.proto "${protodir}/google/api"
 cp googleapis-*/google/api/expr/v1alpha1/syntax.proto "${protodir}/google/api/expr/v1alpha1"
+cp googleapis-*/google/api/expr/v1alpha1/checked.proto "${protodir}/google/api/expr/v1alpha1"
 cp googleapis-*/google/rpc/status.proto "${protodir}/google/rpc"
 
-curl -sL https://github.com/lyft/protoc-gen-validate/archive/${PGV_GIT_SHA}.tar.gz | tar xz --include="*.proto"
+curl -sL https://github.com/envoyproxy/protoc-gen-validate/archive/${PGV_GIT_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/validate"
 cp -r protoc-gen-validate-*/validate/* "${protodir}/validate"
 
-curl -sL https://github.com/census-instrumentation/opencensus-proto/archive/${OPENCENSUS_SHA}.tar.gz | tar xz --include="*.proto"
+curl -sL https://github.com/census-instrumentation/opencensus-proto/archive/v${OPENCENSUS_VERSION}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/opencensus/proto"
 cp -r opencensus-proto-*/src/opencensus/proto/* "${protodir}/opencensus/proto"
 
 curl -sL https://github.com/prometheus/client_model/archive/${PROMETHEUS_SHA}.tar.gz | tar xz --include="*.proto"
 cp client_model-*/metrics.proto "${protodir}"
 
-curl -sL https://github.com/cncf/udpa/archive/${UDPA_SHA}.tar.gz | tar xz --include="*.proto"
+curl -sL https://github.com/cncf/udpa/archive/v${UDPA_VERSION}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/udpa"
 cp -r udpa-*/udpa/* "${protodir}/udpa"
 

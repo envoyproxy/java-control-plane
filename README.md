@@ -36,3 +36,4 @@ following:
    file) and then
 2. run [tools/update-api.sh](tools/update-api.sh) from the `tools`
    directory.
+3. update envoy-alpine-dev docker image version [EnvoyContainer.java] according to envoy SHA in first point.
