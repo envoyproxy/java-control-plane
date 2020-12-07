@@ -8,19 +8,20 @@ import "envoy/config/core/v3/base.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.config.endpoint.v3";
 option java_outer_classname = "LoadReportProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
-// These are stats Envoy reports to GLB every so often. Report frequency is
-// defined by
+// [#protodoc-title: Load Report]
+
+// These are stats Envoy reports to the management server at a frequency defined by
 // :ref:`LoadStatsResponse.load_reporting_interval<envoy_api_field_service.load_stats.v3.LoadStatsResponse.load_reporting_interval>`.
 // Stats per upstream region/zone and optionally per subzone.
-// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
 // [#next-free-field: 9]
 message UpstreamLocalityStats {
   option (udpa.annotations.versioning).previous_message_type =
@@ -59,7 +60,6 @@ message UpstreamLocalityStats {
   uint32 priority = 6;
 }
 
-// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
 // [#next-free-field: 8]
 message UpstreamEndpointStats {
   option (udpa.annotations.versioning).previous_message_type =
@@ -102,7 +102,6 @@ message UpstreamEndpointStats {
   repeated EndpointLoadMetricStats load_metric_stats = 5;
 }
 
-// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
 message EndpointLoadMetricStats {
   option (udpa.annotations.versioning).previous_message_type =
       "envoy.api.v2.endpoint.EndpointLoadMetricStats";
@@ -120,7 +119,6 @@ message EndpointLoadMetricStats {
 
 // Per cluster load stats. Envoy reports these stats a management server in a
 // :ref:`LoadStatsRequest<envoy_api_msg_service.load_stats.v3.LoadStatsRequest>`
-// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
 // Next ID: 7
 // [#next-free-field: 7]
 message ClusterStats {
@@ -131,14 +129,14 @@ message ClusterStats {
         "envoy.api.v2.endpoint.ClusterStats.DroppedRequests";
 
     // Identifier for the policy specifying the drop.
-    string category = 1 [(validate.rules).string = {min_bytes: 1}];
+    string category = 1 [(validate.rules).string = {min_len: 1}];
 
     // Total number of deliberately dropped requests for the category.
     uint64 dropped_count = 2;
   }
 
   // The name of the cluster.
-  string cluster_name = 1 [(validate.rules).string = {min_bytes: 1}];
+  string cluster_name = 1 [(validate.rules).string = {min_len: 1}];
 
   // The eds_cluster_config service_name of the cluster.
   // It's possible that two clusters send the same service_name to EDS,

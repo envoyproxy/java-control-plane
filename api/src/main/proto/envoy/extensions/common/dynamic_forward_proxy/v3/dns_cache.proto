@@ -7,19 +7,27 @@ import "envoy/config/cluster/v3/cluster.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.extensions.common.dynamic_forward_proxy.v3";
 option java_outer_classname = "DnsCacheProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: Dynamic forward proxy common configuration]
 
+// Configuration of circuit breakers for resolver.
+message DnsCacheCircuitBreakers {
+  // The maximum number of pending requests that Envoy will allow to the
+  // resolver. If not specified, the default is 1024.
+  google.protobuf.UInt32Value max_pending_requests = 1;
+}
+
 // Configuration for the dynamic forward proxy DNS cache. See the :ref:`architecture overview
 // <arch_overview_http_dynamic_forward_proxy>` for more information.
-// [#next-free-field: 6]
+// [#next-free-field: 9]
 message DnsCacheConfig {
   option (udpa.annotations.versioning).previous_message_type =
       "envoy.config.common.dynamic_forward_proxy.v2alpha.DnsCacheConfig";
@@ -29,7 +37,7 @@ message DnsCacheConfig {
   // configurations with the same name *must* otherwise have the same settings when referenced
   // from different configuration components. Configuration will fail to load if this is not
   // the case.
-  string name = 1 [(validate.rules).string = {min_bytes: 1}];
+  string name = 1 [(validate.rules).string = {min_len: 1}];
 
   // The DNS lookup family to use during resolution.
   //
@@ -48,7 +56,12 @@ message DnsCacheConfig {
   //
   //  The returned DNS TTL is not currently used to alter the refresh rate. This feature will be
   //  added in a future change.
-  google.protobuf.Duration dns_refresh_rate = 3 [(validate.rules).duration = {gt {}}];
+  //
+  // .. note:
+  //
+  // The refresh rate is rounded to the closest millisecond, and must be at least 1ms.
+  google.protobuf.Duration dns_refresh_rate = 3
+      [(validate.rules).duration = {gte {nanos: 1000000}}];
 
   // The TTL for hosts that are unused. Hosts that have not been used in the configured time
   // interval will be purged. If not specified defaults to 5m.
@@ -72,4 +85,21 @@ message DnsCacheConfig {
   //   it is possible for the maximum hosts in the cache to go slightly above the configured
   //   value depending on timing. This is similar to how other circuit breakers work.
   google.protobuf.UInt32Value max_hosts = 5 [(validate.rules).uint32 = {gt: 0}];
+
+  // If the DNS failure refresh rate is specified,
+  // this is used as the cache's DNS refresh rate when DNS requests are failing. If this setting is
+  // not specified, the failure refresh rate defaults to the dns_refresh_rate.
+  config.cluster.v3.Cluster.RefreshRate dns_failure_refresh_rate = 6;
+
+  // The config of circuit breakers for resolver. It provides a configurable threshold.
+  // If `envoy.reloadable_features.enable_dns_cache_circuit_breakers` is enabled,
+  // envoy will use dns cache circuit breakers with default settings even if this value is not set.
+  DnsCacheCircuitBreakers dns_cache_circuit_breaker = 7;
+
+  // [#next-major-version: Reconcile DNS options in a single message.]
+  // Always use TCP queries instead of UDP queries for DNS lookups.
+  // Setting this value causes failure if the
+  // ``envoy.restart_features.use_apple_api_for_dns_lookups`` runtime value is true during
+  // server startup. Apple' API only uses UDP for DNS resolution.
+  bool use_tcp_for_dns_lookups = 8;
 }
