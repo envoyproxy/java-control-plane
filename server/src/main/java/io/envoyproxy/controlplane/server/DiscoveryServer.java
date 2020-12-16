@@ -10,7 +10,6 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +20,6 @@ public abstract class DiscoveryServer<T, U> {
   final ConfigWatcher configWatcher;
   final ProtoResourcesSerializer protoResourcesSerializer;
   private final ExecutorGroup executorGroup;
-  private final AtomicLong streamCount = new AtomicLong();
 
   /**
    * Creates the server.
@@ -59,7 +57,7 @@ public abstract class DiscoveryServer<T, U> {
       boolean ads,
       String defaultTypeUrl) {
 
-    long streamId = streamCount.getAndIncrement();
+    long streamId = StreamCounter.getAndIncrement();
     Executor executor = executorGroup.next();
 
     LOGGER.debug("[{}] open stream from {}", streamId, defaultTypeUrl);
