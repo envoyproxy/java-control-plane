@@ -37,6 +37,7 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
   private static final String CONFIG = "envoy/ads.v2.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
+  private static final int API_VERSION = 2;
   private static final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
     @Override public String hash(Node node) {
       return GROUP;
@@ -97,7 +98,7 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
 
   private static final Network NETWORK = Network.newNetwork();
 
-  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort())
+  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort(), API_VERSION)
       .withExposedPorts(LISTENER_PORT)
       .withNetwork(NETWORK);
 

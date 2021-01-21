@@ -23,6 +23,7 @@ public class V2DiscoveryServerXdsIT {
   private static final String CONFIG = "envoy/xds.v2.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
+  private static final int API_VERSION = 2;
 
   private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(2);
   private static final CountDownLatch onStreamRequestLatch = new CountDownLatch(2);
@@ -68,7 +69,7 @@ public class V2DiscoveryServerXdsIT {
 
   private static final Network NETWORK = Network.newNetwork();
 
-  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> XDS.getServer().getPort())
+  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> XDS.getServer().getPort(), API_VERSION)
       .withExposedPorts(LISTENER_PORT)
       .withNetwork(NETWORK);
 
