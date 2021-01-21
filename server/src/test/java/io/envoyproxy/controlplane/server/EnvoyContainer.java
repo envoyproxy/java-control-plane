@@ -24,7 +24,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   private final Supplier<Integer> controlPlanePortSupplier;
 
   EnvoyContainer(String config, Supplier<Integer> controlPlanePortSupplier) {
-    super("envoyproxy/envoy-alpine-dev:8fb3cb86082b17144a80402f5367ae65f06083bd");
+    super("envoyproxy/envoy-alpine-dev:5c801b25cae04f06bf48248c90e87d623d7a6283");
 
     this.config = config;
     this.controlPlanePortSupplier = controlPlanePortSupplier;
