@@ -54,6 +54,9 @@ curl -sL https://github.com/prometheus/client_model/archive/${PROMETHEUS_SHA}.ta
 cp client_model-*/metrics.proto "${protodir}"
 
 curl -sL https://github.com/cncf/udpa/archive/${UDPA_SHA}.tar.gz | tar xz --include="*.proto"
-cp -r udpa-*/* "${protodir}"
+mkdir -p "${protodir}/udpa"
+mkdir -p "${protodir}/xds"
+cp -r udpa-*/udpa/* "${protodir}/udpa"
+cp -r udpa-*/xds/* "${protodir}/xds"
 
 popd >/dev/null
