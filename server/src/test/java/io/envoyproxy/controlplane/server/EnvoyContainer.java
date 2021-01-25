@@ -12,7 +12,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EnvoyContainer.class);
 
-  private static final int DEFAULT_API_VERSION = 3;
+  private static final int DEFAULT_API_VERSION = 2;
   private static final String CONFIG_DEST = "/etc/envoy/envoy.yaml";
   private static final String HOST_IP_SCRIPT = "docker/host_ip.sh";
   private static final String HOST_IP_SCRIPT_DEST = "/usr/local/bin/host_ip.sh";
