@@ -1,4 +1,4 @@
-* See the main [Envoy OWNERS.md](https://github.com/envoyproxy/envoy/blob/master/OWNERS.md) for general Envoy project
+* See the main [Envoy OWNERS.md](https://github.com/envoyproxy/envoy/blob/main/OWNERS.md) for general Envoy project
   ownership.
 * See [CONTRIBUTING.md](CONTRIBUTING.md) for general contribution guidelines.
 

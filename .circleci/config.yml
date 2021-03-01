@@ -33,10 +33,10 @@ jobs:
 
       - add_ssh_keys
 
-      # Deploy if on master branch. If the $RELEASE and $NEXT variables are set then prepare a full maven release.
+      # Deploy if on main branch. If the $RELEASE and $NEXT variables are set then prepare a full maven release.
       - deploy:
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "main" ]; then
               echo $GPG_KEY | base64 --decode > signing-key
               gpg --passphrase $GPG_PASSPHRASE --import signing-key
               shred signing-key
