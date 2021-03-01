@@ -38,6 +38,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
   private static final String CONFIG = "envoy/ads.v3.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
+  private static final int API_VERSION = 3;
   private static final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
     @Override public String hash(Node node) {
       throw new IllegalStateException("Unexpected v2 request in v3 test");
@@ -103,7 +104,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
   private static final Network NETWORK = Network.newNetwork();
 
-  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort())
+  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort(), API_VERSION)
       .withExposedPorts(LISTENER_PORT)
       .withNetwork(NETWORK);
 
