@@ -1,0 +1,39 @@
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 9901 }
+dynamic_resources:
+  ads_config:
+    api_type: DELTA_GRPC
+    grpc_services:
+      envoy_grpc:
+        cluster_name: ads_cluster
+    transport_api_version: V3
+  cds_config:
+    ads: { }
+    resource_api_version: V3
+  lds_config:
+    ads: { }
+    resource_api_version: V3
+node:
+  cluster: test-cluster
+  id: test-id
+static_resources:
+  clusters:
+    - name: ads_cluster
+      connect_timeout: 1s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      http2_protocol_options:
+        connection_keepalive:
+          interval: 30s
+          timeout: 5s
+      load_assignment:
+        cluster_name: ads_cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: HOST_IP
+                      port_value: HOST_PORT
