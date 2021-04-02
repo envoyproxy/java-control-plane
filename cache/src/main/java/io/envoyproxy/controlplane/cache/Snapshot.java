@@ -2,11 +2,17 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 public abstract class Snapshot {
+
+  public abstract String version(ResourceType resourceType, List<String> resourceNames);
+
+  public abstract Map<String, ? extends Message> resources(ResourceType resourceType);
 
   /**
    * Asserts that all of the given resource names have corresponding values in the given resources collection.
@@ -21,7 +27,7 @@ public abstract class Snapshot {
       String parentTypeUrl,
       String dependencyTypeUrl,
       Set<String> resourceNames,
-      Map<String, SnapshotResource<T>> resources) throws SnapshotConsistencyException {
+      Map<String, VersionedResource<T>> resources) throws SnapshotConsistencyException {
 
     if (resourceNames.size() != resources.size()) {
       throw new SnapshotConsistencyException(
@@ -46,7 +52,17 @@ public abstract class Snapshot {
     }
   }
 
-  public abstract String version(ResourceType resourceType, List<String> resourceNames);
+  public abstract Map<String, VersionedResource<? extends Message>> versionedResources(ResourceType resourceType);
 
-  public abstract Map<String, SnapshotResource<?>> resources(ResourceType resourceType);
+  private static <T> Iterable<T> getIterableFromIterator(Iterator<T> iterator) {
+    return () -> iterator;
+  }
+
+  protected static <T extends Message> Iterable<VersionedResource<T>> generateSnapshotResourceIterable(
+      Iterable<T> resources) {
+    return getIterableFromIterator(
+        StreamSupport.stream(resources.spliterator(), false)
+            .map((r) -> VersionedResource.create(r))
+            .iterator());
+  }
 }

@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.containsString;
 
 import com.google.protobuf.util.Durations;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
@@ -81,7 +80,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
         @Override
         public void onV3StreamDeltaRequest(long streamId,
-                                           io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
+            io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
           throw new IllegalStateException("Unexpected delta request");
         }
 
@@ -162,6 +161,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
     cache.setSnapshot(
         GROUP,
         createSnapshot(true,
+            false,
             "upstream",
             UPSTREAM.ipAddress(),
             EchoContainer.PORT,
@@ -195,19 +195,19 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         .build();
     ClusterLoadAssignment
         endpoint = TestResources.createEndpointV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, V3, V3, listenerName,
+    Listener listener = TestResources.createListenerV3(ads, false, V3, V3, listenerName,
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
 
     // here we have new version of resources other than CDS.
     return Snapshot.create(
-        ImmutableList.of(SnapshotResource.create(cluster, "1")),
+        ImmutableList.of(cluster),
         "1",
-        ImmutableList.of(SnapshotResource.create(endpoint, "2")),
+        ImmutableList.of(endpoint),
         "2",
-        ImmutableList.of(SnapshotResource.create(listener, "2")),
+        ImmutableList.of(listener),
         "2",
-        ImmutableList.of(SnapshotResource.create(route, "2")),
+        ImmutableList.of(route),
         "2",
         ImmutableList.of(),
         "2");

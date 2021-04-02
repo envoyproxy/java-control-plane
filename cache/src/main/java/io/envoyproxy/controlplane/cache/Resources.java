@@ -218,10 +218,10 @@ public class Resources {
    *
    * @param resources the resource whose dependencies we are calculating
    */
-  public static <T extends Message> Set<String> getResourceReferences(Collection<SnapshotResource<T>> resources) {
+  public static <T extends Message> Set<String> getResourceReferences(Collection<VersionedResource<T>> resources) {
     final ImmutableSet.Builder<String> refs = ImmutableSet.builder();
 
-    for (SnapshotResource<T> sr : resources) {
+    for (VersionedResource<T> sr : resources) {
       Message r = sr.resource();
       if (r instanceof ClusterLoadAssignment || r instanceof RouteConfiguration) {
         // Endpoints have no dependencies.

@@ -12,9 +12,9 @@ import java.util.Map;
 public abstract class DeltaResponse {
 
   public static DeltaResponse create(DeltaXdsRequest request,
-                                     Map<String, SnapshotResource<?>> resources,
-                                     List<String> removedResources,
-                                     String version) {
+      Map<String, VersionedResource<?>> resources,
+      List<String> removedResources,
+      String version) {
     return new AutoValue_DeltaResponse(request, resources, removedResources, version);
   }
 
@@ -26,7 +26,7 @@ public abstract class DeltaResponse {
   /**
    * Returns the resources to include in the response.
    */
-  public abstract Map<String, SnapshotResource<? extends Message>> resources();
+  public abstract Map<String, VersionedResource<? extends Message>> resources();
 
   /**
    * Returns the removed resources to include in the response.
