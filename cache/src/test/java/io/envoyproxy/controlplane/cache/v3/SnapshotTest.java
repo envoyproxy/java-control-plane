@@ -11,8 +11,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
 import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
-import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.TestResources;
+import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
@@ -23,6 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.junit.Test;
 
 public class SnapshotTest {
+
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
   private static final String CLUSTER_NAME = "cluster0";
   private static final String LISTENER_NAME = "listener0";
@@ -32,18 +33,14 @@ public class SnapshotTest {
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
 
-  private static final SnapshotResource<Cluster> CLUSTER =
-      SnapshotResource.create(TestResources.createClusterV3(CLUSTER_NAME), UUID.randomUUID().toString());
-  private static final SnapshotResource<ClusterLoadAssignment> ENDPOINT =
-      SnapshotResource.create(TestResources.createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT),
-          UUID.randomUUID().toString());
-  private static final SnapshotResource<Listener> LISTENER =
-      SnapshotResource.create(TestResources.createListenerV3(ADS, V3, V3,
-          LISTENER_NAME, LISTENER_PORT, ROUTE_NAME), UUID.randomUUID().toString());
-  private static final SnapshotResource<RouteConfiguration> ROUTE =
-      SnapshotResource.create(TestResources.createRouteV3(ROUTE_NAME, CLUSTER_NAME), UUID.randomUUID().toString());
-  private static final SnapshotResource<Secret> SECRET =
-      SnapshotResource.create(TestResources.createSecretV3(SECRET_NAME), UUID.randomUUID().toString());
+  private static final Cluster CLUSTER = TestResources.createClusterV3(CLUSTER_NAME);
+  private static final ClusterLoadAssignment ENDPOINT = TestResources
+      .createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT);
+  private static final Listener LISTENER = TestResources.createListenerV3(ADS, false, V3, V3,
+      LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+  private static final RouteConfiguration ROUTE = TestResources
+      .createRouteV3(ROUTE_NAME, CLUSTER_NAME);
+  private static final Secret SECRET = TestResources.createSecretV3(SECRET_NAME);
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -133,19 +130,19 @@ public class SnapshotTest {
     // generic type constraints.
 
     assertThat(snapshot.resources(CLUSTER_TYPE_URL))
-        .containsEntry(CLUSTER_NAME, CLUSTER)
+        .containsEntry(CLUSTER_NAME, VersionedResource.create(CLUSTER))
         .hasSize(1);
 
     assertThat(snapshot.resources(ENDPOINT_TYPE_URL))
-        .containsEntry(CLUSTER_NAME, ENDPOINT)
+        .containsEntry(CLUSTER_NAME, VersionedResource.create(ENDPOINT))
         .hasSize(1);
 
     assertThat(snapshot.resources(LISTENER_TYPE_URL))
-        .containsEntry(LISTENER_NAME, LISTENER)
+        .containsEntry(LISTENER_NAME, VersionedResource.create(LISTENER))
         .hasSize(1);
 
     assertThat(snapshot.resources(ROUTE_TYPE_URL))
-        .containsEntry(ROUTE_NAME, ROUTE)
+        .containsEntry(ROUTE_NAME, VersionedResource.create(ROUTE))
         .hasSize(1);
 
     String nullString = null;
@@ -233,8 +230,7 @@ public class SnapshotTest {
 
     Snapshot snapshot1 = Snapshot.create(
         ImmutableList.of(CLUSTER),
-        ImmutableList.of(SnapshotResource.create(TestResources.createEndpointV3(otherClusterName, ENDPOINT_PORT),
-            UUID.randomUUID().toString())),
+        ImmutableList.of(TestResources.createEndpointV3(otherClusterName, ENDPOINT_PORT)),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
@@ -253,8 +249,7 @@ public class SnapshotTest {
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
-        ImmutableList.of(SnapshotResource.create(TestResources.createRouteV3(otherRouteName, CLUSTER_NAME),
-            UUID.randomUUID().toString())),
+        ImmutableList.of(TestResources.createRouteV3(otherRouteName, CLUSTER_NAME)),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 

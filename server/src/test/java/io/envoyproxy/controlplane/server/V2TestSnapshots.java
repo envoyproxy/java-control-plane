@@ -1,6 +1,5 @@
 package io.envoyproxy.controlplane.server;
 
-import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
@@ -8,9 +7,13 @@ import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
 import io.envoyproxy.envoy.api.v2.RouteConfiguration;
 import io.envoyproxy.envoy.api.v2.core.ApiVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 class V2TestSnapshots {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(V2TestSnapshots.class);
 
   static Snapshot createSnapshot(
       boolean ads,
@@ -28,11 +31,18 @@ class V2TestSnapshots {
         listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
+    LOGGER.info("snapshot={}", Snapshot.create(
+        ImmutableList.of(cluster),
+        ImmutableList.of(endpoint),
+        ImmutableList.of(listener),
+        ImmutableList.of(route),
+        ImmutableList.of(),
+        version));
     return Snapshot.create(
-        ImmutableList.of(SnapshotResource.create(cluster, version)),
-        ImmutableList.of(SnapshotResource.create(endpoint, version)),
-        ImmutableList.of(SnapshotResource.create(listener, version)),
-        ImmutableList.of(SnapshotResource.create(route, version)),
+        ImmutableList.of(cluster),
+        ImmutableList.of(endpoint),
+        ImmutableList.of(listener),
+        ImmutableList.of(route),
         ImmutableList.of(),
         version);
   }
@@ -80,10 +90,10 @@ class V2TestSnapshots {
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(
-        ImmutableList.of(SnapshotResource.create(cluster, version)),
+        ImmutableList.of(cluster),
         ImmutableList.of(),
-        ImmutableList.of(SnapshotResource.create(listener, version)),
-        ImmutableList.of(SnapshotResource.create(route, version)),
+        ImmutableList.of(listener),
+        ImmutableList.of(route),
         ImmutableList.of(),
         version);
   }

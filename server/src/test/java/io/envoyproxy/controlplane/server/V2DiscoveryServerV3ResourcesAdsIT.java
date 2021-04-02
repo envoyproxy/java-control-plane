@@ -54,6 +54,7 @@ public class V2DiscoveryServerV3ResourcesAdsIT {
       cache.setSnapshot(
           GROUP,
           createSnapshot(true,
+              false,
               "upstream",
               UPSTREAM.ipAddress(),
               EchoContainer.PORT,

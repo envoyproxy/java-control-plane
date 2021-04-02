@@ -274,12 +274,13 @@ public class TestResources {
    * @param routeName name of the test route that is associated with this listener
    */
   public static io.envoyproxy.envoy.config.listener.v3.Listener createListenerV3(boolean ads,
+      boolean delta,
       ApiVersion rdsTransportVersion,
       ApiVersion rdsResourceVersion, String listenerName,
       int port, String routeName) {
     io.envoyproxy.envoy.config.core.v3.ConfigSource.Builder configSourceBuilder =
         io.envoyproxy.envoy.config.core.v3.ConfigSource.newBuilder()
-        .setResourceApiVersion(rdsResourceVersion);
+            .setResourceApiVersion(rdsResourceVersion);
     io.envoyproxy.envoy.config.core.v3.ConfigSource rdsSource = ads
         ? configSourceBuilder
         .setAds(io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource.getDefaultInstance())
@@ -287,7 +288,9 @@ public class TestResources {
         : configSourceBuilder
             .setApiConfigSource(io.envoyproxy.envoy.config.core.v3.ApiConfigSource.newBuilder()
                 .setTransportApiVersion(rdsTransportVersion)
-                .setApiType(io.envoyproxy.envoy.config.core.v3.ApiConfigSource.ApiType.GRPC)
+                .setApiType(
+                    delta ? io.envoyproxy.envoy.config.core.v3.ApiConfigSource.ApiType.DELTA_GRPC
+                        : io.envoyproxy.envoy.config.core.v3.ApiConfigSource.ApiType.GRPC)
                 .addGrpcServices(io.envoyproxy.envoy.config.core.v3.GrpcService.newBuilder()
                     .setEnvoyGrpc(io.envoyproxy.envoy.config.core.v3.GrpcService.EnvoyGrpc.newBuilder()
                         .setClusterName(XDS_CLUSTER))))

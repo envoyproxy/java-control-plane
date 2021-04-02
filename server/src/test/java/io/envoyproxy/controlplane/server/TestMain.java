@@ -3,7 +3,6 @@ package io.envoyproxy.controlplane.server;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Duration;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.v2.SimpleCache;
 import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
@@ -43,15 +42,13 @@ public class TestMain {
         GROUP,
         Snapshot.create(
             ImmutableList.of(
-                SnapshotResource.create(
-                    Cluster.newBuilder()
-                        .setName("cluster0")
-                        .setConnectTimeout(Duration.newBuilder().setSeconds(5))
-                        .setType(DiscoveryType.STATIC)
-                        .addHosts(Address.newBuilder()
-                            .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1234)))
-                        .build(),
-                    "1")),
+                Cluster.newBuilder()
+                    .setName("cluster0")
+                    .setConnectTimeout(Duration.newBuilder().setSeconds(5))
+                    .setType(DiscoveryType.STATIC)
+                    .addHosts(Address.newBuilder()
+                        .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1234)))
+                    .build()),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
@@ -87,15 +84,13 @@ public class TestMain {
         GROUP,
         Snapshot.create(
             ImmutableList.of(
-                SnapshotResource.create(
-                    Cluster.newBuilder()
+                Cluster.newBuilder()
                     .setName("cluster1")
                     .setConnectTimeout(Duration.newBuilder().setSeconds(5))
                     .setType(DiscoveryType.STATIC)
                     .addHosts(Address.newBuilder()
                         .setSocketAddress(SocketAddress.newBuilder().setAddress("127.0.0.1").setPortValue(1235)))
-                    .build(),
-                    "1")),
+                    .build()),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),

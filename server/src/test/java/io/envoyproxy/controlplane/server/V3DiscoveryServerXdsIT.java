@@ -48,6 +48,7 @@ public class V3DiscoveryServerXdsIT {
       cache.setSnapshot(
           GROUP,
           createSnapshotNoEds(false,
+              false,
               "upstream",
               "upstream",
               EchoContainer.PORT,
