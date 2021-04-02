@@ -13,6 +13,7 @@ import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -100,5 +101,12 @@ public class V3DiscoveryServerXdsIT {
             .when().get("/")
             .then().statusCode(200)
             .and().body(containsString(UPSTREAM.response)));
+  }
+
+  @After
+  public void after() throws Exception {
+    ENVOY.stop();
+    UPSTREAM.stop();
+    NETWORK.close();
   }
 }
