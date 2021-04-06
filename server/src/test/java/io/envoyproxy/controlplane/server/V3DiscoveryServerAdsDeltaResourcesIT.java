@@ -142,7 +142,7 @@ public class V3DiscoveryServerAdsDeltaResourcesIT {
         snapshot
     );
 
-    await().atMost(3, TimeUnit.SECONDS).untilAsserted(
+    await().atMost(5, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).untilAsserted(
         () -> {
           assertThat(nonce.toString()).isEqualTo("01234");
           assertThat(errorDetails.toString()).isEqualTo("");
@@ -152,59 +152,34 @@ public class V3DiscoveryServerAdsDeltaResourcesIT {
           assertThat(resourceToNonceMap.get(V3.LISTENER_TYPE_URL).toString()).contains("4");
         }
     );
-  }
 
-  @Test
-  public void validateNewSnapshotVersionButSameUnderlyingResourcesDoesNotTriggerUpdate()
-      throws InterruptedException {
-    assertThat(onStreamOpenLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to open ADS stream");
-
-    assertThat(onStreamRequestLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to receive ADS request");
-
-    // there is no onStreamResponseLatch because V3DiscoveryServer doesn't call the callbacks
-    // when responding to a delta request
-
-    String baseUri = String
-        .format("http://%s:%d", ENVOY.getContainerIpAddress(), ENVOY.getMappedPort(LISTENER_PORT));
-
-    await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
-        () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
-            .when().get("/")
-            .then().statusCode(200)
-            .and().body(containsString(UPSTREAM.response)));
-
-    // basically the nonces will count up from 0 to 3 as envoy receives more resources
-    // and check that no messages have been sent to errorDetails
-    assertThat(nonce.toString()).isEqualTo("0123");
-    assertThat(resourceToNonceMap.containsKey(V3.CLUSTER_TYPE_URL)).isTrue();
-    assertThat(resourceToNonceMap.containsKey(V3.LISTENER_TYPE_URL)).isTrue();
-    assertThat(resourceToNonceMap.containsKey(V3.ROUTE_TYPE_URL)).isTrue();
-    assertThat(errorDetails.toString()).isEqualTo("");
-
-    // now write a new snapshot, with the only change being an update
-    // to the version, wait for a few seconds for envoy to pick it up, and
-    // check that the nonce doesn't change
-    Snapshot snapshot = V3TestSnapshots.createSnapshot(true,
+    // now increment the version but keep all the underlying resources the same. This should not
+    // trigger any updates, so the nonces should remain constant to above.
+    snapshot = V3TestSnapshots.createSnapshot(true,
         true,
         "upstream",
         UPSTREAM.ipAddress(),
         EchoContainer.PORT,
-        "listener0",
+        "listener1",
         LISTENER_PORT,
         "route0",
-        "2");
+        "3");
     LOGGER.info("snapshot={}", snapshot);
     cache.setSnapshot(
         GROUP,
         snapshot
     );
 
-    await().atMost(3, TimeUnit.SECONDS).untilAsserted(
+    await().atMost(5, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).untilAsserted(
         () -> {
-          assertThat(nonce.toString()).isEqualTo("0123");
+
+          LOGGER.info("lastWatchRequestTime={}", cache.statusInfo(GROUP));
+          assertThat(nonce.toString()).isEqualTo("01234");
           assertThat(errorDetails.toString()).isEqualTo("");
+          assertThat(resourceToNonceMap.containsKey(V3.LISTENER_TYPE_URL)).isTrue();
+          // we know that the most recent update was to the listener, so check
+          // that it received the most recent nonce
+          assertThat(resourceToNonceMap.get(V3.LISTENER_TYPE_URL).toString()).contains("4");
         }
     );
   }
