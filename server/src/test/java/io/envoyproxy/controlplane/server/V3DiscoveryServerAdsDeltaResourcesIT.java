@@ -170,6 +170,7 @@ public class V3DiscoveryServerAdsDeltaResourcesIT {
         snapshot
     );
 
+    // wait 2 seconds before we start checking this
     await().atMost(5, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).untilAsserted(
         () -> {
 
