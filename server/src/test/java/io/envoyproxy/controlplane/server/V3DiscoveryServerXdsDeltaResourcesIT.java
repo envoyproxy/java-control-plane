@@ -156,48 +156,17 @@ public class V3DiscoveryServerXdsDeltaResourcesIT {
           assertThat(errorDetails.toString()).isEqualTo("");
         }
     );
-  }
-
-  @Test
-  public void validateNewSnapshotVersionButSameUnderlyingResourcesDoesNotTriggerUpdate()
-      throws InterruptedException {
-    assertThat(onStreamOpenLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to open ADS stream");
-
-    assertThat(onStreamRequestLatch.await(15, TimeUnit.SECONDS)).isTrue()
-        .overridingErrorMessage("failed to receive ADS request");
-
-    // there is no onStreamResponseLatch because V3DiscoveryServer doesn't call the callbacks
-    // when responding to a delta request
-
-    String baseUri = String
-        .format("http://%s:%d", ENVOY.getContainerIpAddress(), ENVOY.getMappedPort(LISTENER_PORT));
-
-    await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
-        () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
-            .when().get("/")
-            .then().statusCode(200)
-            .and().body(containsString(UPSTREAM.response)));
-
-    // we'll count three nonces of "0" and make sure we've gotten no errors
-    assertThat(errorDetails.toString()).isEqualTo("");
-    assertThat(resourceToNonceMap.containsKey(V3.CLUSTER_TYPE_URL)).isTrue();
-    assertThat(resourceToNonceMap.get(V3.CLUSTER_TYPE_URL).toString()).isEqualTo("0");
-    assertThat(resourceToNonceMap.containsKey(V3.LISTENER_TYPE_URL)).isTrue();
-    assertThat(resourceToNonceMap.get(V3.LISTENER_TYPE_URL).toString()).isEqualTo("0");
-    assertThat(resourceToNonceMap.containsKey(V3.ROUTE_TYPE_URL)).isTrue();
-    assertThat(resourceToNonceMap.get(V3.ROUTE_TYPE_URL).toString()).isEqualTo("0");
 
     // now write a new snapshot, with no changes to the params we pass in
     // but update version. This being a Delta request, this version doesn't
     // really matter, and Envoy should not receive a spontaneous update
     // because the hash of the resources will be the same
-    Snapshot snapshot = V3TestSnapshots.createSnapshotNoEds(false,
+    snapshot = V3TestSnapshots.createSnapshotNoEds(false,
         true,
         "upstream",
         UPSTREAM.ipAddress(),
         EchoContainer.PORT,
-        "listener0",
+        "listener1",
         LISTENER_PORT,
         "route0",
         "2");
@@ -207,12 +176,13 @@ public class V3DiscoveryServerXdsDeltaResourcesIT {
         snapshot
     );
 
-    await().atMost(3, TimeUnit.SECONDS).untilAsserted(
+    // delay polling by 2 seconds to check that no upsates are received
+    await().pollDelay(2, TimeUnit.SECONDS).atMost(5, TimeUnit.SECONDS).untilAsserted(
         () -> {
           assertThat(resourceToNonceMap.containsKey(V3.CLUSTER_TYPE_URL)).isTrue();
           assertThat(resourceToNonceMap.get(V3.CLUSTER_TYPE_URL).toString()).isEqualTo("0");
           assertThat(resourceToNonceMap.containsKey(V3.LISTENER_TYPE_URL)).isTrue();
-          assertThat(resourceToNonceMap.get(V3.LISTENER_TYPE_URL).toString()).isEqualTo("0");
+          assertThat(resourceToNonceMap.get(V3.LISTENER_TYPE_URL).toString()).isEqualTo("01");
           assertThat(resourceToNonceMap.containsKey(V3.ROUTE_TYPE_URL)).isTrue();
           assertThat(resourceToNonceMap.get(V3.ROUTE_TYPE_URL).toString()).isEqualTo("0");
           assertThat(errorDetails.toString()).isEqualTo("");
