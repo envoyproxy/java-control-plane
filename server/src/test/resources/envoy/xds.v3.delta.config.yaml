@@ -24,14 +24,7 @@ node:
   id: test-id
 static_resources:
   clusters:
-    - name: xds_cluster
-      connect_timeout: 1s
-      type: STRICT_DNS
-      lb_policy: ROUND_ROBIN
-      http2_protocol_options:
-        connection_keepalive:
-          interval: 30s
-          timeout: 5s
+    - connect_timeout: 1s
       load_assignment:
         cluster_name: xds_cluster
         endpoints:
@@ -41,3 +34,5 @@ static_resources:
                     socket_address:
                       address: HOST_IP
                       port_value: HOST_PORT
+      http2_protocol_options: {}
+      name: xds_cluster
