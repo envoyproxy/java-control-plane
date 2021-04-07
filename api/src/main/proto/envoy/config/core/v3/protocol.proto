@@ -2,16 +2,19 @@ syntax = "proto3";
 
 package envoy.config.core.v3;
 
+import "envoy/type/v3/percent.proto";
+
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.config.core.v3";
 option java_outer_classname = "ProtocolProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: Protocol options]
 
@@ -37,12 +40,33 @@ message UpstreamHttpProtocolOptions {
   bool auto_san_validation = 2;
 }
 
+// [#next-free-field: 6]
 message HttpProtocolOptions {
   option (udpa.annotations.versioning).previous_message_type =
       "envoy.api.v2.core.HttpProtocolOptions";
 
+  // Action to take when Envoy receives client request with header names containing underscore
+  // characters.
+  // Underscore character is allowed in header names by the RFC-7230 and this behavior is implemented
+  // as a security measure due to systems that treat '_' and '-' as interchangeable. Envoy by default allows client request headers with underscore
+  // characters.
+  enum HeadersWithUnderscoresAction {
+    // Allow headers with underscores. This is the default behavior.
+    ALLOW = 0;
+
+    // Reject client request. HTTP/1 requests are rejected with the 400 status. HTTP/2 requests
+    // end with the stream reset. The "httpN.requests_rejected_with_underscores_in_headers" counter
+    // is incremented for each rejected request.
+    REJECT_REQUEST = 1;
+
+    // Drop the header with name containing underscores. The header is dropped before the filter chain is
+    // invoked and as such filters will not see dropped headers. The
+    // "httpN.dropped_headers_with_underscores" is incremented for each dropped header.
+    DROP_HEADER = 2;
+  }
+
   // The idle timeout for connections. The idle timeout is defined as the
-  // period in which there are no active requests. If not set, there is no idle timeout. When the
+  // period in which there are no active requests. When the
   // idle timeout is reached the connection will be closed. If the connection is an HTTP/2
   // downstream connection a drain sequence will occur prior to closing the connection, see
   // :ref:`drain_timeout
@@ -53,6 +77,10 @@ message HttpProtocolOptions {
   // .. warning::
   //   Disabling this timeout has a highly likelihood of yielding connection leaks due to lost TCP
   //   FIN packets, etc.
+  //
+  // If the :ref:`overload action <config_overload_manager_overload_actions>` "envoy.overload_actions.reduce_timeouts"
+  // is configured, this timeout is scaled for downstream connections according to the value for
+  // :ref:`HTTP_DOWNSTREAM_CONNECTION_IDLE <envoy_api_enum_value_config.overload.v3.ScaleTimersOverloadActionConfig.TimerType.HTTP_DOWNSTREAM_CONNECTION_IDLE>`.
   google.protobuf.Duration idle_timeout = 1;
 
   // The maximum duration of a connection. The duration is defined as a period since a connection
@@ -67,9 +95,18 @@ message HttpProtocolOptions {
   // maximum number of request headers allowed is 100. Requests that exceed this limit will receive
   // a 431 response for HTTP/1.x and cause a stream reset for HTTP/2.
   google.protobuf.UInt32Value max_headers_count = 2 [(validate.rules).uint32 = {gte: 1}];
+
+  // Total duration to keep alive an HTTP request/response stream. If the time limit is reached the stream will be
+  // reset independent of any other timeouts. If not specified, this value is not set.
+  google.protobuf.Duration max_stream_duration = 4;
+
+  // Action to take when a client request with a header name containing underscore characters is received.
+  // If this setting is not specified, the value defaults to ALLOW.
+  // Note: upstream responses are not affected by this setting.
+  HeadersWithUnderscoresAction headers_with_underscores_action = 5;
 }
 
-// [#next-free-field: 6]
+// [#next-free-field: 8]
 message Http1ProtocolOptions {
   option (udpa.annotations.versioning).previous_message_type =
       "envoy.api.v2.core.Http1ProtocolOptions";
@@ -126,12 +163,66 @@ message Http1ProtocolOptions {
   //   - Not a response to a HEAD request.
   //   - The content length header is not present.
   bool enable_trailers = 5;
+
+  // Allows Envoy to process requests/responses with both `Content-Length` and `Transfer-Encoding`
+  // headers set. By default such messages are rejected, but if option is enabled - Envoy will
+  // remove Content-Length header and process message.
+  // See `RFC7230, sec. 3.3.3 <https://tools.ietf.org/html/rfc7230#section-3.3.3>` for details.
+  //
+  // .. attention::
+  //   Enabling this option might lead to request smuggling vulnerability, especially if traffic
+  //   is proxied via multiple layers of proxies.
+  bool allow_chunked_length = 6;
+
+  // Allows invalid HTTP messaging. When this option is false, then Envoy will terminate
+  // HTTP/1.1 connections upon receiving an invalid HTTP message. However,
+  // when this option is true, then Envoy will leave the HTTP/1.1 connection
+  // open where possible.
+  // If set, this overrides any HCM :ref:`stream_error_on_invalid_http_messaging
+  // <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_error_on_invalid_http_message>`.
+  google.protobuf.BoolValue override_stream_error_on_invalid_http_message = 7;
 }
 
-// [#next-free-field: 13]
+message KeepaliveSettings {
+  // Send HTTP/2 PING frames at this period, in order to test that the connection is still alive.
+  google.protobuf.Duration interval = 1 [(validate.rules).duration = {
+    required: true
+    gte {nanos: 1000000}
+  }];
+
+  // How long to wait for a response to a keepalive PING. If a response is not received within this
+  // time period, the connection will be aborted.
+  google.protobuf.Duration timeout = 2 [(validate.rules).duration = {
+    required: true
+    gte {nanos: 1000000}
+  }];
+
+  // A random jitter amount as a percentage of interval that will be added to each interval.
+  // A value of zero means there will be no jitter.
+  // The default value is 15%.
+  type.v3.Percent interval_jitter = 3;
+}
+
+// [#next-free-field: 16]
 message Http2ProtocolOptions {
   option (udpa.annotations.versioning).previous_message_type =
       "envoy.api.v2.core.Http2ProtocolOptions";
+
+  // Defines a parameter to be sent in the SETTINGS frame.
+  // See `RFC7540, sec. 6.5.1 <https://tools.ietf.org/html/rfc7540#section-6.5.1>`_ for details.
+  message SettingsParameter {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.api.v2.core.Http2ProtocolOptions.SettingsParameter";
+
+    // The 16 bit parameter identifier.
+    google.protobuf.UInt32Value identifier = 1 [
+      (validate.rules).uint32 = {lte: 65535 gte: 0},
+      (validate.rules).message = {required: true}
+    ];
+
+    // The 32 bit parameter value.
+    google.protobuf.UInt32Value value = 2 [(validate.rules).message = {required: true}];
+  }
 
   // `Maximum table size <https://httpwg.org/specs/rfc7541.html#rfc.section.4.2>`_
   // (in octets) that the encoder is permitted to use for the dynamic HPACK table. Valid values
@@ -183,7 +274,8 @@ message Http2ProtocolOptions {
   // be written into the socket). Exceeding this limit triggers flood mitigation and connection is
   // terminated. The ``http2.outbound_flood`` stat tracks the number of terminated connections due
   // to flood mitigation. The default limit is 10000.
-  // [#comment:TODO: implement same limits for upstream outbound frames as well.]
+  // NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
+  // `envoy.reloadable_features.upstream_http2_flood_checks` flag.
   google.protobuf.UInt32Value max_outbound_frames = 7 [(validate.rules).uint32 = {gte: 1}];
 
   // Limit the number of pending outbound downstream frames of types PING, SETTINGS and RST_STREAM,
@@ -191,7 +283,8 @@ message Http2ProtocolOptions {
   // this limit triggers flood mitigation and connection is terminated. The
   // ``http2.outbound_control_flood`` stat tracks the number of terminated connections due to flood
   // mitigation. The default limit is 1000.
-  // [#comment:TODO: implement same limits for upstream outbound frames as well.]
+  // NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
+  // `envoy.reloadable_features.upstream_http2_flood_checks` flag.
   google.protobuf.UInt32Value max_outbound_control_frames = 8 [(validate.rules).uint32 = {gte: 1}];
 
   // Limit the number of consecutive inbound frames of types HEADERS, CONTINUATION and DATA with an
@@ -200,7 +293,8 @@ message Http2ProtocolOptions {
   // stat tracks the number of connections terminated due to flood mitigation.
   // Setting this to 0 will terminate connection upon receiving first frame with an empty payload
   // and no end stream flag. The default limit is 1.
-  // [#comment:TODO: implement same limits for upstream inbound frames as well.]
+  // NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
+  // `envoy.reloadable_features.upstream_http2_flood_checks` flag.
   google.protobuf.UInt32Value max_consecutive_inbound_frames_with_empty_payload = 9;
 
   // Limit the number of inbound PRIORITY frames allowed per each opened stream. If the number
@@ -211,7 +305,8 @@ message Http2ProtocolOptions {
   //
   // the connection is terminated. The ``http2.inbound_priority_frames_flood`` stat tracks
   // the number of connections terminated due to flood mitigation. The default limit is 100.
-  // [#comment:TODO: implement same limits for upstream inbound frames as well.]
+  // NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
+  // `envoy.reloadable_features.upstream_http2_flood_checks` flag.
   google.protobuf.UInt32Value max_inbound_priority_frames_per_stream = 10;
 
   // Limit the number of inbound WINDOW_UPDATE frames allowed per DATA frame sent. If the number
@@ -225,7 +320,8 @@ message Http2ProtocolOptions {
   // the number of connections terminated due to flood mitigation. The default limit is 10.
   // Setting this to 1 should be enough to support HTTP/2 implementations with basic flow control,
   // but more complex implementations that try to estimate available bandwidth require at least 2.
-  // [#comment:TODO: implement same limits for upstream inbound frames as well.]
+  // NOTE: flood and abuse mitigation for upstream connections is presently enabled by the
+  // `envoy.reloadable_features.upstream_http2_flood_checks` flag.
   google.protobuf.UInt32Value max_inbound_window_update_frames_per_data_frame_sent = 11
       [(validate.rules).uint32 = {gte: 1}];
 
@@ -233,8 +329,57 @@ message Http2ProtocolOptions {
   // the whole HTTP/2 connection is terminated upon receiving invalid HEADERS frame. However,
   // when this option is enabled, only the offending stream is terminated.
   //
+  // This is overridden by HCM :ref:`stream_error_on_invalid_http_messaging
+  // <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_error_on_invalid_http_message>`
+  // iff present.
+  //
+  // This is deprecated in favor of :ref:`override_stream_error_on_invalid_http_message
+  // <envoy_v3_api_field_config.core.v3.Http2ProtocolOptions.override_stream_error_on_invalid_http_message>`
+  //
   // See `RFC7540, sec. 8.1 <https://tools.ietf.org/html/rfc7540#section-8.1>`_ for details.
-  bool stream_error_on_invalid_http_messaging = 12;
+  bool stream_error_on_invalid_http_messaging = 12 [deprecated = true];
+
+  // Allows invalid HTTP messaging and headers. When this option is disabled (default), then
+  // the whole HTTP/2 connection is terminated upon receiving invalid HEADERS frame. However,
+  // when this option is enabled, only the offending stream is terminated.
+  //
+  // This overrides any HCM :ref:`stream_error_on_invalid_http_messaging
+  // <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_error_on_invalid_http_message>`
+  //
+  // See `RFC7540, sec. 8.1 <https://tools.ietf.org/html/rfc7540#section-8.1>`_ for details.
+  google.protobuf.BoolValue override_stream_error_on_invalid_http_message = 14;
+
+  // [#not-implemented-hide:]
+  // Specifies SETTINGS frame parameters to be sent to the peer, with two exceptions:
+  //
+  // 1. SETTINGS_ENABLE_PUSH (0x2) is not configurable as HTTP/2 server push is not supported by
+  // Envoy.
+  //
+  // 2. SETTINGS_ENABLE_CONNECT_PROTOCOL (0x8) is only configurable through the named field
+  // 'allow_connect'.
+  //
+  // Note that custom parameters specified through this field can not also be set in the
+  // corresponding named parameters:
+  //
+  // .. code-block:: text
+  //
+  //   ID    Field Name
+  //   ----------------
+  //   0x1   hpack_table_size
+  //   0x3   max_concurrent_streams
+  //   0x4   initial_stream_window_size
+  //
+  // Collisions will trigger config validation failure on load/update. Likewise, inconsistencies
+  // between custom parameters with the same identifier will trigger a failure.
+  //
+  // See `IANA HTTP/2 Settings
+  // <https://www.iana.org/assignments/http2-parameters/http2-parameters.xhtml#settings>`_ for
+  // standardized identifiers.
+  repeated SettingsParameter custom_settings_parameters = 13;
+
+  // Send HTTP/2 PING frames to verify that the connection is still healthy. If the remote peer
+  // does not respond within the configured timeout, the connection will be aborted.
+  KeepaliveSettings connection_keepalive = 15;
 }
 
 // [#not-implemented-hide:]

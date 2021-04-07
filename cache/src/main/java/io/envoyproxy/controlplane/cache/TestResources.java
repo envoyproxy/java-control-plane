@@ -105,6 +105,7 @@ public class TestResources {
     io.envoyproxy.envoy.config.core.v3.ConfigSource edsSource =
         io.envoyproxy.envoy.config.core.v3.ConfigSource.newBuilder()
             .setAds(io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource.getDefaultInstance())
+            .setResourceApiVersion(ApiVersion.V3)
             .build();
 
     return io.envoyproxy.envoy.config.cluster.v3.Cluster.newBuilder()
@@ -228,6 +229,7 @@ public class TestResources {
     ConfigSource rdsSource = ads
         ? configSourceBuilder
         .setAds(AggregatedConfigSource.getDefaultInstance())
+        .setResourceApiVersion(rdsResourceVersion)
         .build()
         : configSourceBuilder
             .setApiConfigSource(ApiConfigSource.newBuilder()
@@ -284,6 +286,7 @@ public class TestResources {
     io.envoyproxy.envoy.config.core.v3.ConfigSource rdsSource = ads
         ? configSourceBuilder
         .setAds(io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource.getDefaultInstance())
+        .setResourceApiVersion(rdsResourceVersion)
         .build()
         : configSourceBuilder
             .setApiConfigSource(io.envoyproxy.envoy.config.core.v3.ApiConfigSource.newBuilder()

@@ -2,13 +2,14 @@ syntax = "proto3";
 
 package envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3;
 
+import "udpa/annotations/status.proto";
 import "udpa/annotations/versioning.proto";
-
 import "validate/validate.proto";
 
 option java_package = "io.envoyproxy.envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3";
 option java_outer_classname = "ConfigProto";
 option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: gRPC HTTP/1.1 Reverse Bridge]
 // gRPC HTTP/1.1 Reverse Bridge :ref:`configuration overview
@@ -22,7 +23,7 @@ message FilterConfig {
 
   // The content-type to pass to the upstream when the gRPC bridge filter is applied.
   // The filter will also validate that the upstream responds with the same content type.
-  string content_type = 1 [(validate.rules).string = {min_bytes: 1}];
+  string content_type = 1 [(validate.rules).string = {min_len: 1}];
 
   // If true, Envoy will assume that the upstream doesn't understand gRPC frames and
   // strip the gRPC frame from the request, and add it back in to the response. This will
