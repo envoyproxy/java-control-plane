@@ -33,7 +33,7 @@ public abstract class VersionedResource<T extends Message> {
         resource,
         // todo: is this a stable hash?
         Hashing.sha256()
-            .hashString(resource.toString(), StandardCharsets.UTF_8)
+            .hashBytes(resource.toByteArray())
             .toString()
     );
   }
