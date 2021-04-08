@@ -3,7 +3,6 @@ package io.envoyproxy.controlplane.cache;
 import com.google.auto.value.AutoValue;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.Message;
-import java.nio.charset.StandardCharsets;
 
 @AutoValue
 public abstract class VersionedResource<T extends Message> {
