@@ -10,6 +10,7 @@ import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
+import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.StatusInfo;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.XdsRequest;
@@ -44,30 +45,65 @@ public class SimpleCacheTest {
   private static final String VERSION2 = UUID.randomUUID().toString();
 
   private static final Snapshot SNAPSHOT1 = Snapshot.create(
-      ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
-      ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
-      ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
-      ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
-      ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+      ImmutableList.of(SnapshotResource.create(Cluster.newBuilder().setName(CLUSTER_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(ClusterLoadAssignment.getDefaultInstance(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(Listener.newBuilder().setName(LISTENER_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(Secret.newBuilder().setName(SECRET_NAME).build(),
+          UUID.randomUUID().toString())),
       VERSION1);
 
   private static final Snapshot SNAPSHOT2 = Snapshot.create(
-      ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build()),
-      ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
-      ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
-      ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
-      ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+      ImmutableList.of(SnapshotResource.create(Cluster.newBuilder().setName(CLUSTER_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(ClusterLoadAssignment.getDefaultInstance(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(Listener.newBuilder().setName(LISTENER_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(Secret.newBuilder().setName(SECRET_NAME).build(),
+          UUID.randomUUID().toString())),
       VERSION2);
 
   private static final Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = Snapshot.create(
-      ImmutableList.of(Cluster.newBuilder().setName(CLUSTER_NAME).build(),
-          Cluster.newBuilder().setName(SECONDARY_CLUSTER_NAME).build()),
-      ImmutableList.of(ClusterLoadAssignment.newBuilder().setClusterName(CLUSTER_NAME).build(),
-          ClusterLoadAssignment.newBuilder().setClusterName(SECONDARY_CLUSTER_NAME).build()),
-      ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
-      ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
-      ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+      ImmutableList.of(
+          SnapshotResource.create(Cluster.newBuilder().setName(CLUSTER_NAME).build(), UUID.randomUUID().toString()),
+          SnapshotResource.create(Cluster.newBuilder().setName(SECONDARY_CLUSTER_NAME).build(),
+              UUID.randomUUID().toString())),
+      ImmutableList.of(
+          SnapshotResource.create(ClusterLoadAssignment.newBuilder().setClusterName(CLUSTER_NAME).build(),
+              UUID.randomUUID().toString()),
+          SnapshotResource.create(ClusterLoadAssignment.newBuilder().setClusterName(SECONDARY_CLUSTER_NAME).build(),
+              UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(Listener.newBuilder().setName(LISTENER_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build(),
+          UUID.randomUUID().toString())),
+      ImmutableList.of(SnapshotResource.create(Secret.newBuilder().setName(SECRET_NAME).build(),
+          UUID.randomUUID().toString())),
       VERSION2);
+
+  private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
+    assertThat(watchAndTracker.watch.isCancelled()).isFalse();
+    Assertions.assertThat(watchAndTracker.tracker.responses).isEmpty();
+  }
+
+  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
+    Assertions.assertThat(watchAndTracker.tracker.responses).isNotEmpty();
+
+    Response response = watchAndTracker.tracker.responses.getFirst();
+
+    assertThat(response).isNotNull();
+    assertThat(response.version()).isEqualTo(snapshot.version(watchAndTracker.watch.request().getTypeUrl()));
+    assertThat(response.resources().toArray(new Message[0]))
+        .containsExactlyElementsOf(snapshot.resources(watchAndTracker.watch.request().getTypeUrl()).values()
+            .stream().map(SnapshotResource::resource).collect(Collectors.toList()));
+  }
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponseInAdsMode() {
@@ -417,7 +453,7 @@ public class SimpleCacheTest {
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(ROUTE_TYPE_URL)
             .addAllResourceNames(Collections.singleton(ROUTE_NAME))
-          .build()),
+            .build()),
         Collections.singleton(ROUTE_NAME),
         responseTracker);
 
@@ -458,7 +494,8 @@ public class SimpleCacheTest {
             .setVersionInfo(SNAPSHOT1.version(CLUSTER_TYPE_URL))
             .build()),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     // clearSnapshot should fail and the snapshot should be left untouched
     assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
@@ -484,25 +521,10 @@ public class SimpleCacheTest {
             .setTypeUrl(CLUSTER_TYPE_URL)
             .build()),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
-  }
-
-  private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
-    assertThat(watchAndTracker.watch.isCancelled()).isFalse();
-    Assertions.assertThat(watchAndTracker.tracker.responses).isEmpty();
-  }
-
-  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
-    Assertions.assertThat(watchAndTracker.tracker.responses).isNotEmpty();
-
-    Response response = watchAndTracker.tracker.responses.getFirst();
-
-    assertThat(response).isNotNull();
-    assertThat(response.version()).isEqualTo(snapshot.version(watchAndTracker.watch.request().getTypeUrl()));
-    assertThat(response.resources().toArray(new Message[0]))
-        .containsExactlyElementsOf(snapshot.resources(watchAndTracker.watch.request().getTypeUrl()).values());
   }
 
   private static class ResponseTracker implements Consumer<Response> {
@@ -520,7 +542,8 @@ public class SimpleCacheTest {
 
     private final LinkedList<String> responseTypes = new LinkedList<>();
 
-    @Override public void accept(Response response) {
+    @Override
+    public void accept(Response response) {
       responseTypes.add(response.request().getTypeUrl());
     }
   }

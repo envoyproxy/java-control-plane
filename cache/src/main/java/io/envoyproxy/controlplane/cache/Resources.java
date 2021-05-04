@@ -103,19 +103,21 @@ public class Resources {
       ROUTE,
       SECRET);
 
-  public static final Map<String, String> V3_TYPE_URLS_TO_V2 = ImmutableMap.of(
-      Resources.V3.CLUSTER_TYPE_URL, Resources.V2.CLUSTER_TYPE_URL,
-      Resources.V3.ENDPOINT_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL,
-      Resources.V3.LISTENER_TYPE_URL, Resources.V2.LISTENER_TYPE_URL,
-      Resources.V3.ROUTE_TYPE_URL, Resources.V2.ROUTE_TYPE_URL,
-      Resources.V3.SECRET_TYPE_URL, Resources.V2.SECRET_TYPE_URL);
+  public static final Map<String, String> V3_TYPE_URLS_TO_V2 = ImmutableMap.<String, String>builder()
+      .put(Resources.V3.CLUSTER_TYPE_URL, Resources.V2.CLUSTER_TYPE_URL)
+      .put(Resources.V3.ENDPOINT_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL)
+      .put(Resources.V3.LISTENER_TYPE_URL, Resources.V2.LISTENER_TYPE_URL)
+      .put(Resources.V3.ROUTE_TYPE_URL, Resources.V2.ROUTE_TYPE_URL)
+      .put(Resources.V3.SECRET_TYPE_URL, Resources.V2.SECRET_TYPE_URL)
+      .build();
 
-  public static final Map<String, String> V2_TYPE_URLS_TO_V3 = ImmutableMap.of(
-      Resources.V2.CLUSTER_TYPE_URL, Resources.V3.CLUSTER_TYPE_URL,
-      Resources.V2.ENDPOINT_TYPE_URL, Resources.V3.ENDPOINT_TYPE_URL,
-      Resources.V2.LISTENER_TYPE_URL, Resources.V3.LISTENER_TYPE_URL,
-      Resources.V2.ROUTE_TYPE_URL, Resources.V3.ROUTE_TYPE_URL,
-      Resources.V2.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL);
+  public static final Map<String, String> V2_TYPE_URLS_TO_V3 = ImmutableMap.<String, String>builder()
+      .put(Resources.V2.CLUSTER_TYPE_URL, Resources.V3.CLUSTER_TYPE_URL)
+      .put(Resources.V2.ENDPOINT_TYPE_URL, Resources.V3.ENDPOINT_TYPE_URL)
+      .put(Resources.V2.LISTENER_TYPE_URL, Resources.V3.LISTENER_TYPE_URL)
+      .put(Resources.V2.ROUTE_TYPE_URL, Resources.V3.ROUTE_TYPE_URL)
+      .put(Resources.V2.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL)
+      .build();
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
@@ -216,10 +218,11 @@ public class Resources {
    *
    * @param resources the resource whose dependencies we are calculating
    */
-  public static Set<String> getResourceReferences(Collection<? extends Message> resources) {
+  public static <T extends Message> Set<String> getResourceReferences(Collection<SnapshotResource<T>> resources) {
     final ImmutableSet.Builder<String> refs = ImmutableSet.builder();
 
-    for (Message r : resources) {
+    for (SnapshotResource<T> sr : resources) {
+      Message r = sr.resource();
       if (r instanceof ClusterLoadAssignment || r instanceof RouteConfiguration) {
         // Endpoints have no dependencies.
 

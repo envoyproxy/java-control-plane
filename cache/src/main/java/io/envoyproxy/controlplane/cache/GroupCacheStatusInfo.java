@@ -23,6 +23,11 @@ class GroupCacheStatusInfo<T> implements StatusInfo<T> {
     return statuses.stream().mapToLong(CacheStatusInfo::lastWatchRequestTime).max().orElse(0);
   }
 
+  @Override
+  public long lastDeltaWatchRequestTime() {
+    return statuses.stream().mapToLong(CacheStatusInfo::lastDeltaWatchRequestTime).max().orElse(0);
+  }
+
   /**
    * {@inheritDoc}
    */
@@ -37,5 +42,10 @@ class GroupCacheStatusInfo<T> implements StatusInfo<T> {
   @Override
   public int numWatches() {
     return statuses.stream().mapToInt(CacheStatusInfo::numWatches).sum();
+  }
+
+  @Override
+  public int numDeltaWatches() {
+    return statuses.stream().mapToInt(CacheStatusInfo::numDeltaWatches).sum();
   }
 }
