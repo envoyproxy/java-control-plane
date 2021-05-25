@@ -591,30 +591,6 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  private ResponseState respondDeltaTracked(DeltaWatch watch,
-      Map<String, VersionedResource<?>> snapshotResources,
-      List<String> removedResources,
-      String version,
-      T group) {
-
-    Map<String, VersionedResource<?>> resources = snapshotResources.entrySet()
-        .stream()
-        .filter(entry -> {
-          if (watch.pendingResources().contains(entry.getKey())) {
-            return true;
-          }
-          String resourceVersion = watch.trackedResources().get(entry.getKey());
-          if (resourceVersion == null) {
-            // resource is not tracked, should respond it only if watch is wildcard
-            return watch.isWildcard();
-          }
-          return !entry.getValue().version().equals(resourceVersion);
-        })
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-    return respondDelta(watch, resources, removedResources, version, group);
-  }
-
   private ResponseState respondDelta(DeltaWatch watch,
       Map<String, VersionedResource<?>> resources,
       List<String> removedResources,
