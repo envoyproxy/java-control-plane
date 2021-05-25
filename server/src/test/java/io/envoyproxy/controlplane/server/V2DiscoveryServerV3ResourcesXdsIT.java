@@ -55,6 +55,7 @@ public class V2DiscoveryServerV3ResourcesXdsIT {
       cache.setSnapshot(
           GROUP,
           createSnapshotNoEdsV2Transport(false,
+              false,
               "upstream",
               "upstream",
               EchoContainer.PORT,

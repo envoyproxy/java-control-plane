@@ -1,5 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.ThreadSafe;
@@ -27,5 +28,26 @@ public interface ConfigWatcher {
       XdsRequest request,
       Set<String> knownResourceNames,
       Consumer<Response> responseConsumer,
+      boolean hasClusterChanged);
+
+  /**
+   * Returns a new configuration resource {@link Watch} for the given discovery request.
+   *
+   * @param request           the discovery request (node, names, etc.) to use to generate the watch
+   * @param requesterVersion  the last version applied by the requester
+   * @param resourceVersions  resources that are already known to the requester
+   * @param pendingResources  resources that the caller is waiting for
+   * @param isWildcard        indicates if the stream is in wildcard mode
+   * @param responseConsumer  the response handler, used to process outgoing response messages
+   * @param hasClusterChanged indicates if EDS should be sent immediately, even if version has not been changed.
+   *                          Supported in ADS mode.
+   */
+  DeltaWatch createDeltaWatch(
+      DeltaXdsRequest request,
+      String requesterVersion,
+      Map<String, String> resourceVersions,
+      Set<String> pendingResources,
+      boolean isWildcard,
+      Consumer<DeltaResponse> responseConsumer,
       boolean hasClusterChanged);
 }

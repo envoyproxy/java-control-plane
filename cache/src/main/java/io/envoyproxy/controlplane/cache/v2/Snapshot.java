@@ -11,6 +11,7 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
 import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.SnapshotResources;
+import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -31,11 +32,11 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   /**
    * Returns a new {@link Snapshot} instance that is versioned uniformly across all resources.
    *
-   * @param clusters the cluster resources in this snapshot
+   * @param clusters  the cluster resources in this snapshot
    * @param endpoints the endpoint resources in this snapshot
    * @param listeners the listener resources in this snapshot
-   * @param routes the route resources in this snapshot
-   * @param version the version associated with all resources in this snapshot
+   * @param routes    the route resources in this snapshot
+   * @param version   the version associated with all resources in this snapshot
    */
   public static Snapshot create(
       Iterable<Cluster> clusters,
@@ -46,24 +47,29 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       String version) {
 
     return new AutoValue_Snapshot(
-        SnapshotResources.create(clusters, version),
-        SnapshotResources.create(endpoints, version),
-        SnapshotResources.create(listeners, version),
-        SnapshotResources.create(routes, version),
-        SnapshotResources.create(secrets, version));
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(clusters), version),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(endpoints), version),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(listeners), version),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(routes), version),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(secrets), version));
   }
 
   /**
    * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
    *
-   * @param clusters the cluster resources in this snapshot
-   * @param clustersVersion the version of the cluster resources
-   * @param endpoints the endpoint resources in this snapshot
+   * @param clusters         the cluster resources in this snapshot
+   * @param clustersVersion  the version of the cluster resources
+   * @param endpoints        the endpoint resources in this snapshot
    * @param endpointsVersion the version of the endpoint resources
-   * @param listeners the listener resources in this snapshot
+   * @param listeners        the listener resources in this snapshot
    * @param listenersVersion the version of the listener resources
-   * @param routes the route resources in this snapshot
-   * @param routesVersion the version of the route resources
+   * @param routes           the route resources in this snapshot
+   * @param routesVersion    the version of the route resources
    */
   public static Snapshot create(
       Iterable<Cluster> clusters,
@@ -79,37 +85,42 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
 
     // TODO(snowp): add a builder alternative
     return new AutoValue_Snapshot(
-        SnapshotResources.create(clusters, clustersVersion),
-        SnapshotResources.create(endpoints, endpointsVersion),
-        SnapshotResources.create(listeners, listenersVersion),
-        SnapshotResources.create(routes, routesVersion),
-        SnapshotResources.create(secrets, secretsVersion));
+        SnapshotResources.create(generateSnapshotResourceIterable(clusters),
+            clustersVersion),
+        SnapshotResources.create(generateSnapshotResourceIterable(endpoints),
+            endpointsVersion),
+        SnapshotResources.create(generateSnapshotResourceIterable(listeners),
+            listenersVersion),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(routes), routesVersion),
+        SnapshotResources.create(generateSnapshotResourceIterable(secrets),
+            secretsVersion));
   }
 
   /**
    * Returns a new {@link Snapshot} instance that has separate versions for each resource type.
    *
-   * @param clusters the cluster resources in this snapshot
-   * @param clusterVersionResolver version resolver of the clusters in this snapshot
-   * @param endpoints the endpoint resources in this snapshot
+   * @param clusters                the cluster resources in this snapshot
+   * @param clusterVersionResolver  version resolver of the clusters in this snapshot
+   * @param endpoints               the endpoint resources in this snapshot
    * @param endpointVersionResolver version resolver of the endpoints in this snapshot
-   * @param listeners the listener resources in this snapshot
+   * @param listeners               the listener resources in this snapshot
    * @param listenerVersionResolver version resolver of listeners in this snapshot
-   * @param routes the route resources in this snapshot
-   * @param routeVersionResolver version resolver of the routes in this snapshot
-   * @param secrets the secret resources in this snapshot
-   * @param secretVersionResolver version resolver of the secrets in this snapshot
+   * @param routes                  the route resources in this snapshot
+   * @param routeVersionResolver    version resolver of the routes in this snapshot
+   * @param secrets                 the secret resources in this snapshot
+   * @param secretVersionResolver   version resolver of the secrets in this snapshot
    */
   public static Snapshot create(
-      Iterable<Cluster> clusters,
+      Iterable<VersionedResource<Cluster>> clusters,
       ResourceVersionResolver clusterVersionResolver,
-      Iterable<ClusterLoadAssignment> endpoints,
+      Iterable<VersionedResource<ClusterLoadAssignment>> endpoints,
       ResourceVersionResolver endpointVersionResolver,
-      Iterable<Listener> listeners,
+      Iterable<VersionedResource<Listener>> listeners,
       ResourceVersionResolver listenerVersionResolver,
-      Iterable<RouteConfiguration> routes,
+      Iterable<VersionedResource<RouteConfiguration>> routes,
       ResourceVersionResolver routeVersionResolver,
-      Iterable<Secret> secrets,
+      Iterable<VersionedResource<Secret>> secrets,
       ResourceVersionResolver secretVersionResolver) {
 
     return new AutoValue_Snapshot(
@@ -166,15 +177,15 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * @throws SnapshotConsistencyException if the snapshot is not consistent
    */
   public void ensureConsistent() throws SnapshotConsistencyException {
-    Set<String> clusterEndpointRefs = Resources.getResourceReferences(clusters().resources().values());
+    Set<String> clusterEndpointRefs = Resources.getResourceReferences(clusters().versionedResources().values());
 
     ensureAllResourceNamesExist(Resources.V2.CLUSTER_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL,
-        clusterEndpointRefs, endpoints().resources());
+        clusterEndpointRefs, endpoints().versionedResources());
 
-    Set<String> listenerRouteRefs = Resources.getResourceReferences(listeners().resources().values());
+    Set<String> listenerRouteRefs = Resources.getResourceReferences(listeners().versionedResources().values());
 
     ensureAllResourceNamesExist(Resources.V2.LISTENER_TYPE_URL, Resources.V2.ROUTE_TYPE_URL,
-        listenerRouteRefs, routes().resources());
+        listenerRouteRefs, routes().versionedResources());
   }
 
   /**
@@ -182,7 +193,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    *
    * @param typeUrl the type URL of the requested resource type
    */
-  public Map<String, ? extends Message> resources(String typeUrl) {
+  public Map<String, VersionedResource<?>> resources(String typeUrl) {
     if (Strings.isNullOrEmpty(typeUrl)) {
       return ImmutableMap.of();
     }
@@ -192,7 +203,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       return ImmutableMap.of();
     }
 
-    return resources(resourceType);
+    return versionedResources(resourceType);
   }
 
   /**
@@ -203,15 +214,37 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   public Map<String, ? extends Message> resources(ResourceType resourceType) {
     switch (resourceType) {
       case CLUSTER:
-        return clusters().resources();
+        return (Map) clusters().resources();
       case ENDPOINT:
-        return endpoints().resources();
+        return (Map) endpoints().resources();
       case LISTENER:
-        return listeners().resources();
+        return (Map) listeners().resources();
       case ROUTE:
-        return routes().resources();
+        return (Map) routes().resources();
       case SECRET:
-        return secrets().resources();
+        return (Map) secrets().resources();
+      default:
+        return ImmutableMap.of();
+    }
+  }
+
+  /**
+   * Returns the resources with the given type.
+   *
+   * @param resourceType the requested resource type
+   */
+  public Map<String, VersionedResource<?>> versionedResources(ResourceType resourceType) {
+    switch (resourceType) {
+      case CLUSTER:
+        return (Map) clusters().versionedResources();
+      case ENDPOINT:
+        return (Map) endpoints().versionedResources();
+      case LISTENER:
+        return (Map) listeners().versionedResources();
+      case ROUTE:
+        return (Map) routes().versionedResources();
+      case SECRET:
+        return (Map) secrets().versionedResources();
       default:
         return ImmutableMap.of();
     }
@@ -229,7 +262,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   /**
    * Returns the version in this snapshot for the given resource type.
    *
-   * @param typeUrl the type URL of the requested resource type
+   * @param typeUrl       the type URL of the requested resource type
    * @param resourceNames list of requested resource names,
    *                      used to calculate a version for the given resources
    */
@@ -253,7 +286,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   /**
    * Returns the version in this snapshot for the given resource type.
    *
-   * @param resourceType the the requested resource type
+   * @param resourceType  the the requested resource type
    * @param resourceNames list of requested resource names,
    *                      used to calculate a version for the given resources
    */
@@ -274,6 +307,4 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return "";
     }
   }
-
-
 }

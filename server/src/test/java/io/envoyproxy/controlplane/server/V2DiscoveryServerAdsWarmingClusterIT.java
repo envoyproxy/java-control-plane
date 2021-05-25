@@ -13,6 +13,7 @@ import io.envoyproxy.controlplane.cache.v2.SimpleCache;
 import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
+import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -68,6 +69,17 @@ public class V2DiscoveryServerAdsWarmingClusterIT {
             @Override
             public void onV3StreamRequest(long streamId,
                 io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
+              throw new IllegalStateException("unexpected v3 request for v2 test");
+            }
+
+            @Override
+            public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
+              throw new IllegalStateException("unexpected delta request for test");
+            }
+
+            @Override
+            public void onV3StreamDeltaRequest(long streamId,
+                                               io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
               throw new IllegalStateException("unexpected v3 request for v2 test");
             }
 
