@@ -4,7 +4,7 @@
 
     <parent>
         <artifactId>java-control-plane</artifactId>
-        <groupId>io.envoyproxy.controlplane</groupId>
+        <groupId>common-parent</groupId>
         <version>0.1.29-SNAPSHOT</version>
     </parent>
 
@@ -13,20 +13,6 @@
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>io.envoyproxy.controlplane</groupId>
-            <artifactId>cache</artifactId>
-            <version>0.1.29-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.envoyproxy.controlplane</groupId>
-            <artifactId>server</artifactId>
-            <version>0.1.29-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
