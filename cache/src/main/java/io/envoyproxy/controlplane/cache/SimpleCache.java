@@ -154,21 +154,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
 
       // If the requested version is up-to-date or missing a response, leave an open watch.
       if (snapshot == null || request.getVersionInfo().equals(version)) {
-        long watchId = watchCount.incrementAndGet();
-
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("open watch {} for {}[{}] from node {} for version {}",
-              watchId,
-              request.getTypeUrl(),
-              String.join(", ", request.getResourceNamesList()),
-              group,
-              request.getVersionInfo());
-        }
-
-        status.setWatch(watchId, watch);
-
-        watch.setStop(() -> status.removeWatch(watchId));
-
+        openWatch(status, watch, request.getTypeUrl(), request.getResourceNamesList(), group, request.getVersionInfo());
         return watch;
       }
 
@@ -176,20 +162,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       boolean responded = respond(watch, snapshot, group);
 
       if (!responded) {
-        long watchId = watchCount.incrementAndGet();
-
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("did not respond immediately, leaving open watch {} for {}[{}] from node {} for version {}",
-              watchId,
-              request.getTypeUrl(),
-              String.join(", ", request.getResourceNamesList()),
-              group,
-              request.getVersionInfo());
-        }
-
-        status.setWatch(watchId, watch);
-
-        watch.setStop(() -> status.removeWatch(watchId));
+        openWatch(status, watch, request.getTypeUrl(), request.getResourceNamesList(), group, request.getVersionInfo());
       }
 
       return watch;
@@ -241,16 +214,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       // If no snapshot, leave an open watch.
 
       if (snapshot == null) {
-        long watchId = setDeltaWatch(status, watch);
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("open watch {} for {}[{}] from node {} for version {}",
-              watchId,
-              request.getTypeUrl(),
-              String.join(", ", watch.trackedResources().keySet()),
-              group,
-              requesterVersion);
-        }
-
+        openWatch(status, watch, request.getTypeUrl(), watch.trackedResources().keySet(), group, requesterVersion);
         return watch;
       }
 
@@ -280,15 +244,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
           }
         }
 
-        long watchId = setDeltaWatch(status, watch);
-        if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("open watch {} for {}[{}] from node {} for version {}",
-              watchId,
-              request.getTypeUrl(),
-              String.join(", ", watch.trackedResources().keySet()),
-              group,
-              requesterVersion);
-        }
+        openWatch(status, watch, request.getTypeUrl(), watch.trackedResources().keySet(), group, requesterVersion);
 
         return watch;
       }
@@ -299,27 +255,30 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
         return watch;
       }
 
-      long watchId = setDeltaWatch(status, watch);
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("did not respond immediately, leaving open watch {} for {}[{}] from node {} for version {}",
-            watchId,
-            request.getTypeUrl(),
-            String.join(", ", watch.trackedResources().keySet()),
-            group,
-            requesterVersion);
-      }
-
+      openWatch(status, watch, request.getTypeUrl(), watch.trackedResources().keySet(), group, requesterVersion);
       return watch;
     } finally {
       readLock.unlock();
     }
   }
 
-  private long setDeltaWatch(DeltaCacheStatusInfo<T> status, DeltaWatch watch) {
+  private <V extends AbstractWatch<?, ?>> void openWatch(MutableStatusInfo<T, V> status,
+                                                         V watch,
+                                                         String url,
+                                                         Collection<String> resources,
+                                                         T group,
+                                                         String version) {
     long watchId = watchCount.incrementAndGet();
     status.setWatch(watchId, watch);
     watch.setStop(() -> status.removeWatch(watchId));
-    return watchId;
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("open watch {} for {}[{}] from node {} for version {}",
+          watchId,
+          url,
+          String.join(", ", resources),
+          group,
+          version);
+    }
   }
 
   /**

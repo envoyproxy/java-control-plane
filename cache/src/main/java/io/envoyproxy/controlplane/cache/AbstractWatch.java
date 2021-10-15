@@ -3,7 +3,7 @@ package io.envoyproxy.controlplane.cache;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Consumer;
 
-abstract class AbstractWatch<V, T> {
+public abstract class AbstractWatch<V, T> {
 
   private static final AtomicIntegerFieldUpdater<AbstractWatch> isCancelledUpdater =
       AtomicIntegerFieldUpdater.newUpdater(AbstractWatch.class, "isCancelled");
