@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.google.common.collect.ImmutableList;
 import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.TestResources;
+import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.Listener;
@@ -114,7 +115,6 @@ public class SnapshotTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   public void resourcesReturnsExpectedResources() {
     Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER),
@@ -124,25 +124,21 @@ public class SnapshotTest {
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
-    // We have to do some lame casting to appease java's compiler, otherwise it fails to compile due to limitations with
-    // generic type constraints.
+    assertThat(snapshot.resources(CLUSTER_TYPE_URL))
+        .containsEntry(CLUSTER_NAME, VersionedResource.create(CLUSTER))
+        .hasSize(1);
 
-    // todo: come back here
-    //    assertThat(snapshot.resources(CLUSTER_TYPE_URL))
-    //        .containsEntry(CLUSTER_NAME, CLUSTER)
-    //        .hasSize(1);
-    //
-    //    assertThat(snapshot.resources(ENDPOINT_TYPE_URL))
-    //        .containsEntry(CLUSTER_NAME, ENDPOINT)
-    //        .hasSize(1);
-    //
-    //    assertThat(snapshot.resources(LISTENER_TYPE_URL))
-    //        .containsEntry(LISTENER_NAME, LISTENER)
-    //        .hasSize(1);
-    //
-    //    assertThat(snapshot.resources(ROUTE_TYPE_URL))
-    //        .containsEntry(ROUTE_NAME, ROUTE)
-    //        .hasSize(1);
+    assertThat(snapshot.resources(ENDPOINT_TYPE_URL))
+        .containsEntry(CLUSTER_NAME, VersionedResource.create(ENDPOINT))
+        .hasSize(1);
+
+    assertThat(snapshot.resources(LISTENER_TYPE_URL))
+        .containsEntry(LISTENER_NAME, VersionedResource.create(LISTENER))
+        .hasSize(1);
+
+    assertThat(snapshot.resources(ROUTE_TYPE_URL))
+        .containsEntry(ROUTE_NAME, VersionedResource.create(ROUTE))
+        .hasSize(1);
 
     String nullString = null;
     assertThat(snapshot.version(nullString)).isEmpty();
