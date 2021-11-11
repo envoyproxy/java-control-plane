@@ -36,6 +36,9 @@ OPENCENSUS_DATE=$(find_date "$CURL_OUTPUT" opencensus_proto)
 UDPA_SHA=$(find_sha "$CURL_OUTPUT" com_github_cncf_udpa)
 UDPA_DATE=$(find_date "$CURL_OUTPUT" com_github_cncf_udpa)
 
+OPETELEMETRY_SHA=$(find_sha "$CURL_OUTPUT" opentelemetry_proto)
+OPETELEMETRY_DATE=$(find_date "$CURL_OUTPUT" opentelemetry_proto)
+
 echo -n "# Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
@@ -43,8 +46,9 @@ ENVOY_SHA=\"$ENVOY_VERSION\"
 
 # dependencies (source: https://github.com/envoyproxy/envoy/blob/$ENVOY_VERSION/api/bazel/repository_locations.bzl)
 GOOGLEAPIS_SHA=\"$GOOGLEAPIS_SHA\"  # $GOOGLEAPIS_DATE
-PGV_GIT_SHA=\"$PGV_GIT_SHA\"  # $PGV_GIT_DATE
+PGV_VERSION=\"$PGV_GIT_SHA\"  # $PGV_GIT_DATE
 PROMETHEUS_SHA=\"$PROMETHEUS_SHA\"  # $PROMETHEUS_DATE
 OPENCENSUS_VERSION=\"$OPENCENSUS_SHA\"  # $OPENCENSUS_DATE
+OPETELEMETRY_VERSION=\"$OPETELEMETRY_SHA\"  # $OPETELEMETRY_DATE
 UDPA_SHA=\"$UDPA_SHA\"  # $UDPA_DATE
 "
