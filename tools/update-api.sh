@@ -53,10 +53,10 @@ cp -r opencensus-proto-*/src/opencensus/proto/* "${protodir}/opencensus/proto"
 curl -sL https://github.com/prometheus/client_model/archive/${PROMETHEUS_SHA}.tar.gz | tar xz --include="*.proto"
 cp client_model-*/metrics.proto "${protodir}"
 
-curl -sL https://github.com/cncf/udpa/archive/${UDPA_SHA}.tar.gz | tar xz --include="*.proto"
+curl -sL https://github.com/cncf/xds/archive/${UDPA_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/udpa"
 mkdir -p "${protodir}/xds"
-cp -r udpa-*/udpa/* "${protodir}/udpa"
-cp -r udpa-*/xds/* "${protodir}/xds"
+cp -r xds-*/udpa/* "${protodir}/udpa"
+cp -r xds-*/xds/* "${protodir}/xds"
 
 popd >/dev/null

@@ -3,13 +3,13 @@
 function find_sha() {
   local CONTENT=$1
   local DEPENDENCY=$2
-  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep sha256 | awk '{ print $3 }' | tr -d '"' | tr -d ","
+  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 version | awk '{ print $3 }' | tr -d '"' | tr -d ","
 }
 
 function find_date() {
   local CONTENT=$1
   local DEPENDENCY=$2
-  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep release_date | awk '{ print $3 }' | tr -d '"' | tr -d ","
+  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 release_date | awk '{ print $3 }' | tr -d '"' | tr -d ","
 }
 
 function find_envoy_sha_from_tag() {
@@ -36,8 +36,7 @@ OPENCENSUS_DATE=$(find_date "$CURL_OUTPUT" opencensus_proto)
 UDPA_SHA=$(find_sha "$CURL_OUTPUT" com_github_cncf_udpa)
 UDPA_DATE=$(find_date "$CURL_OUTPUT" com_github_cncf_udpa)
 
-echo -n "
-# Update the versions here and run update-api.sh
+echo -n "# Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
 ENVOY_SHA=\"$ENVOY_VERSION\"
