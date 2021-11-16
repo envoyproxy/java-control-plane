@@ -7,7 +7,6 @@ import io.envoyproxy.controlplane.cache.v2.SimpleCache;
 import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
-import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.core.Address;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.api.v2.core.SocketAddress;
