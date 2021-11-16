@@ -7,6 +7,7 @@ import io.envoyproxy.controlplane.cache.v2.SimpleCache;
 import io.envoyproxy.controlplane.cache.v2.Snapshot;
 import io.envoyproxy.envoy.api.v2.Cluster;
 import io.envoyproxy.envoy.api.v2.Cluster.DiscoveryType;
+import io.envoyproxy.envoy.api.v2.ClusterLoadAssignment;
 import io.envoyproxy.envoy.api.v2.core.Address;
 import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.api.v2.core.SocketAddress;
@@ -53,15 +54,9 @@ public class TestMain {
             ImmutableList.of(),
             "1"));
 
-    V2DiscoveryServer discoveryServer = new V2DiscoveryServer(cache);
     V3DiscoveryServer v3DiscoveryServer = new V3DiscoveryServer(cache);
 
     ServerBuilder builder = NettyServerBuilder.forPort(12345)
-        .addService(discoveryServer.getAggregatedDiscoveryServiceImpl())
-        .addService(discoveryServer.getClusterDiscoveryServiceImpl())
-        .addService(discoveryServer.getEndpointDiscoveryServiceImpl())
-        .addService(discoveryServer.getListenerDiscoveryServiceImpl())
-        .addService(discoveryServer.getRouteDiscoveryServiceImpl())
         .addService(v3DiscoveryServer.getAggregatedDiscoveryServiceImpl())
         .addService(v3DiscoveryServer.getClusterDiscoveryServiceImpl())
         .addService(v3DiscoveryServer.getEndpointDiscoveryServiceImpl())
