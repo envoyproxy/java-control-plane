@@ -4,7 +4,7 @@
 
     <groupId>io.envoyproxy.controlplane</groupId>
     <artifactId>java-control-plane</artifactId>
-    <version>0.1.29-SNAPSHOT</version>
+    <version>0.1.29-delta-xds-slonka-hash-bytes-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
