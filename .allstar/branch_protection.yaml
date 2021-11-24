@@ -1,0 +1,4 @@
+optConfig:
+  optIn: true
+action: issue
+dismissStale: false
