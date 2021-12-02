@@ -1,0 +1,9 @@
+env:
+  SET_VERSION_OVERRIDE: 1.0-$GIT_BRANCH-SNAPSHOT
+  MAVEN_ARGS: -DskipTests
+
+buildpack:
+  host: git.hubteam.com
+  organization: HubSpot
+  repository: Blazar-Buildpack-Java
+  branch: v2
