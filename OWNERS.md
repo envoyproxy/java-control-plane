@@ -17,6 +17,5 @@
 * Marcin Skalski ([Automaat](https://github.com/Automaat)) (marcin.skalski@allegro.pl)
 * Miłosz Kukuła ([kukulam-allegro](https://github.com/kukulam-allegro)) (milosz.kukula@allegro.pl)
 * Michał Gawarzyński ([gawarz](https://github.com/gawarz)) (michal.gawarzynski@allegro.pl)
-* Kateryna Nezdolii ([nezdolik](https://github.com/nezdolik)) (nezdolik@spotify.com)
 * Erica Manno ([rulex123](https://github.com/rulex123)) (ericam@spotify.com)
 * Erik Lindblad ([onemanbucket](https://github.com/onemanbucket)) (erili@spotify.com)
