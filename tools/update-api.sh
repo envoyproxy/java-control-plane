@@ -57,7 +57,11 @@ cp client_model-*/metrics.proto "${protodir}"
 curl -sL https://github.com/cncf/xds/archive/${UDPA_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/udpa"
 mkdir -p "${protodir}/xds"
-cp -r xds-${UDPA_SHA}*/udpa/* "${protodir}/udpa"
-cp -r xds-${UDPA_SHA}*/xds/* "${protodir}/xds"
+cp -r xds-*/udpa/* "${protodir}/udpa"
+cp -r xds-*/xds/* "${protodir}/xds"
+
+curl -sL https://github.com/open-telemetry/opentelemetry-proto/archive/v${OPEN_TELEMETRY_VERSION}.tar.gz | tar xz --include="*.proto"
+mkdir -p "${protodir}/opentelemetry/proto"
+cp -r opentelemetry-proto-*/proto/* "${protodir}/opentelemetry/proto"
 
 popd >/dev/null
