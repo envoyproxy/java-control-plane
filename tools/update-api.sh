@@ -62,6 +62,6 @@ cp -r xds-*/xds/* "${protodir}/xds"
 
 curl -sL https://github.com/open-telemetry/opentelemetry-proto/archive/v${OPEN_TELEMETRY_VERSION}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/opentelemetry/proto"
-cp -r opentelemetry-proto-*/proto/* "${protodir}/opentelemetry/proto"
+cp -r opentelemetry-proto-*/opentelemetry/proto/* "${protodir}/opentelemetry/proto"
 
 popd >/dev/null
