@@ -1,6 +1,8 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.server.exception.RequestException;
+import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
+import io.envoyproxy.envoy.api.v2.DeltaDiscoveryResponse;
 import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
 import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
 
@@ -67,7 +69,32 @@ public interface DiscoveryServerCallbacks {
    *     will be returned to the client and the stream will be closed with error.
    */
   void onV3StreamRequest(long streamId,
-      io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request);
+                         io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request);
+
+  /**
+   * {@code onStreamRequest} is called for each {@link DeltaDiscoveryRequest} that is received on the
+   * stream.
+   *
+   * @param streamId an ID for this stream that is only unique to this discovery server instance
+   * @param request the discovery request sent by the envoy instance
+   *
+   * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
+   *     will be returned to the client and the stream will be closed with error.
+   */
+  void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request);
+
+  /**
+   * {@code onV3StreamRequest} is called for each {@link io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest}
+   * that is received on the stream.
+   *
+   * @param streamId an ID for this stream that is only unique to this discovery server instance
+   * @param request the discovery request sent by the envoy instance
+   *
+   * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
+   *     will be returned to the client and the stream will be closed with error.
+   */
+  void onV3StreamDeltaRequest(long streamId,
+      io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request);
 
   /**
    * {@code onStreamResponse} is called just before each {@link DiscoveryResponse} that is sent
@@ -89,7 +116,31 @@ public interface DiscoveryServerCallbacks {
    * @param response the discovery response sent by the discovery server
    */
   default void onV3StreamResponse(long streamId,
-      io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request,
-      io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse response) {
+                                  io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request,
+                                  io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse response) {
+  }
+
+  /**
+   * {@code onStreamDeltaResponse} is called just before each {@link DeltaDiscoveryResponse} that is sent
+   * on the stream.
+   *
+   * @param streamId an ID for this stream that is only unique to this discovery server instance
+   * @param request the discovery request sent by the envoy instance
+   * @param response the discovery response sent by the discovery server
+   */
+  default void onStreamDeltaResponse(long streamId, DeltaDiscoveryRequest request, DeltaDiscoveryResponse response) {
+  }
+
+  /**
+   * {@code onV3StreamResponse} is called just before each
+   * {@link io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse} that is sent on the stream.
+   *
+   * @param streamId an ID for this stream that is only unique to this discovery server instance
+   * @param request the discovery request sent by the envoy instance
+   * @param response the discovery response sent by the discovery server
+   */
+  default void onV3StreamDeltaResponse(long streamId,
+      io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request,
+      io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse response) {
   }
 }

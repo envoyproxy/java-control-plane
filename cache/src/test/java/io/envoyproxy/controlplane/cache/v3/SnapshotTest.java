@@ -10,15 +10,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
+import io.envoyproxy.controlplane.cache.SnapshotResource;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.Test;
@@ -33,14 +32,18 @@ public class SnapshotTest {
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
 
-  private static final Cluster CLUSTER = TestResources.createClusterV3(CLUSTER_NAME);
-  private static final ClusterLoadAssignment
-      ENDPOINT = TestResources.createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener
-      LISTENER = TestResources.createListenerV3(ADS, V3, V3, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
-  private static final RouteConfiguration ROUTE = TestResources.createRouteV3(ROUTE_NAME,
-      CLUSTER_NAME);
-  private static final Secret SECRET = TestResources.createSecretV3(SECRET_NAME);
+  private static final SnapshotResource<Cluster> CLUSTER =
+      SnapshotResource.create(TestResources.createClusterV3(CLUSTER_NAME), UUID.randomUUID().toString());
+  private static final SnapshotResource<ClusterLoadAssignment> ENDPOINT =
+      SnapshotResource.create(TestResources.createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT),
+          UUID.randomUUID().toString());
+  private static final SnapshotResource<Listener> LISTENER =
+      SnapshotResource.create(TestResources.createListenerV3(ADS, V3, V3,
+          LISTENER_NAME, LISTENER_PORT, ROUTE_NAME), UUID.randomUUID().toString());
+  private static final SnapshotResource<RouteConfiguration> ROUTE =
+      SnapshotResource.create(TestResources.createRouteV3(ROUTE_NAME, CLUSTER_NAME), UUID.randomUUID().toString());
+  private static final SnapshotResource<Secret> SECRET =
+      SnapshotResource.create(TestResources.createSecretV3(SECRET_NAME), UUID.randomUUID().toString());
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -129,19 +132,19 @@ public class SnapshotTest {
     // due to limitations with
     // generic type constraints.
 
-    assertThat((Map<String, Message>) snapshot.resources(CLUSTER_TYPE_URL))
+    assertThat(snapshot.resources(CLUSTER_TYPE_URL))
         .containsEntry(CLUSTER_NAME, CLUSTER)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(ENDPOINT_TYPE_URL))
+    assertThat(snapshot.resources(ENDPOINT_TYPE_URL))
         .containsEntry(CLUSTER_NAME, ENDPOINT)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(LISTENER_TYPE_URL))
+    assertThat(snapshot.resources(LISTENER_TYPE_URL))
         .containsEntry(LISTENER_NAME, LISTENER)
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(ROUTE_TYPE_URL))
+    assertThat(snapshot.resources(ROUTE_TYPE_URL))
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
@@ -230,7 +233,8 @@ public class SnapshotTest {
 
     Snapshot snapshot1 = Snapshot.create(
         ImmutableList.of(CLUSTER),
-        ImmutableList.of(TestResources.createEndpointV3(otherClusterName, ENDPOINT_PORT)),
+        ImmutableList.of(SnapshotResource.create(TestResources.createEndpointV3(otherClusterName, ENDPOINT_PORT),
+            UUID.randomUUID().toString())),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
@@ -249,7 +253,8 @@ public class SnapshotTest {
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
-        ImmutableList.of(TestResources.createRouteV3(otherRouteName, CLUSTER_NAME)),
+        ImmutableList.of(SnapshotResource.create(TestResources.createRouteV3(otherRouteName, CLUSTER_NAME),
+            UUID.randomUUID().toString())),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
