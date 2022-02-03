@@ -3,6 +3,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
+set -o xtrace
 
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -50,10 +51,6 @@ curl -sL https://github.com/census-instrumentation/opencensus-proto/archive/v${O
 mkdir -p "${protodir}/opencensus/proto"
 cp -r opencensus-proto-*/src/opencensus/proto/* "${protodir}/opencensus/proto"
 
-curl -sL https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v${OPENTELEMETRY_VERSION}.tar.gz | tar xz --include="*.proto"
-mkdir -p "${protodir}/opentelemetry/proto"
-cp -r opentelemetry-proto-*/opentelemetry/proto/* "${protodir}/opentelemetry/proto"
-
 curl -sL https://github.com/prometheus/client_model/archive/${PROMETHEUS_SHA}.tar.gz | tar xz --include="*.proto"
 mkdir -p "${protodir}/io/prometheus/client/"
 cp client_model-*/io/prometheus/client/metrics.proto "${protodir}/io/prometheus/client/"
@@ -63,5 +60,9 @@ mkdir -p "${protodir}/udpa"
 mkdir -p "${protodir}/xds"
 cp -r xds-*/udpa/* "${protodir}/udpa"
 cp -r xds-*/xds/* "${protodir}/xds"
+
+curl -sL https://github.com/open-telemetry/opentelemetry-proto/archive/v${OPEN_TELEMETRY_VERSION}.tar.gz | tar xz --include="*.proto"
+mkdir -p "${protodir}/opentelemetry/proto"
+cp -r opentelemetry-proto-*/opentelemetry/proto/* "${protodir}/opentelemetry/proto"
 
 popd >/dev/null
