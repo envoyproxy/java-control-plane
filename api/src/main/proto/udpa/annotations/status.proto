@@ -4,6 +4,8 @@ package udpa.annotations;
 
 import "google/protobuf/descriptor.proto";
 
+option go_package = "github.com/cncf/xds/go/annotations";
+
 // Magic number in this file derived from top 28bit of SHA256 digest of
 // "udpa.annotation.status".
 extend google.protobuf.FileOptions {
