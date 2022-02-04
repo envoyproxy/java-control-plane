@@ -6,6 +6,8 @@ import "udpa/annotations/status.proto";
 
 import "google/protobuf/descriptor.proto";
 
+option go_package = "github.com/cncf/xds/go/annotations";
+
 // All annotations in this file are experimental and subject to change. Their
 // only consumer today is the Envoy APIs and SecuritAnnotationValidator protoc
 // plugin in this repository.
