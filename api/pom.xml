@@ -5,7 +5,7 @@
     <parent>
         <artifactId>java-control-plane</artifactId>
         <groupId>io.envoyproxy.controlplane</groupId>
-        <version>0.1.30</version>
+        <version>0.1.31-SNAPSHOT</version>
     </parent>
 
     <artifactId>api</artifactId>
