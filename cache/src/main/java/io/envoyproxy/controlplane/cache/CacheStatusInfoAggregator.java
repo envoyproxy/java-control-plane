@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class CacheStatusInfoAggregator<T> {
+public class CacheStatusInfoAggregator<T> {
   private final ConcurrentMap<T, ConcurrentMap<Resources.ResourceType, CacheStatusInfo<T>>> statuses =
       new ConcurrentHashMap<>();
   private final ConcurrentMap<T, ConcurrentMap<Resources.ResourceType, DeltaCacheStatusInfo<T>>> deltaStatuses =
@@ -17,7 +17,7 @@ class CacheStatusInfoAggregator<T> {
     return Stream.concat(statuses.keySet().stream(), deltaStatuses.keySet().stream()).collect(Collectors.toSet());
   }
 
-  void remove(T group) {
+  public void remove(T group) {
     statuses.remove(group);
     deltaStatuses.remove(group);
   }
@@ -27,7 +27,7 @@ class CacheStatusInfoAggregator<T> {
    *
    * @param group group identifier.
    */
-  Map<Resources.ResourceType, DeltaCacheStatusInfo<T>> getDeltaStatus(T group) {
+  public Map<Resources.ResourceType, DeltaCacheStatusInfo<T>> getDeltaStatus(T group) {
     return deltaStatuses.getOrDefault(group, new ConcurrentHashMap<>());
   }
 
@@ -36,7 +36,7 @@ class CacheStatusInfoAggregator<T> {
    *
    * @param group group identifier.
    */
-  Map<Resources.ResourceType, CacheStatusInfo<T>> getStatus(T group) {
+  public Map<Resources.ResourceType, CacheStatusInfo<T>> getStatus(T group) {
     return statuses.getOrDefault(group, new ConcurrentHashMap<>());
   }
 
@@ -46,7 +46,7 @@ class CacheStatusInfoAggregator<T> {
    * @param group group identifier.
    * @return true if statuses for specific group have any watcher.
    */
-  boolean hasStatuses(T group) {
+  public boolean hasStatuses(T group) {
     Map<Resources.ResourceType, CacheStatusInfo<T>> status = getStatus(group);
     Map<Resources.ResourceType, DeltaCacheStatusInfo<T>> deltaStatus = getDeltaStatus(group);
     return status.values().stream().mapToLong(CacheStatusInfo::numWatches).sum()
@@ -59,7 +59,7 @@ class CacheStatusInfoAggregator<T> {
    * @param group        group identifier.
    * @param resourceType resource type.
    */
-  DeltaCacheStatusInfo<T> getOrAddDeltaStatusInfo(T group, Resources.ResourceType resourceType) {
+  public DeltaCacheStatusInfo<T> getOrAddDeltaStatusInfo(T group, Resources.ResourceType resourceType) {
     return deltaStatuses.computeIfAbsent(group, g -> new ConcurrentHashMap<>())
         .computeIfAbsent(resourceType, s -> new DeltaCacheStatusInfo<>(group));
   }
@@ -70,7 +70,7 @@ class CacheStatusInfoAggregator<T> {
    * @param group        group identifier.
    * @param resourceType resource type.
    */
-  CacheStatusInfo<T> getOrAddStatusInfo(T group, Resources.ResourceType resourceType) {
+  public CacheStatusInfo<T> getOrAddStatusInfo(T group, Resources.ResourceType resourceType) {
     return statuses.computeIfAbsent(group, g -> new ConcurrentHashMap<>())
         .computeIfAbsent(resourceType, s -> new CacheStatusInfo<>(group));
   }
