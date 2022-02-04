@@ -21,7 +21,9 @@ jobs:
           - v1-dependencies-
 
       # Build
-      - run: mvn -B install -DskipTests -Dmaven.javadoc.skip=true dependency:go-offline
+      - run:
+          command: mvn -B install -DskipTests -Dmaven.javadoc.skip=true dependency:go-offline
+          no_output_timeout: 20m
 
       # Save the dependency cache for future runs
       - save_cache:
