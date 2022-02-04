@@ -20,6 +20,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @deprecated Envoy has removed support for v2 xDS API.
+ */
 @Deprecated(forRemoval = true, since = "0.1.31")
 public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, DiscoveryResponse> {
 
