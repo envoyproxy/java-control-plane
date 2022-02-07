@@ -40,7 +40,7 @@ following:
 
 #### Releasing a new version
 To release and publish a new version, do the following:
-1. create a personal API token in CircleCI by following the instructions listed [here](https://circleci.com/docs/2.0/managing-api-tokens/?utm_source=google&utm_medium=sem&utm_campaign=sem-google-dg--emea-en-dsa-maxConv-auth-brand&utm_term=g_-_c__dsa_&utm_content=&gclid=Cj0KCQiAuvOPBhDXARIsAKzLQ8EWU_AmKCTHUcr8yxruUUhKCOJzsKmeaRuaN5L2nJaLHPTXiGZTrK0aAqWyEALw_wcB#creating-a-personal-api-token)
+1. create a personal API token in CircleCI by following the instructions listed [here](https://circleci.com/docs/2.0/managing-api-tokens/#creating-a-personal-api-token)
 2. from terminal, curl the CircleCI API as follows
 
 ```
