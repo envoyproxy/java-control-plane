@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+@Deprecated
 public class V2DiscoveryServer extends DiscoveryServer<DiscoveryRequest, DiscoveryResponse> {
 
   public V2DiscoveryServer(ConfigWatcher configWatcher) {
