@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 
-class MutableStatusInfo<T, V extends AbstractWatch<?,?>> implements StatusInfo<T> {
+public class MutableStatusInfo<T, V extends AbstractWatch<?,?>> implements StatusInfo<T> {
   private final ConcurrentMap<Long, V> watches = new ConcurrentHashMap<>();
   private final T nodeGroup;
   private volatile long lastWatchRequestTime;
