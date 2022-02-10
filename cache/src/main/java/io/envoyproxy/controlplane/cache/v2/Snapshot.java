@@ -26,6 +26,7 @@ import java.util.Set;
  * {@code Snapshot} is a data class that contains an internally consistent snapshot of v2 xDS
  * resources. Snapshots should have distinct versions per node group.
  */
+@Deprecated
 @AutoValue
 public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot {
 
