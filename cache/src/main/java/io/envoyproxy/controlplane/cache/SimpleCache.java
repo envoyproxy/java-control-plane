@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.GuardedBy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -238,7 +240,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
             return watch;
           }
         } else if (hasClusterChanged && requestResourceType.equals(ResourceType.ENDPOINT)) {
-          ResponseState responseState = respondDelta(request, group, snapshot, version, watch);
+          ResponseState responseState = respondDelta(request, watch, snapshot, version, group);
           if (responseState.isFinished()) {
             return watch;
           }
@@ -250,7 +252,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       }
 
       // Otherwise, version is different, the watch may be responded immediately
-      ResponseState responseState = respondDelta(request, group, snapshot, version, watch);
+      ResponseState responseState = respondDelta(request, watch, snapshot, version, group);
       if (responseState.isFinished()) {
         return watch;
       }
@@ -357,8 +359,9 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
 
   @VisibleForTesting
   protected void respondWithSpecificOrder(T group,
-      U previousSnapshot, U snapshot,
-      Map<ResourceType, CacheStatusInfo<T>> statusMap, Map<ResourceType, DeltaCacheStatusInfo<T>> deltaStatusMap) {
+                                          U previousSnapshot, U snapshot,
+                                          Map<ResourceType, CacheStatusInfo<T>> statusMap,
+                                          Map<ResourceType, DeltaCacheStatusInfo<T>> deltaStatusMap) {
     for (ResourceType resourceType : RESOURCE_TYPES_IN_ORDER) {
       CacheStatusInfo<T> status = statusMap.get(resourceType);
       if (status != null) {
@@ -425,6 +428,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
 
             Map<String, VersionedResource<?>> changedResources = findChangedResources(watch, snapshotChangedResources);
 
+
             ResponseState responseState = respondDelta(watch,
                 changedResources,
                 removedResources,
@@ -443,16 +447,16 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
   }
 
   private Response createResponse(XdsRequest request, Map<String, VersionedResource<?>> resources,
-      String version) {
+                                  String version) {
     Collection<? extends Message> filtered = request.getResourceNamesList().isEmpty()
         ? resources.values().stream()
         .map(VersionedResource::resource)
         .collect(Collectors.toList())
         : request.getResourceNamesList().stream()
-            .map(resources::get)
-            .filter(Objects::nonNull)
-            .map(VersionedResource::resource)
-            .collect(Collectors.toList());
+        .map(resources::get)
+        .filter(Objects::nonNull)
+        .map(VersionedResource::resource)
+        .collect(Collectors.toList());
 
     return Response.create(request, filtered, version);
   }
@@ -517,7 +521,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
   }
 
   private Map<String, VersionedResource<?>> findChangedResources(DeltaWatch watch,
-      Map<String, VersionedResource<?>> snapshotResources) {
+                                                                 Map<String, VersionedResource<?>> snapshotResources) {
     return snapshotResources.entrySet()
         .stream()
         .filter(entry -> {
@@ -534,13 +538,13 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  private ResponseState respondDelta(DeltaXdsRequest request, T group, U snapshot, String version, DeltaWatch watch) {
+
+  private ResponseState respondDelta(DeltaXdsRequest request, DeltaWatch watch, U snapshot, String version, T group) {
     Map<String, VersionedResource<?>> snapshotResources = snapshot.versionedResources(request.getResourceType());
     List<String> removedResources = findRemovedResources(watch,
         snapshotResources);
     Map<String, VersionedResource<?>> changedResources = findChangedResources(watch, snapshotResources);
-    return respondDelta(
-        watch,
+    return respondDelta(watch,
         changedResources,
         removedResources,
         version,
@@ -548,10 +552,10 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
   }
 
   private ResponseState respondDelta(DeltaWatch watch,
-      Map<String, VersionedResource<?>> resources,
-      List<String> removedResources,
-      String version,
-      T group) {
+                                     Map<String, VersionedResource<?>> resources,
+                                     List<String> removedResources,
+                                     String version,
+                                     T group) {
     if (resources.isEmpty() && removedResources.isEmpty()) {
       return ResponseState.UNRESPONDED;
     }
