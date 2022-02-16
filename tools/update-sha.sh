@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+set -o errexit
+set -o pipefail
+set -o nounset
+set -o xtrace
+
 function find_sha() {
   local CONTENT=$1
   local DEPENDENCY=$2
