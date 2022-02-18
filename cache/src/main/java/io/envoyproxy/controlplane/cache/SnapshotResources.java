@@ -24,8 +24,10 @@ public abstract class SnapshotResources<T extends Message> {
   public static <T extends Message> SnapshotResources<T> create(
       Iterable<?> resources,
       String version) {
+    ImmutableMap<String, VersionedResource<T>> versionedResourcesMap = createVersionedResourcesMap(resources);
     return new AutoValue_SnapshotResources<>(
-        resourcesMap(resources),
+        versionedResourcesMap,
+        createResourcesMap(versionedResourcesMap),
         (r) -> version
     );
   }
@@ -41,18 +43,19 @@ public abstract class SnapshotResources<T extends Message> {
   public static <T extends Message> SnapshotResources<T> create(
       Iterable<VersionedResource<T>> resources,
       ResourceVersionResolver versionResolver) {
+    ImmutableMap<String, VersionedResource<T>> versionedResourcesMap = createVersionedResourcesMap(resources);
     return new AutoValue_SnapshotResources<>(
-        resourcesMap(resources),
+        versionedResourcesMap,
+        createResourcesMap(versionedResourcesMap),
         versionResolver);
   }
 
-  private static <T extends Message> ImmutableMap<String, VersionedResource<T>> resourcesMap(
+  private static <T extends Message> ImmutableMap<String, VersionedResource<T>> createVersionedResourcesMap(
       Iterable<?> resources) {
     List<?> resourcesList = StreamSupport.stream(resources.spliterator(), false)
         .collect(Collectors.toList());
     if (resourcesList.stream().allMatch(Predicates.instanceOf(VersionedResource.class)::apply)) {
-      ImmutableMap<String, VersionedResource<T>> result = StreamSupport
-          .stream(resourcesList.spliterator(), false)
+      ImmutableMap<String, VersionedResource<T>> result = resourcesList.stream()
           .collect(
               Collector.of(
                   Builder<String, VersionedResource<T>>::new,
@@ -77,16 +80,9 @@ public abstract class SnapshotResources<T extends Message> {
     }
   }
 
-  /**
-   * Returns a map of the resources in this collection, where the key is the name of the resource.
-   */
-  public abstract Map<String, VersionedResource<T>> versionedResources();
-
-  /**
-   * Returns a map of the resources in this collection, where the key is the name of the resource.
-   */
-  public Map<String, T> resources() {
-    return versionedResources().values().stream().collect(
+  private static <T extends Message> ImmutableMap<String, T> createResourcesMap(
+      ImmutableMap<String, VersionedResource<T>> versionedResources) {
+    return versionedResources.values().stream().collect(
         Collector.of(
             Builder<String, T>::new,
             (b, e) -> {
@@ -95,6 +91,16 @@ public abstract class SnapshotResources<T extends Message> {
             (b1, b2) -> b1.putAll(b2.build()),
             Builder::build));
   }
+
+  /**
+   * Returns a map of the resources in this collection, where the key is the name of the resource.
+   */
+  public abstract Map<String, VersionedResource<T>> versionedResources();
+
+  /**
+   * Returns a map of the resources in this collection, where the key is the name of the resource.
+   */
+  public abstract Map<String, T> resources();
 
   /**
    * Returns the version associated with this all resources in this collection.
