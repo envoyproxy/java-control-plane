@@ -5,7 +5,7 @@
     <parent>
         <artifactId>java-control-plane</artifactId>
         <groupId>io.envoyproxy.controlplane</groupId>
-        <version>0.1.31-delta-xds-slonka-hash-bytes-SNAPSHOT</version>
+        <version>0.1.31-delta-xds-slonka-hash-bytes-performance-SNAPSHOT</version>
     </parent>
 
     <artifactId>test</artifactId>
@@ -18,13 +18,13 @@
         <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>cache</artifactId>
-            <version>0.1.31-delta-xds-slonka-hash-bytes-SNAPSHOT</version>
+            <version>0.1.31-delta-xds-slonka-hash-bytes-performance-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>server</artifactId>
-            <version>0.1.31-delta-xds-slonka-hash-bytes-SNAPSHOT</version>
+            <version>0.1.31-delta-xds-slonka-hash-bytes-performance-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

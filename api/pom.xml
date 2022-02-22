@@ -5,7 +5,7 @@
     <parent>
         <artifactId>java-control-plane</artifactId>
         <groupId>io.envoyproxy.controlplane</groupId>
-        <version>0.1.31-delta-xds-slonka-hash-bytes-SNAPSHOT</version>
+        <version>0.1.31-delta-xds-slonka-hash-bytes-performance-SNAPSHOT</version>
     </parent>
 
     <artifactId>api</artifactId>
