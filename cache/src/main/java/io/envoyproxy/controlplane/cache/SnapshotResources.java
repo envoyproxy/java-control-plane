@@ -1,14 +1,10 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.google.protobuf.Message;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @AutoValue
@@ -24,10 +20,10 @@ public abstract class SnapshotResources<T extends Message> {
   public static <T extends Message> SnapshotResources<T> create(
       Iterable<?> resources,
       String version) {
-    ImmutableMap<String, VersionedResource<T>> versionedResourcesMap = createVersionedResourcesMap(resources);
+    ResourceMapBuilder<T> resourcesMapBuilder = createResourcesMap(resources);
     return new AutoValue_SnapshotResources<>(
-        versionedResourcesMap,
-        createResourcesMap(versionedResourcesMap),
+        resourcesMapBuilder.getVersionedResources(),
+        resourcesMapBuilder.getResources(),
         (r) -> version
     );
   }
@@ -43,53 +39,22 @@ public abstract class SnapshotResources<T extends Message> {
   public static <T extends Message> SnapshotResources<T> create(
       Iterable<VersionedResource<T>> resources,
       ResourceVersionResolver versionResolver) {
-    ImmutableMap<String, VersionedResource<T>> versionedResourcesMap = createVersionedResourcesMap(resources);
+    ResourceMapBuilder<T> resourcesMapBuilder = createResourcesMap(resources);
     return new AutoValue_SnapshotResources<>(
-        versionedResourcesMap,
-        createResourcesMap(versionedResourcesMap),
+        resourcesMapBuilder.getVersionedResources(),
+        resourcesMapBuilder.getResources(),
         versionResolver);
   }
 
-  private static <T extends Message> ImmutableMap<String, VersionedResource<T>> createVersionedResourcesMap(
+  private static <T extends Message> ResourceMapBuilder<T> createResourcesMap(
       Iterable<?> resources) {
-    List<?> resourcesList = StreamSupport.stream(resources.spliterator(), false)
-        .collect(Collectors.toList());
-    if (resourcesList.stream().allMatch(Predicates.instanceOf(VersionedResource.class)::apply)) {
-      ImmutableMap<String, VersionedResource<T>> result = resourcesList.stream()
-          .collect(
-              Collector.of(
-                  Builder<String, VersionedResource<T>>::new,
-                  (b, e) -> {
-                    VersionedResource<T> eCast = (VersionedResource<T>) e;
-                    b.put(Resources.getResourceName(eCast.resource()), eCast);
-                  },
-                  (b1, b2) -> b1.putAll(b2.build()),
-                  Builder::build));
-      return result;
-    } else {
-      return StreamSupport.stream(resources.spliterator(), false)
-          .collect(
-              Collector.of(
-                  Builder<String, VersionedResource<T>>::new,
-                  (b, e) -> {
-                    T eCast = (T) e;
-                    b.put(Resources.getResourceName(eCast), VersionedResource.create(eCast));
-                  },
-                  (b1, b2) -> b1.putAll(b2.build()),
-                  Builder::build));
-    }
-  }
 
-  private static <T extends Message> ImmutableMap<String, T> createResourcesMap(
-      ImmutableMap<String, VersionedResource<T>> versionedResources) {
-    return versionedResources.values().stream().collect(
-        Collector.of(
-            Builder<String, T>::new,
-            (b, e) -> {
-              b.put(Resources.getResourceName(e.resource()), e.resource());
-            },
-            (b1, b2) -> b1.putAll(b2.build()),
-            Builder::build));
+    return StreamSupport.stream(resources.spliterator(), false)
+        .collect(
+            Collector.of(
+                ResourceMapBuilder<T>::new,
+                ResourceMapBuilder::put,
+                ResourceMapBuilder::putAll));
   }
 
   /**
