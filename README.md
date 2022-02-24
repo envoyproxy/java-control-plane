@@ -37,3 +37,16 @@ following:
 2. run [tools/update-api.sh](tools/update-api.sh) from the `tools`
    directory.
 3. update envoy-alpine-dev docker image version [EnvoyContainer.java] according to envoy SHA in first point.
+
+#### Releasing a new version
+To release and publish a new version, do the following:
+1. create a personal API token in CircleCI by following the instructions listed [here](https://circleci.com/docs/2.0/managing-api-tokens/#creating-a-personal-api-token)
+2. from terminal, curl the CircleCI API as follows
+
+```
+curl --request POST \
+  --url https://circleci.com/api/v2/project/github/envoyproxy/java-control-plane/pipeline \
+  --header 'Circle-Token: <API token>' \
+  --header 'content-type: application/json' \
+  --data '{"branch":"main","parameters":{"RELEASE":"<e.g. 0.1.29>","NEXT":"<e.g. 0.1.30-SNAPSHOT>"}}'
+```
