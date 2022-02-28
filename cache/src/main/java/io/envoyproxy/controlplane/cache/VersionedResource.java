@@ -4,6 +4,8 @@ import com.google.auto.value.AutoValue;
 import com.google.common.hash.Hashing;
 import com.google.protobuf.Message;
 
+import java.nio.charset.StandardCharsets;
+
 @AutoValue
 public abstract class VersionedResource<T extends Message> {
 
@@ -32,9 +34,13 @@ public abstract class VersionedResource<T extends Message> {
         resource,
         // todo: is this a stable hash?
         Hashing.sha256()
-            .hashBytes(resource.toByteArray())
+            .hashString(resourceHashCode(resource), StandardCharsets.UTF_8)
             .toString()
     );
+  }
+
+  private static <T extends Message> String resourceHashCode(T resource) {
+    return resource.getClass() + "@" + resource.hashCode();
   }
 
   /**
