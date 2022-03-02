@@ -1,0 +1,21 @@
+name: scheduled
+on:
+  push:
+    branches:
+      - rulex123:scheduled-workflow
+      - scheduled-workflow
+
+#  schedule:
+#    # every Monday at 10
+#    - cron:  '0 10 * * 1'
+
+jobs:
+  call-compare-envoy-versions-workflow:
+    uses: ./.github/workflows/compare-envoy-versions.yml
+
+  call-update-protobuf:
+    needs: call-compare-envoy-versions-workflow
+    if: ${{ needs.call-compare-envoy-versions-workflow.outputs.target-version != 'noop' }}
+    uses: ./.github/workflows/update-protobuf.yml
+    with:
+      envoy_version: ${{ needs.call-compare-envoy-versions-workflow.outputs.target-version }}
