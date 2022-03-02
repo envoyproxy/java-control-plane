@@ -1,8 +1,9 @@
 name: check-latest-envoy-version
 on:
-  schedule:
-    # every Monday at 10
-    - cron:  '0 10 * * 1'
+  workflow_dispatch:
+#  schedule:
+#    # every Monday at 10
+#    - cron:  '0 10 * * 1'
 
 jobs:
   check-latest-envoy-version:
