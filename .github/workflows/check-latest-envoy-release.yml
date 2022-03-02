@@ -1,0 +1,17 @@
+name: check-latest-envoy-version
+on:
+  schedule:
+    # every Monday at 10
+    - cron:  '0 10 * * 1'
+
+jobs:
+  check-latest-envoy-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch latest Envoy version
+        run: |
+          echo "{latest}={curl -sL https://api.github.com/repos/envoyproxy/envoy/releases/latest jq -r ".tag_name"} \
+          >> $GITHUB_ENV
+      - name: Fetch current Envoy
+        run: |
+          echo "{current}={cat current_version}" >> $GITHUB_ENV
