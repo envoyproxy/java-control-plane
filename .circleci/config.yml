@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    machine: true
+    image: ubuntu-2004:202201-02
 
     working_directory: ~/repo
 
