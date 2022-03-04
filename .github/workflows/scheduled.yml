@@ -1,13 +1,8 @@
 name: scheduled
 on:
-  push:
-    branches:
-      - rulex123:scheduled-workflow
-      - scheduled-workflow
-
-#  schedule:
-#    # every Monday at 10
-#    - cron:  '0 10 * * 1'
+  schedule:
+    # every Monday at 10
+    - cron:  '0 10 * * 1'
 
 jobs:
   call-compare-envoy-versions-workflow:
