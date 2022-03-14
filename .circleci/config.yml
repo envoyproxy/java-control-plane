@@ -58,6 +58,4 @@ jobs:
 
               mvn -B -s .circleci/settings-snapshots.xml deploy
             fi
-          environment:
-            - GPG_TTY: "`tty`"
       - run: bash <(curl -s https://codecov.io/bash)
