@@ -41,7 +41,7 @@ jobs:
           command: |
             if [ "${CIRCLE_BRANCH}" == "main" ]; then
               echo $GPG_KEY | base64 --decode > signing-key
-              gpg --passphrase $GPG_PASSPHRASE --import signing-key
+              gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
               shred signing-key
 
               if [[ -n "${RELEASE}" && -n "${NEXT}" ]]; then
@@ -53,7 +53,7 @@ jobs:
               fi
             elif [[ -n "${DEPLOY_BRANCH}" ]]; then
               echo $GPG_KEY | base64 --decode > signing-key
-              gpg --passphrase $GPG_PASSPHRASE --import signing-key
+              gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
               shred signing-key
 
               mvn -B -s .circleci/settings-snapshots.xml deploy
