@@ -4,14 +4,15 @@ package xds.core.v3;
 
 import "google/protobuf/any.proto";
 
-import "udpa/annotations/status.proto";
+import "xds/annotations/v3/status.proto";
 import "xds/core/v3/resource_name.proto";
 
 option java_outer_classname = "ResourceProto";
 option java_multiple_files = true;
 option java_package = "com.github.xds.core.v3";
+option go_package = "github.com/cncf/xds/go/xds/core/v3";
 
-option (udpa.annotations.file_status).work_in_progress = true;
+option (xds.annotations.v3.file_status).work_in_progress = true;
 
 // xDS resource wrapper. This encapsulates a xDS resource when appearing in an
 // xDS transport discovery response or when accessed as a filesystem object.
