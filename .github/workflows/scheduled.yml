@@ -1,8 +1,8 @@
 name: scheduled
 on:
   schedule:
-    # every Monday at 10
-    - cron:  '0 10 * * 1'
+    # every day at 10
+    - cron:  '0 10 * * *'
 
 jobs:
   call-compare-envoy-versions-workflow:
