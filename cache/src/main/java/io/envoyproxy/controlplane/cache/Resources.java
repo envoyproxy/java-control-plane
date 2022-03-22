@@ -56,7 +56,7 @@ public class Resources {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Resources.class);
 
-  static final String FILTER_ENVOY_ROUTER = "envoy.router";
+  static final String FILTER_ENVOY_ROUTER = "envoy.filters.http.router";
   static final String FILTER_HTTP_CONNECTION_MANAGER = "envoy.http_connection_manager";
 
   public static class V2 {

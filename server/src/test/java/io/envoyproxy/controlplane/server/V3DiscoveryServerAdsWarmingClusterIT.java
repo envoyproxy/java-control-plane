@@ -20,10 +20,13 @@ import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.extensions.upstreams.http.v3.HttpProtocolOptions;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
+
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.ClassRule;
@@ -132,7 +135,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
     await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
         () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
             .when().get("/")
-            .then().statusCode(503));
+            .then().statusCode(502));
 
     // Here we update a Snapshot with working cluster, but we change only CDS version, not EDS version.
     // This change allows to test if EDS will be sent anyway after CDS was sent.
@@ -168,13 +171,22 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
     ConfigSource edsSource = ConfigSource.newBuilder()
         .setAds(AggregatedConfigSource.getDefaultInstance())
+        .setResourceApiVersion(V3)
         .build();
 
     Cluster cluster = Cluster.newBuilder()
         .setName(clusterName)
         .setConnectTimeout(Durations.fromSeconds(RandomUtils.nextInt(5)))
         // we are enabling HTTP2 - communication with cluster won't work
-        .setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build())
+        .putAllTypedExtensionProtocolOptions(Collections.singletonMap(
+            "envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            com.google.protobuf.Any.pack(
+                HttpProtocolOptions.newBuilder()
+                    .setExplicitHttpConfig(
+                        HttpProtocolOptions.ExplicitHttpConfig.newBuilder()
+                            .setHttp2ProtocolOptions(Http2ProtocolOptions.getDefaultInstance())
+                            .build())
+                    .build())))
         .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder()
             .setEdsConfig(edsSource)
             .setServiceName(clusterName))
