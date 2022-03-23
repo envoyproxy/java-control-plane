@@ -1,8 +1,8 @@
-version: 2
+version: 2.1
 parameters:
-  release:
-    type: string
-    default: ""
+#  release:
+#    type: string
+#    default: \"\"
   next:
     type: string
     default: "some other value"
@@ -19,15 +19,17 @@ jobs:
       MAVEN_OPTS: -Xms512m -Xmx1024m
 
     steps:
-      - run: echo "<< parameters.release >>"
-      - run: echo "<< parameters.next >>"
+#      - run:
+#          command: echo '<< pipeline.parameters.release >>'
       - run:
-          command: |
-            if [[ -n "<< parameters.release >>" && -n "<< parameters.next >>" ]]; then
-              echo << parameters.release >> << parameters.release >>
-            else
-              echo "everything is null!"
-            fi
+          command: echo '<< pipeline.parameters.next >>'
+#      - run:
+#          command: |
+#            if [[ -n "<< pipeline.parameters.release >>" && -n "<< pipeline.parameters.next >>" ]]; then
+#              echo << pipeline.parameters.release >> << pipeline.parameters.release >>
+#            else
+#              echo "everything is null!"
+#            fi
       - checkout
 
       # Download and cache dependencies
