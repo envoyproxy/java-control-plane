@@ -1,4 +1,12 @@
 version: 2
+parameters:
+  release:
+    type: string
+    default: ""
+  next:
+    type: string
+    default: "some other value"
+
 jobs:
   build:
     machine:
@@ -11,6 +19,15 @@ jobs:
       MAVEN_OPTS: -Xms512m -Xmx1024m
 
     steps:
+      - run: echo "<< parameters.release >>"
+      - run: echo "<< parameters.next >>"
+      - run:
+          command: |
+            if [[ -n "<< parameters.release >>" && -n "<< parameters.next >>" ]]; then
+              echo << parameters.release >> << parameters.release >>
+            else
+              echo "everything is null!"
+            fi
       - checkout
 
       # Download and cache dependencies
@@ -44,7 +61,7 @@ jobs:
               gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
               shred signing-key
 
-              if [[ -n "${RELEASE}" && -n "${NEXT}" ]]; then
+              if [[ -n "<< parameters.release >>" && -n "<< parameters.next >>" ]]; then
                 git config --global user.email "envoy-bot@users.noreply.github.com"
                 git config --global user.name "envoy-bot"
                 mvn -B -s .circleci/settings.xml release:prepare -Darguments="-s .circleci/settings.xml" -DreleaseVersion=$RELEASE -DdevelopmentVersion=$NEXT -DscmCommentPrefix="release: "
