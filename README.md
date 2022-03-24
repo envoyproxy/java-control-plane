@@ -45,9 +45,8 @@ To release and publish a new version, do the following:
 2. from terminal, curl the CircleCI API as follows
 
 ```
-curl --request POST \
-  --url https://circleci.com/api/v2/project/github/envoyproxy/java-control-plane/pipeline \
-  --header 'Circle-Token: <API token>' \
-  --header 'content-type: application/json' \
-  --data '{"branch":"main","parameters":{"RELEASE":"<e.g. 0.1.29>","NEXT":"<e.g. 0.1.30-SNAPSHOT>"}}'
+ curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{ "build_parameters": { "RELEASE": "<e.g. 0.1.29>", "NEXT": "<e.g. 0.1.30-SNAPSHOT>" } }' \
+    "https://circleci.com/api/v1.1/project/github/envoyproxy/java-control-plane/tree/main?circle-token=<API token>"
 ```
