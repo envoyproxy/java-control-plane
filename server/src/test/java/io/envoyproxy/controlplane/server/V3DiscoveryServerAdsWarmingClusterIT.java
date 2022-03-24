@@ -29,12 +29,13 @@ import io.restassured.http.ContentType;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
-import org.testcontainers.shaded.org.apache.commons.lang.math.RandomUtils;
 
 public class V3DiscoveryServerAdsWarmingClusterIT {
 
@@ -176,7 +177,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
     Cluster cluster = Cluster.newBuilder()
         .setName(clusterName)
-        .setConnectTimeout(Durations.fromSeconds(RandomUtils.nextInt(5)))
+        .setConnectTimeout(Durations.fromSeconds(RandomUtils.nextInt(1, 5)))
         // we are enabling HTTP2 - communication with cluster won't work
         .putAllTypedExtensionProtocolOptions(Collections.singletonMap(
             "envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
