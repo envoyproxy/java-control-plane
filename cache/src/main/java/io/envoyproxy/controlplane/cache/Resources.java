@@ -1,7 +1,6 @@
 package io.envoyproxy.controlplane.cache;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V2;
 import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V3;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.CLUSTER;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.ENDPOINT;
@@ -47,7 +46,6 @@ public class Resources {
   }
 
   public enum ApiVersion {
-    V2,
     V3
   }
 
@@ -97,14 +95,6 @@ public class Resources {
 
   public static final List<ResourceType> RESOURCE_TYPES_IN_ORDER =
       ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, SECRET);
-
-  public static final Map<String, String> V3_TYPE_URLS_TO_V2 =
-      ImmutableMap.of(
-          Resources.V3.CLUSTER_TYPE_URL, Resources.V2.CLUSTER_TYPE_URL,
-          Resources.V3.ENDPOINT_TYPE_URL, Resources.V2.ENDPOINT_TYPE_URL,
-          Resources.V3.LISTENER_TYPE_URL, Resources.V2.LISTENER_TYPE_URL,
-          Resources.V3.ROUTE_TYPE_URL, Resources.V2.ROUTE_TYPE_URL,
-          Resources.V3.SECRET_TYPE_URL, Resources.V2.SECRET_TYPE_URL);
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
@@ -230,9 +220,7 @@ public class Resources {
 
   /** Returns the API version (v2 or v3) for a given type URL. */
   public static ApiVersion getResourceApiVersion(String typeUrl) {
-    if (Resources.V2.TYPE_URLS.contains(typeUrl)) {
-      return V2;
-    } else if (Resources.V3.TYPE_URLS.contains(typeUrl)) {
+    if (Resources.V3.TYPE_URLS.contains(typeUrl)) {
       return V3;
     }
 

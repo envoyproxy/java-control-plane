@@ -160,10 +160,10 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         .setType(Cluster.DiscoveryType.EDS)
         .build();
     ClusterLoadAssignment
-        endpoint = TestResources.createEndpointV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, V3, V3, listenerName,
+        endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
+    Listener listener = TestResources.createListener(ads, V3, V3, listenerName,
         listenerPort, routeName);
-    RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
+    RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     // here we have new version of resources other than CDS.
     return Snapshot.create(

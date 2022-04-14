@@ -27,7 +27,7 @@ public class TestMain {
     cache.setSnapshot(
         GROUP,
         Snapshot.create(
-            ImmutableList.of(TestResources.createClusterV3("cluster0", "127.0.0.1", 1234)),
+            ImmutableList.of(TestResources.createCluster("cluster0", "127.0.0.1", 1234)),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
@@ -57,7 +57,7 @@ public class TestMain {
     cache.setSnapshot(
         GROUP,
         Snapshot.create(
-            ImmutableList.of(TestResources.createClusterV3("cluster1", "127.0.0.1", 1235)),
+            ImmutableList.of(TestResources.createCluster("cluster1", "127.0.0.1", 1235)),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),

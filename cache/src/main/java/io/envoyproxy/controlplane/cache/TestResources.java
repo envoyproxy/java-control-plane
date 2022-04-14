@@ -3,7 +3,6 @@ package io.envoyproxy.controlplane.cache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Any;
 import com.google.protobuf.util.Durations;
-import io.envoyproxy.envoy.api.v2.core.SocketAddress.Protocol;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Address;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
@@ -47,7 +46,7 @@ public class TestResources {
    *
    * @param clusterName name of the new cluster
    */
-  public static Cluster createClusterV3(String clusterName) {
+  public static Cluster createCluster(String clusterName) {
     ConfigSource edsSource =
         ConfigSource.newBuilder()
             .setAds(AggregatedConfigSource.getDefaultInstance())
@@ -72,7 +71,7 @@ public class TestResources {
    * @param address address to use for the cluster endpoint
    * @param port port to use for the cluster endpoint
    */
-  public static Cluster createClusterV3(String clusterName, String address, int port) {
+  public static Cluster createCluster(String clusterName, String address, int port) {
     return Cluster.newBuilder()
         .setName(clusterName)
         .setConnectTimeout(Durations.fromSeconds(5))
@@ -92,7 +91,7 @@ public class TestResources {
                                                     SocketAddress.newBuilder()
                                                         .setAddress(address)
                                                         .setPortValue(port)
-                                                        .setProtocolValue(Protocol.TCP_VALUE)))))))
+                                                        .setProtocolValue(SocketAddress.Protocol.TCP_VALUE)))))))
         .build();
   }
 
@@ -102,8 +101,8 @@ public class TestResources {
    * @param clusterName name of the test cluster that is associated with this endpoint
    * @param port port to use for the endpoint
    */
-  public static ClusterLoadAssignment createEndpointV3(String clusterName, int port) {
-    return createEndpointV3(clusterName, LOCALHOST, port);
+  public static ClusterLoadAssignment createEndpoint(String clusterName, int port) {
+    return createEndpoint(clusterName, LOCALHOST, port);
   }
 
   /**
@@ -113,7 +112,7 @@ public class TestResources {
    * @param address ip address to use for the endpoint
    * @param port port to use for the endpoint
    */
-  public static ClusterLoadAssignment createEndpointV3(
+  public static ClusterLoadAssignment createEndpoint(
       String clusterName, String address, int port) {
     return ClusterLoadAssignment.newBuilder()
         .setClusterName(clusterName)
@@ -145,7 +144,7 @@ public class TestResources {
    * @param port port to use for the listener
    * @param routeName name of the test route that is associated with this listener
    */
-  public static io.envoyproxy.envoy.config.listener.v3.Listener createListenerV3(
+  public static io.envoyproxy.envoy.config.listener.v3.Listener createListener(
       boolean ads,
       ApiVersion rdsTransportVersion,
       ApiVersion rdsResourceVersion,
@@ -204,7 +203,7 @@ public class TestResources {
    * @param routeName name of the new route
    * @param clusterName name of the test cluster that is associated with this route
    */
-  public static RouteConfiguration createRouteV3(String routeName, String clusterName) {
+  public static RouteConfiguration createRoute(String routeName, String clusterName) {
     return RouteConfiguration.newBuilder()
         .setName(routeName)
         .addVirtualHosts(
@@ -223,7 +222,7 @@ public class TestResources {
    *
    * @param secretName name of the new secret
    */
-  public static Secret createSecretV3(String secretName) {
+  public static Secret createSecret(String secretName) {
     return Secret.newBuilder()
         .setName(secretName)
         .setTlsCertificate(

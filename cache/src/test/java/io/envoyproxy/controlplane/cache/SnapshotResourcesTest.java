@@ -16,8 +16,8 @@ public class SnapshotResourcesTest {
   private static final String CLUSTER0_NAME  = "cluster0";
   private static final String CLUSTER1_NAME  = "cluster1";
 
-  private static final Cluster CLUSTER0 = TestResources.createClusterV3(CLUSTER0_NAME);
-  private static final Cluster CLUSTER1 = TestResources.createClusterV3(CLUSTER1_NAME);
+  private static final Cluster CLUSTER0 = TestResources.createCluster(CLUSTER0_NAME);
+  private static final Cluster CLUSTER1 = TestResources.createCluster(CLUSTER1_NAME);
 
   @Test
   public void createBuildsResourcesMapWithNameAndPopulatesVersion() {
