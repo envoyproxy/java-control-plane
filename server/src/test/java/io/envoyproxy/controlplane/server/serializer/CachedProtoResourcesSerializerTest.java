@@ -1,6 +1,5 @@
 package io.envoyproxy.controlplane.server.serializer;
 
-import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V2;
 import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V3;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,13 +20,9 @@ public class CachedProtoResourcesSerializerTest {
         .setClusterName("service1")
         .build();
 
-    Any serializedEndpoint = serializer.serialize(endpoint, V2);
-    Any serializedSameEndpoint = serializer.serialize(endpoint, V2);
     Any v3SerializedEndpoint = serializer.serialize(endpoint, V3);
     Any v3SerializedSameEndpoint = serializer.serialize(endpoint, V3);
 
-    assertThat(serializedEndpoint).isSameAs(serializedSameEndpoint);
-    assertThat(serializedEndpoint).isNotSameAs(v3SerializedEndpoint);
     assertThat(v3SerializedEndpoint).isSameAs(v3SerializedSameEndpoint);
   }
 
@@ -42,17 +37,8 @@ public class CachedProtoResourcesSerializerTest {
             .build()
     );
 
-    Collection<Any> serializedEndpoints = serializer.serialize(endpoints, V2);
-    Collection<Any> serializedSameEndpoints = serializer.serialize(endpoints, V2);
     Collection<Any> v3SerializedEndpoints = serializer.serialize(endpoints, V3);
     Collection<Any> v3SerializedSameEndpoints = serializer.serialize(endpoints, V3);
-
-    assertThat(serializedEndpoints).isEqualTo(serializedSameEndpoints);
-    assertThat(serializedEndpoints).isNotSameAs(serializedSameEndpoints);
-    assertThat(serializedEndpoints).isNotSameAs(v3SerializedSameEndpoints);
-    assertThat(serializedEndpoints) // elements are the same instances
-        .usingElementComparator((x, y) -> x == y ? 0 : 1)
-        .hasSameElementsAs(serializedSameEndpoints);
 
     assertThat(v3SerializedEndpoints).isEqualTo(v3SerializedSameEndpoints);
     assertThat(v3SerializedEndpoints).isNotSameAs(v3SerializedSameEndpoints);
@@ -69,13 +55,9 @@ public class CachedProtoResourcesSerializerTest {
             .setClusterName("service1")
             .build();
 
-    Any serializedEndpoint = serializer.serialize(endpoint, V2);
-    Any serializedSameEndpoint = serializer.serialize(endpoint, V2);
     Any v3SerializedEndpoint = serializer.serialize(endpoint, V3);
     Any v3SerializedSameEndpoint = serializer.serialize(endpoint, V3);
 
-    assertThat(serializedEndpoint).isSameAs(serializedSameEndpoint);
-    assertThat(serializedEndpoint).isNotSameAs(v3SerializedEndpoint);
     assertThat(v3SerializedEndpoint).isSameAs(v3SerializedSameEndpoint);
   }
 
@@ -90,17 +72,8 @@ public class CachedProtoResourcesSerializerTest {
             .build()
     );
 
-    Collection<Any> serializedEndpoints = serializer.serialize(endpoints, V2);
-    Collection<Any> serializedSameEndpoints = serializer.serialize(endpoints, V2);
     Collection<Any> v3SerializedEndpoints = serializer.serialize(endpoints, V3);
     Collection<Any> v3SerializedSameEndpoints = serializer.serialize(endpoints, V3);
-
-    assertThat(serializedEndpoints).isEqualTo(serializedSameEndpoints);
-    assertThat(serializedEndpoints).isNotSameAs(serializedSameEndpoints);
-    assertThat(serializedEndpoints).isNotSameAs(v3SerializedSameEndpoints);
-    assertThat(serializedEndpoints) // elements are the same instances
-        .usingElementComparator((x, y) -> x == y ? 0 : 1)
-        .hasSameElementsAs(serializedSameEndpoints);
 
     assertThat(v3SerializedEndpoints).isEqualTo(v3SerializedSameEndpoints);
     assertThat(v3SerializedEndpoints).isNotSameAs(v3SerializedSameEndpoints);

@@ -1,6 +1,5 @@
 package io.envoyproxy.controlplane.server.serializer;
 
-import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V2;
 import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V3;
 
 import com.google.common.cache.Cache;
@@ -27,9 +26,6 @@ public class CachedProtoResourcesSerializer extends DefaultProtoResourcesSeriali
   private static final Map<ApiVersion, Cache<Message, Any>> caches =
       new HashMap<ApiVersion, Cache<Message, Any>>() {
     {
-      put(V2, CacheBuilder.newBuilder()
-          .weakValues()
-          .build());
       put(V3, CacheBuilder.newBuilder()
           .weakValues()
           .build());
@@ -41,8 +37,7 @@ public class CachedProtoResourcesSerializer extends DefaultProtoResourcesSeriali
   @Override
   public Any serialize(Message resource, ApiVersion apiVersion) {
     try {
-      return caches.get(apiVersion).get(resource,
-          () -> super.maybeRewriteTypeUrl(Any.pack(resource), apiVersion));
+      return caches.get(apiVersion).get(resource, () -> Any.pack(resource));
     } catch (ExecutionException e) {
       throw new ProtoSerializerException("Error while serializing resources", e);
     }

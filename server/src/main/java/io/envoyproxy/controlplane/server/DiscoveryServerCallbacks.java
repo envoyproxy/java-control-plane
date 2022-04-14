@@ -1,8 +1,8 @@
 package io.envoyproxy.controlplane.server;
 
 import io.envoyproxy.controlplane.server.exception.RequestException;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 
 /**
  * {@code DiscoveryServerCallbacks} defines the callbacks that are exposed by the {@link DiscoveryServer}. The callbacks
@@ -45,19 +45,7 @@ public interface DiscoveryServerCallbacks {
   }
 
   /**
-   * {@code onStreamRequest} is called for each {@link DiscoveryRequest} that is received on the
-   * stream.
-   *
-   * @param streamId an ID for this stream that is only unique to this discovery server instance
-   * @param request the discovery request sent by the envoy instance
-   *
-   * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
-   *     will be returned to the client and the stream will be closed with error.
-   */
-  void onV2StreamRequest(long streamId, DiscoveryRequest request);
-
-  /**
-   * {@code onV3StreamRequest} is called for each {@link io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest}
+   * {@code onV3StreamRequest} is called for each {@link DiscoveryRequest}
    * that is received on the stream.
    *
    * @param streamId an ID for this stream that is only unique to this discovery server instance
@@ -66,30 +54,16 @@ public interface DiscoveryServerCallbacks {
    * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
    *     will be returned to the client and the stream will be closed with error.
    */
-  void onV3StreamRequest(long streamId,
-      io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request);
-
-  /**
-   * {@code onStreamResponse} is called just before each {@link DiscoveryResponse} that is sent
-   * on the stream.
-   *
-   * @param streamId an ID for this stream that is only unique to this discovery server instance
-   * @param request the discovery request sent by the envoy instance
-   * @param response the discovery response sent by the discovery server
-   */
-  default void onStreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
-  }
+  void onV3StreamRequest(long streamId, DiscoveryRequest request);
 
   /**
    * {@code onV3StreamResponse} is called just before each
-   * {@link io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse} that is sent on the stream.
+   * {@link DiscoveryResponse} that is sent on the stream.
    *
    * @param streamId an ID for this stream that is only unique to this discovery server instance
    * @param request the discovery request sent by the envoy instance
    * @param response the discovery response sent by the discovery server
    */
-  default void onV3StreamResponse(long streamId,
-      io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request,
-      io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse response) {
+  default void onV3StreamResponse(long streamId, DiscoveryRequest request, DiscoveryResponse response) {
   }
 }

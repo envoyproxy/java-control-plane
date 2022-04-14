@@ -1051,12 +1051,6 @@ public class V3DiscoveryServerTest {
     }
 
     @Override
-    public void onV2StreamRequest(long streamId,
-        io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-      throw new IllegalStateException("Unexpected v2 request in v3 test");
-    }
-
-    @Override
     public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
       streamRequestCount.getAndIncrement();
 
@@ -1068,12 +1062,6 @@ public class V3DiscoveryServerTest {
             NODE,
             request.getNode()));
       }
-    }
-
-    @Override
-    public void onStreamResponse(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-        io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-      throw new IllegalStateException("Unexpected v2 response in v3 test");
     }
 
     @Override
