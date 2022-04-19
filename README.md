@@ -27,26 +27,26 @@ mvn clean package
 More thorough usage examples are still TODO, but there is a basic test implementation in
 [TestMain](server/src/test/java/io/envoyproxy/controlplane/server/TestMain.java).
 
-#### Bring api up-to-date with data-plane-api
-To bring this repository's protobuf files up-to-date with the source
-of truth protobuf files in in envoyproxy/data-plane-api, do the
-following:
+### Envoy API
+There is automation built into this repo to keep the Envoy API (i.e. protobuf files)
+up to date with the latest available Envoy release.
 
-1. update [tools/API_SHAS](tools/API_SHAS) (instructions are in the
-   file) and then
-2. run [tools/update-api.sh](tools/update-api.sh) from the `tools`
-   directory.
-3. update envoy-alpine-dev docker image version [EnvoyContainer.java] according to envoy SHA in first point.
+This automation uses Github Workflows and works as follows: a scheduled workflow runs with
+weekly cadence, and calls a reusable workflow that fetches the latest available Envoy release
+and compares it with the version currently used in the repo.
 
-#### Releasing a new version
+If the latest available Envoy release doesn't match the version currently used, another
+reusable workflow is called which creates a PR that upgrades the Envoy API to the latest
+available release.
+
+### Releasing a new version
 To release and publish a new version, do the following:
 1. create a personal API token in CircleCI by following the instructions listed [here](https://circleci.com/docs/2.0/managing-api-tokens/#creating-a-personal-api-token)
 2. from terminal, curl the CircleCI API as follows
 
 ```
-curl --request POST \
-  --url https://circleci.com/api/v2/project/github/envoyproxy/java-control-plane/pipeline \
-  --header 'Circle-Token: <API token>' \
-  --header 'content-type: application/json' \
-  --data '{"branch":"main","parameters":{"RELEASE":"<e.g. 0.1.29>","NEXT":"<e.g. 0.1.30-SNAPSHOT>"}}'
+ curl -X POST \
+    -H "Content-Type: application/json" \
+    -d '{ "build_parameters": { "RELEASE": "<e.g. 0.1.29>", "NEXT": "<e.g. 0.1.30-SNAPSHOT>" } }' \
+    "https://circleci.com/api/v1.1/project/github/envoyproxy/java-control-plane/tree/main?circle-token=<API token>"
 ```

@@ -18,25 +18,28 @@ import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.extensions.upstreams.http.v3.HttpProtocolOptions;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
+
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.testcontainers.containers.Network;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
-import org.testcontainers.shaded.org.apache.commons.lang.math.RandomUtils;
 
 public class V3DiscoveryServerAdsWarmingClusterIT {
 
   private static final String CONFIG = "envoy/ads.v3.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
-  private static final int API_VERSION = 3;
   private static final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
   private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(1);
@@ -82,7 +85,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
   private static final Network NETWORK = Network.newNetwork();
 
-  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort(), API_VERSION)
+  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> ADS.getServer().getPort())
       .withExposedPorts(LISTENER_PORT)
       .withNetwork(NETWORK);
 
@@ -111,7 +114,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
     await().atMost(5, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(
         () -> given().baseUri(baseUri).contentType(ContentType.TEXT)
             .when().get("/")
-            .then().statusCode(503));
+            .then().statusCode(502));
 
     // Here we update a Snapshot with working cluster, but we change only CDS version, not EDS version.
     // This change allows to test if EDS will be sent anyway after CDS was sent.
@@ -147,13 +150,22 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
 
     ConfigSource edsSource = ConfigSource.newBuilder()
         .setAds(AggregatedConfigSource.getDefaultInstance())
+        .setResourceApiVersion(V3)
         .build();
 
     Cluster cluster = Cluster.newBuilder()
         .setName(clusterName)
-        .setConnectTimeout(Durations.fromSeconds(RandomUtils.nextInt(5)))
+        .setConnectTimeout(Durations.fromSeconds(RandomUtils.nextInt(1, 5)))
         // we are enabling HTTP2 - communication with cluster won't work
-        .setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build())
+        .putAllTypedExtensionProtocolOptions(Collections.singletonMap(
+            "envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            com.google.protobuf.Any.pack(
+                HttpProtocolOptions.newBuilder()
+                    .setExplicitHttpConfig(
+                        HttpProtocolOptions.ExplicitHttpConfig.newBuilder()
+                            .setHttp2ProtocolOptions(Http2ProtocolOptions.getDefaultInstance())
+                            .build())
+                    .build())))
         .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder()
             .setEdsConfig(edsSource)
             .setServiceName(clusterName))
