@@ -54,7 +54,8 @@ jobs:
               fi
             elif [[ -n "${DEPLOY_BRANCH}" ]]; then
               echo $GPG_KEY | base64 --decode > signing-key
-              gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
+              gpg -v --batch --passphrase $GPG_PASSPHRASE --import signing-key
+              echo "imported key"
               shred signing-key
 
               mvn -B -s .circleci/settings-snapshots.xml deploy
