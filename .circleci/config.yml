@@ -54,7 +54,6 @@ jobs:
               fi
             elif [[ -n "${DEPLOY_BRANCH}" ]]; then
               echo $GPG_KEY | base64 --decode > signing-key
-              gpg --verify signing-key
               gpg -v --batch --passphrase $GPG_PASSPHRASE --import signing-key
               echo "imported key"
               shred signing-key
