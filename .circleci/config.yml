@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:20.04
+      - image: cimg/openjdk:8.0.322
 
     working_directory: ~/repo
 
