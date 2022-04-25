@@ -40,6 +40,7 @@ jobs:
       # Deploy if on main branch. If the $RELEASE and $NEXT variables are set then prepare a full maven release.
       - deploy:
           command: |
+            set -x
             if [ "${CIRCLE_BRANCH}" == "main" ]; then
               echo $GPG_KEY | base64 --decode > signing-key
               gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
@@ -60,4 +61,5 @@ jobs:
 
               mvn -B -s .circleci/settings-snapshots.xml deploy
             fi
+            set +x
       - run: bash <(curl -s https://codecov.io/bash)
