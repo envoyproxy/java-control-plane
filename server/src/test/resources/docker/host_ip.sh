@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 
@@ -8,8 +8,8 @@ set -eu
 # See https://github.com/docker/for-linux/issues/264 to track host.docker.internal support on linux.
 HOST_DOMAIN_IP="$(getent hosts host.docker.internal | awk '{ print $1 }')"
 
-if [[ ! -z "${HOST_DOMAIN_IP}" ]]; then
-    printf "${HOST_DOMAIN_IP}"
+if [[ -n "${HOST_DOMAIN_IP}" ]]; then
+    printf "%s" "${HOST_DOMAIN_IP}"
 else
-    printf "$(ip route | awk '/default/ { print $3 }')"
+    printf "%s" "$(ip route | awk '/default/ { print $3 }')"
 fi

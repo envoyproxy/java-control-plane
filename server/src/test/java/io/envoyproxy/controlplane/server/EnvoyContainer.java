@@ -40,7 +40,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
     withClasspathResourceMapping(config, CONFIG_DEST, BindMode.READ_ONLY);
 
     withCommand(
-        "/bin/sh", "/usr/local/bin/launch_envoy.sh",
+        "/bin/bash", "/usr/local/bin/launch_envoy.sh",
         Integer.toString(controlPlanePortSupplier.get()),
         CONFIG_DEST,
         "-l", "debug"

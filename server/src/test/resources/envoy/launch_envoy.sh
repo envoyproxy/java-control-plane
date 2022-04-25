@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 
-HOST_IP=$(sh /usr/local/bin/host_ip.sh)
+HOST_IP=$(/bin/bash /usr/local/bin/host_ip.sh)
 HOST_PORT=$1
 
 CONFIG=$(cat $2)
