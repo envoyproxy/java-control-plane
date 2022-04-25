@@ -33,7 +33,7 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
 
       # Test
-      - run: mvn -B -Dmaven.javadoc.skip=true verify
+#      - run: mvn -B -Dmaven.javadoc.skip=true verify
 
       - add_ssh_keys
 
