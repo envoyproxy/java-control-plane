@@ -1,14 +1,8 @@
-// THIS FILE IS DEPRECATED
-// Users should instead use the corresponding proto in the xds tree.
-// No new changes will be accepted here.
-
 syntax = "proto3";
 
 package udpa.annotations;
 
 import "google/protobuf/descriptor.proto";
-
-option go_package = "github.com/cncf/xds/go/annotations";
 
 // Magic number in this file derived from top 28bit of SHA256 digest of
 // "udpa.annotation.migrate".

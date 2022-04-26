@@ -19,6 +19,7 @@ import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
+import "envoy/annotations/deprecation.proto";
 import "udpa/annotations/migrate.proto";
 import "udpa/annotations/security.proto";
 import "udpa/annotations/status.proto";
@@ -28,7 +29,6 @@ import "validate/validate.proto";
 option java_package = "io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3";
 option java_outer_classname = "HttpConnectionManagerProto";
 option java_multiple_files = true;
-option go_package = "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3;http_connection_managerv3";
 option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: HTTP connection manager]
@@ -501,7 +501,23 @@ message HttpConnectionManager {
   // determining the origin client's IP address. The default is zero if this option
   // is not specified. See the documentation for
   // :ref:`config_http_conn_man_headers_x-forwarded-for` for more information.
-  uint32 xff_num_trusted_hops = 19;
+  //
+  // .. note::
+  //    This field is deprecated and instead :ref:`original_ip_detection_extensions
+  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.original_ip_detection_extensions>`
+  //    should be used to configure the :ref:`xff extension <envoy_v3_api_msg_extensions.http.original_ip_detection.xff.v3.XffConfig>`
+  //    to configure IP detection using the :ref:`config_http_conn_man_headers_x-forwarded-for` header. To replace
+  //    this field use a config like the following:
+  //
+  // .. code-block:: yaml
+  //
+  //    original_ip_detection_extensions:
+  //      typed_config:
+  //        "@type": type.googleapis.com/envoy.extensions.http.original_ip_detection.xff.v3.XffConfig
+  //        xff_num_trusted_hops: 1
+  //
+  uint32 xff_num_trusted_hops = 19
+      [deprecated = true, (envoy.annotations.deprecated_at_minor_version) = "3.0"];
 
   // The configuration for the original IP detection extensions.
   //
@@ -512,12 +528,6 @@ message HttpConnectionManager {
   // the request, the HCM will try the remaining extensions until one succeeds or rejects
   // the request. If the request isn't rejected nor any extension succeeds, the HCM will
   // fallback to using the remote address.
-  //
-  // .. WARNING::
-  //    Extensions cannot be used in conjunction with :ref:`use_remote_address
-  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
-  //    nor :ref:`xff_num_trusted_hops
-  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.xff_num_trusted_hops>`.
   //
   // [#extension-category: envoy.http.original_ip_detection]
   repeated config.core.v3.TypedExtensionConfig original_ip_detection_extensions = 46;
@@ -912,7 +922,7 @@ message ScopedRoutes {
   // Configuration source specifier for RDS.
   // This config source is used to subscribe to RouteConfiguration resources specified in
   // ScopedRouteConfiguration messages.
-  config.core.v3.ConfigSource rds_config_source = 3;
+  config.core.v3.ConfigSource rds_config_source = 3 [(validate.rules).message = {required: true}];
 
   oneof config_specifier {
     option (validate.required) = true;
@@ -994,13 +1004,4 @@ message RequestIDExtension {
 
   // Request ID extension specific configuration.
   google.protobuf.Any typed_config = 1;
-}
-
-// [#protodoc-title: Envoy Mobile HTTP connection manager]
-// HTTP connection manager for use in Envoy mobile.
-// [#extension: envoy.filters.network.envoy_mobile_http_connection_manager]
-message EnvoyMobileHttpConnectionManager {
-  // The configuration for the underlying HttpConnectionManager which will be
-  // instantiated for Envoy mobile.
-  HttpConnectionManager config = 1;
 }

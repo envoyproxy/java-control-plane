@@ -12,7 +12,6 @@ import "udpa/annotations/versioning.proto";
 option java_package = "io.envoyproxy.envoy.admin.v3";
 option java_outer_classname = "ServerInfoProto";
 option java_multiple_files = true;
-option go_package = "github.com/envoyproxy/go-control-plane/envoy/admin/v3;adminv3";
 option (udpa.annotations.file_status).package_version_status = ACTIVE;
 
 // [#protodoc-title: Server State]
@@ -59,7 +58,7 @@ message ServerInfo {
   config.core.v3.Node node = 7;
 }
 
-// [#next-free-field: 39]
+// [#next-free-field: 38]
 message CommandLineOptions {
   option (udpa.annotations.versioning).previous_message_type =
       "envoy.admin.v2alpha.CommandLineOptions";
@@ -88,9 +87,9 @@ message CommandLineOptions {
     Immediate = 1;
   }
 
-  reserved 12, 20, 21, 29;
+  reserved 12, 20, 21;
 
-  reserved "max_stats", "max_obj_name_len", "bootstrap_version";
+  reserved "max_stats", "max_obj_name_len";
 
   // See :option:`--base-id` for details.
   uint64 base_id = 1;
@@ -179,6 +178,9 @@ message CommandLineOptions {
   // See :option:`--disable-extensions` for details.
   repeated string disabled_extensions = 28;
 
+  // See :option:`--bootstrap-version` for details.
+  uint32 bootstrap_version = 29;
+
   // See :option:`--enable-fine-grain-logging` for details.
   bool enable_fine_grain_logging = 34;
 
@@ -190,7 +192,4 @@ message CommandLineOptions {
 
   // See :option:`--enable-core-dump` for details.
   bool enable_core_dump = 37;
-
-  // See :option:`--stats-tag` for details.
-  repeated string stats_tag = 38;
 }
