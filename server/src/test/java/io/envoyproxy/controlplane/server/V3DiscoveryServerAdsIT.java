@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
-import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.Network;
 
 public class V3DiscoveryServerAdsIT {
