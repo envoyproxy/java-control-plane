@@ -40,6 +40,8 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
     withClasspathResourceMapping(LAUNCH_ENVOY_SCRIPT, LAUNCH_ENVOY_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(config, CONFIG_DEST, BindMode.READ_ONLY);
 
+    withExtraHost("host.docker.internal","host-gateway");
+
     withCommand(
         "/bin/bash", "/usr/local/bin/launch_envoy.sh",
         Integer.toString(controlPlanePortSupplier.get()),
