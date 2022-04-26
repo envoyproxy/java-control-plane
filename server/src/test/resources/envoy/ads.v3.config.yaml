@@ -21,6 +21,7 @@ node:
 static_resources:
   clusters:
   - connect_timeout: 1s
+    type: STRICT_DNS
     load_assignment:
       cluster_name: ads_server
       endpoints:
@@ -28,7 +29,7 @@ static_resources:
           - endpoint:
               address:
                 socket_address:
-                  address: HOST_IP
+                  address: host.testcontainers.internal
                   port_value: HOST_PORT
     http2_protocol_options: {}
     name: ads_cluster

@@ -4,6 +4,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -54,5 +55,12 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
     followOutput(new Slf4jLogConsumer(LOGGER).withPrefix("ENVOY"));
 
     super.containerIsStarting(containerInfo);
+  }
+
+  @Override
+  protected void containerIsCreated(String containerId) {
+    Testcontainers.exposeHostPorts(controlPlanePortSupplier.get());
+
+    super.containerIsCreated(containerId);
   }
 }
