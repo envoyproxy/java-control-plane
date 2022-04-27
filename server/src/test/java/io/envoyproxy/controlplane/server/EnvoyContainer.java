@@ -14,8 +14,6 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   private static final Logger LOGGER = LoggerFactory.getLogger(EnvoyContainer.class);
 
   private static final String CONFIG_DEST = "/etc/envoy/envoy.yaml";
-  private static final String HOST_IP_SCRIPT = "docker/host_ip.sh";
-  private static final String HOST_IP_SCRIPT_DEST = "/usr/local/bin/host_ip.sh";
   private static final String LAUNCH_ENVOY_SCRIPT = "envoy/launch_envoy.sh";
   private static final String LAUNCH_ENVOY_SCRIPT_DEST = "/usr/local/bin/launch_envoy.sh";
 
@@ -36,7 +34,6 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   protected void configure() {
     super.configure();
 
-    withClasspathResourceMapping(HOST_IP_SCRIPT, HOST_IP_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(LAUNCH_ENVOY_SCRIPT, LAUNCH_ENVOY_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(config, CONFIG_DEST, BindMode.READ_ONLY);
 
