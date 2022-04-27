@@ -23,14 +23,14 @@ jobs:
         id: current-envoy-version
         run: |
           echo 'ENVOY_CURRENT<<EOF' >> $GITHUB_ENV
-          cat envoy_release >> $GITHUB_ENV
+          cat ./tools/envoy_release >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
       - name: Compare latest to current
         id: compare-latest-to-current-version
         run: |
-          if [[ "${{ env.ENVOY_LATEST }}" == "${{ env.ENVOY_CURRENT }}" ]]
+          if [[ "${{ env.ENVOY_LATEST }}" > "${{ env.ENVOY_CURRENT }}" ]]
           then
-            echo "::set-output name=target-version::noop"
-          else
             echo "::set-output name=target-version::${{ env.ENVOY_LATEST }}"
+          else
+            echo "::set-output name=target-version::noop"
           fi
