@@ -1,7 +1,3 @@
-// THIS FILE IS DEPRECATED
-// Users should instead use the corresponding proto in the xds tree.
-// No new changes will be accepted here.
-
 syntax = "proto3";
 
 package udpa.annotations;

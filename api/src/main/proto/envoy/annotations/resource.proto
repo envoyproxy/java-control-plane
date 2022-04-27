@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package envoy.annotations;
-option go_package = "github.com/envoyproxy/go-control-plane/envoy/annotations";
 
 import "google/protobuf/descriptor.proto";
 

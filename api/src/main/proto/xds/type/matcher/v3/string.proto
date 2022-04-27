@@ -9,7 +9,6 @@ import "validate/validate.proto";
 option java_package = "com.github.xds.type.matcher.v3";
 option java_outer_classname = "StringProto";
 option java_multiple_files = true;
-option go_package = "github.com/cncf/xds/go/xds/type/matcher/v3";
 
 // [#protodoc-title: String matcher]
 
