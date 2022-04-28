@@ -62,4 +62,4 @@ UDPA_SHA=\"$UDPA_SHA\"  # $UDPA_DATE
 sed -i 's/\(envoy-dev:\).*\(\");\)/\1'"$ENVOY_VERSION"'\2/g'  ../server/src/test/java/io/envoyproxy/controlplane/server/EnvoyContainer.java
 
 # update tag in envoy_release file
-echo $1 > enovy_release
+echo $1 > envoy_release
