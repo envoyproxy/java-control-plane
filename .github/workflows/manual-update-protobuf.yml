@@ -1,0 +1,33 @@
+name: update-protobuf
+on:
+  workflow_dispatch:
+    inputs:
+      envoy_version:
+        description: 'Envoy version to update to'
+        required: true
+        type: string
+
+jobs:
+  update-protobuf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run scripts
+        working-directory: ./tools/
+        run: |
+          ./update-sha.sh ${{ github.event.inputs.envoy_version }} | tee API_SHAS
+          ./update-api.sh
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          branch: update-protobuf-to-${{ github.event.inputs.envoy_version }}
+          base: main
+          author: envoy-bot <envoy-bot@users.noreply.github.com>
+          committer: envoy-bot <envoy-bot@users.noreply.github.com>
+          signoff: true
+          title: '[protobuf] Update protobuf definitions to ${{ github.event.inputs.envoy_version }}'
+          commit-message: |
+            [protobuf] Update protobuf definitions to ${{ github.event.inputs.envoy_version }}
+          body: |
+            This is an automatic PR created by github action workflow:
+            - Updated protobuf files
