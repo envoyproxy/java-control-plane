@@ -39,6 +39,7 @@ import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.Http
 import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager.CodecType;
 import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.HttpFilter;
 import io.envoyproxy.envoy.config.filter.network.http_connection_manager.v2.Rds;
+import io.envoyproxy.envoy.extensions.filters.http.router.v3.Router;
 
 /**
  * {@code TestResources} provides helper methods for generating resource messages for testing. It is not intended to be
@@ -247,7 +248,8 @@ public class TestResources {
             .setConfigSource(rdsSource)
             .setRouteConfigName(routeName))
         .addHttpFilters(HttpFilter.newBuilder()
-            .setName(Resources.FILTER_ENVOY_ROUTER))
+            .setName(Resources.FILTER_ENVOY_ROUTER)
+            .setTypedConfig(Any.pack(Router.newBuilder().build())))
         .build();
 
     return Listener.newBuilder()
@@ -308,7 +310,8 @@ public class TestResources {
             .setRouteConfigName(routeName))
         .addHttpFilters(
             io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpFilter.newBuilder()
-                .setName(Resources.FILTER_ENVOY_ROUTER))
+                .setName(Resources.FILTER_ENVOY_ROUTER)
+                .setTypedConfig(Any.pack(Router.newBuilder().build())))
         .build();
 
     return io.envoyproxy.envoy.config.listener.v3.Listener.newBuilder()
