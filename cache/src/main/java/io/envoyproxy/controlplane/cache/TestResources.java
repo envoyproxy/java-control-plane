@@ -23,12 +23,12 @@ import io.envoyproxy.envoy.config.route.v3.RouteAction;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.config.route.v3.RouteMatch;
 import io.envoyproxy.envoy.config.route.v3.VirtualHost;
+import io.envoyproxy.envoy.extensions.filters.http.router.v3.Router;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpFilter;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.Rds;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.TlsCertificate;
-
 
 /**
  * {@code TestResources} provides helper methods for generating resource messages for testing. It is
@@ -91,7 +91,8 @@ public class TestResources {
                                                     SocketAddress.newBuilder()
                                                         .setAddress(address)
                                                         .setPortValue(port)
-                                                        .setProtocolValue(SocketAddress.Protocol.TCP_VALUE)))))))
+                                                        .setProtocolValue(
+                                                            SocketAddress.Protocol.TCP_VALUE)))))))
         .build();
   }
 
@@ -112,8 +113,7 @@ public class TestResources {
    * @param address ip address to use for the endpoint
    * @param port port to use for the endpoint
    */
-  public static ClusterLoadAssignment createEndpoint(
-      String clusterName, String address, int port) {
+  public static ClusterLoadAssignment createEndpoint(String clusterName, String address, int port) {
     return ClusterLoadAssignment.newBuilder()
         .setClusterName(clusterName)
         .addEndpoints(
@@ -176,7 +176,10 @@ public class TestResources {
             .setCodecType(HttpConnectionManager.CodecType.AUTO)
             .setStatPrefix("http")
             .setRds(Rds.newBuilder().setConfigSource(rdsSource).setRouteConfigName(routeName))
-            .addHttpFilters(HttpFilter.newBuilder().setName(Resources.FILTER_ENVOY_ROUTER))
+            .addHttpFilters(
+                HttpFilter.newBuilder()
+                    .setName(Resources.FILTER_ENVOY_ROUTER)
+                    .setTypedConfig(Any.pack(Router.newBuilder().build())))
             .build();
 
     return io.envoyproxy.envoy.config.listener.v3.Listener.newBuilder()

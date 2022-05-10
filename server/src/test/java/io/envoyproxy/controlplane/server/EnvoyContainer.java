@@ -13,8 +13,6 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   private static final Logger LOGGER = LoggerFactory.getLogger(EnvoyContainer.class);
 
   private static final String CONFIG_DEST = "/etc/envoy/envoy.yaml";
-  private static final String HOST_IP_SCRIPT = "docker/host_ip.sh";
-  private static final String HOST_IP_SCRIPT_DEST = "/usr/local/bin/host_ip.sh";
   private static final String LAUNCH_ENVOY_SCRIPT = "envoy/launch_envoy.sh";
   private static final String LAUNCH_ENVOY_SCRIPT_DEST = "/usr/local/bin/launch_envoy.sh";
 
@@ -26,7 +24,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   EnvoyContainer(String config, Supplier<Integer> controlPlanePortSupplier) {
     // this version is changed automatically by /tools/update-sha.sh:57
     // if you change it make sure to reflect changes there
-    super("envoyproxy/envoy-alpine-dev:af50070ee60866874b0a9383daf9364e884ded22");
+    super("envoyproxy/envoy-dev:dcd329a2e95b54f754b17aceca3f72724294b502");
     this.config = config;
     this.controlPlanePortSupplier = controlPlanePortSupplier;
   }
@@ -35,12 +33,13 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   protected void configure() {
     super.configure();
 
-    withClasspathResourceMapping(HOST_IP_SCRIPT, HOST_IP_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(LAUNCH_ENVOY_SCRIPT, LAUNCH_ENVOY_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(config, CONFIG_DEST, BindMode.READ_ONLY);
 
+    withExtraHost("host.docker.internal","host-gateway");
+
     withCommand(
-        "/bin/sh", "/usr/local/bin/launch_envoy.sh",
+        "/bin/bash", "/usr/local/bin/launch_envoy.sh",
         Integer.toString(controlPlanePortSupplier.get()),
         CONFIG_DEST,
         "-l", "debug"
@@ -55,4 +54,5 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
 
     super.containerIsStarting(containerInfo);
   }
+
 }

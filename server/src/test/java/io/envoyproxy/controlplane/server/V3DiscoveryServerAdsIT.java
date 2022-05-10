@@ -12,6 +12,7 @@ import io.restassured.http.ContentType;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;

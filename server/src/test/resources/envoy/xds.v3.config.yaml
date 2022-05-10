@@ -25,6 +25,7 @@ node:
 static_resources:
   clusters:
   - connect_timeout: 1s
+    type: STRICT_DNS
     load_assignment:
       cluster_name: xds_cluster
       endpoints:
@@ -32,7 +33,7 @@ static_resources:
             - endpoint:
                 address:
                   socket_address:
-                    address: HOST_IP
+                    address: host.docker.internal
                     port_value: HOST_PORT
     http2_protocol_options: {}
     name: xds_cluster

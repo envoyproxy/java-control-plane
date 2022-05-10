@@ -19,7 +19,7 @@ option (xds.annotations.v3.file_status).work_in_progress = true;
 
 // Matches a specific IP address against a set of possibly overlapping subnets using a trie.
 message IPMatcher {
-  // Specifies an optional list of IP address ranges and a match action.
+  // Specifies a list of IP address ranges and a match action.
   message IPRangeMatcher {
     // A non-empty set of CIDR ranges.
     repeated core.v3.CidrRange ranges = 1 [(validate.rules).repeated = {min_items: 1}];
