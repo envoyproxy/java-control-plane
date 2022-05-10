@@ -1,8 +1,8 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: cimg/openjdk:8.0.322
+    machine:
+      image: ubuntu-2004:202201-02
 
     working_directory: ~/repo
 
@@ -33,14 +33,13 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
 
       # Test
-#      - run: mvn -B -Dmaven.javadoc.skip=true verify
+      - run: mvn -B -Dmaven.javadoc.skip=true verify
 
       - add_ssh_keys
 
       # Deploy if on main branch. If the $RELEASE and $NEXT variables are set then prepare a full maven release.
       - deploy:
           command: |
-            set -x
             if [ "${CIRCLE_BRANCH}" == "main" ]; then
               echo $GPG_KEY | base64 --decode > signing-key
               gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
@@ -55,7 +54,7 @@ jobs:
               fi
             elif [[ -n "${DEPLOY_BRANCH}" ]]; then
               echo $GPG_KEY | base64 --decode > signing-key
-              gpg -v --batch --passphrase $GPG_PASSPHRASE --import signing-key
+              gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
               shred signing-key
 
               mvn -B -s .circleci/settings-snapshots.xml deploy
