@@ -16,20 +16,23 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+            - v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum
+              "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
 
       # Build
       - run:
-          command: mvn -B install -DskipTests -Dmaven.javadoc.skip=true dependency:go-offline
+          command: mvn -B install -DskipTests -Dmaven.javadoc.skip=true
+            dependency:go-offline
           no_output_timeout: 20m
 
       # Save the dependency cache for future runs
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{ checksum "server/pom.xml" }}
+          key: v1-dependencies-{{ checksum "pom.xml" }}-{{ checksum "cache/pom.xml" }}-{{
+            checksum "server/pom.xml" }}
 
       # Test
       - run: mvn -B -Dmaven.javadoc.skip=true verify
@@ -59,3 +62,5 @@ jobs:
               mvn -B -s .circleci/settings-snapshots.xml deploy
             fi
       - run: bash <(curl -s https://codecov.io/bash)
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
