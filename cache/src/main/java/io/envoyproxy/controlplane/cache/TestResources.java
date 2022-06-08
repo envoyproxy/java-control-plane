@@ -115,78 +115,29 @@ public class TestResources {
    * @param address ip address to use for the endpoint
    * @param port port to use for the endpoint
    */
-  public static io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment createEndpointV3(
-      String clusterName, String address, int port) {
-    return io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment.newBuilder()
+  public static ClusterLoadAssignment createEndpoint(String clusterName, String address, int port) {
+    return ClusterLoadAssignment.newBuilder()
         .setClusterName(clusterName)
-        .addEndpoints(io.envoyproxy.envoy.config.endpoint.v3.LocalityLbEndpoints.newBuilder()
-            .addLbEndpoints(io.envoyproxy.envoy.config.endpoint.v3.LbEndpoint.newBuilder()
-                .setEndpoint(io.envoyproxy.envoy.config.endpoint.v3.Endpoint.newBuilder()
-                    .setAddress(io.envoyproxy.envoy.config.core.v3.Address.newBuilder()
-                        .setSocketAddress(io.envoyproxy.envoy.config.core.v3.SocketAddress.newBuilder()
-                            .setAddress(address)
-                            .setPortValue(port)
-                            .setProtocol(io.envoyproxy.envoy.config.core.v3.SocketAddress.Protocol.TCP))))))
-        .build();
-  }
-
-  /**
-   * Returns a new test listener.
-   *  @param ads should RDS for the listener be configured to use XDS?
-   * @param rdsTransportVersion the transport_api_version that should be set for RDS
-   * @param rdsResourceVersion the resource_api_version that should be set for RDS
-   * @param listenerName name of the new listener
-   * @param port port to use for the listener
-   * @param routeName name of the test route that is associated with this listener
-   */
-  public static Listener createListener(boolean ads,
-      io.envoyproxy.envoy.api.v2.core.ApiVersion rdsTransportVersion,
-      io.envoyproxy.envoy.api.v2.core.ApiVersion rdsResourceVersion, String listenerName,
-      int port, String routeName) {
-    ConfigSource.Builder configSourceBuilder = ConfigSource.newBuilder()
-        .setResourceApiVersion(rdsResourceVersion);
-
-    ConfigSource rdsSource = ads
-        ? configSourceBuilder
-        .setAds(AggregatedConfigSource.getDefaultInstance())
-        .setResourceApiVersion(rdsResourceVersion)
-        .build()
-        : configSourceBuilder
-            .setApiConfigSource(ApiConfigSource.newBuilder()
-                .setApiType(ApiType.GRPC)
-                .setTransportApiVersion(rdsTransportVersion)
-                .addGrpcServices(GrpcService.newBuilder()
-                    .setEnvoyGrpc(EnvoyGrpc.newBuilder()
-                        .setClusterName(XDS_CLUSTER))))
-            .build();
-
-    HttpConnectionManager manager = HttpConnectionManager.newBuilder()
-        .setCodecType(CodecType.AUTO)
-        .setStatPrefix("http")
-        .setRds(Rds.newBuilder()
-            .setConfigSource(rdsSource)
-            .setRouteConfigName(routeName))
-        .addHttpFilters(HttpFilter.newBuilder()
-            .setName(Resources.FILTER_ENVOY_ROUTER)
-            .setTypedConfig(Any.pack(Router.newBuilder().build())))
-        .build();
-
-    return Listener.newBuilder()
-        .setName(listenerName)
-        .setAddress(Address.newBuilder()
-            .setSocketAddress(SocketAddress.newBuilder()
-                .setAddress(ANY_ADDRESS)
-                .setPortValue(port)
-                .setProtocol(Protocol.TCP)))
-        .addFilterChains(FilterChain.newBuilder()
-            .addFilters(Filter.newBuilder()
-                .setName(Resources.FILTER_HTTP_CONNECTION_MANAGER)
-                .setTypedConfig(Any.pack(manager))))
+        .addEndpoints(
+            io.envoyproxy.envoy.config.endpoint.v3.LocalityLbEndpoints.newBuilder()
+                .addLbEndpoints(
+                    io.envoyproxy.envoy.config.endpoint.v3.LbEndpoint.newBuilder()
+                        .setEndpoint(
+                            io.envoyproxy.envoy.config.endpoint.v3.Endpoint.newBuilder()
+                                .setAddress(
+                                    io.envoyproxy.envoy.config.core.v3.Address.newBuilder()
+                                        .setSocketAddress(
+                                            io.envoyproxy.envoy.config.core.v3.SocketAddress
+                                                .newBuilder()
+                                                .setAddress(address)
+                                                .setPortValue(port)
+                                                .setProtocol(Protocol.TCP))))))
         .build();
   }
 
   /**
    * Returns a new test v3 listener.
+   *
    * @param ads should RDS for the listener be configured to use XDS?
    * @param rdsTransportVersion the transport_api_version that should be set for RDS config on the
    *     listener
@@ -196,44 +147,50 @@ public class TestResources {
    * @param port port to use for the listener
    * @param routeName name of the test route that is associated with this listener
    */
-  public static io.envoyproxy.envoy.config.listener.v3.Listener createListenerV3(boolean ads,
+  public static Listener createListener(
+      boolean ads,
       ApiVersion rdsTransportVersion,
-      ApiVersion rdsResourceVersion, String listenerName,
-      int port, String routeName) {
-    io.envoyproxy.envoy.config.core.v3.ConfigSource.Builder configSourceBuilder =
-        io.envoyproxy.envoy.config.core.v3.ConfigSource.newBuilder()
-        .setResourceApiVersion(rdsResourceVersion);
-    io.envoyproxy.envoy.config.core.v3.ConfigSource rdsSource = ads
-        ? configSourceBuilder
-        .setAds(io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource.getDefaultInstance())
-        .setResourceApiVersion(rdsResourceVersion)
-        .build()
-        : configSourceBuilder
-            .setApiConfigSource(io.envoyproxy.envoy.config.core.v3.ApiConfigSource.newBuilder()
-                .setTransportApiVersion(rdsTransportVersion)
-                .setApiType(io.envoyproxy.envoy.config.core.v3.ApiConfigSource.ApiType.GRPC)
-                .addGrpcServices(io.envoyproxy.envoy.config.core.v3.GrpcService.newBuilder()
-                    .setEnvoyGrpc(io.envoyproxy.envoy.config.core.v3.GrpcService.EnvoyGrpc.newBuilder()
-                        .setClusterName(XDS_CLUSTER))))
+      ApiVersion rdsResourceVersion,
+      String listenerName,
+      int port,
+      String routeName) {
+    ConfigSource.Builder configSourceBuilder =
+        ConfigSource.newBuilder().setResourceApiVersion(rdsResourceVersion);
+    ConfigSource rdsSource =
+        ads
+            ? configSourceBuilder
+                .setAds(AggregatedConfigSource.getDefaultInstance())
+                .setResourceApiVersion(rdsResourceVersion)
+                .build()
+            : configSourceBuilder
+                .setApiConfigSource(
+                    ApiConfigSource.newBuilder()
+                        .setTransportApiVersion(rdsTransportVersion)
+                        .setApiType(ApiConfigSource.ApiType.GRPC)
+                        .addGrpcServices(
+                            GrpcService.newBuilder()
+                                .setEnvoyGrpc(
+                                    GrpcService.EnvoyGrpc.newBuilder()
+                                        .setClusterName(XDS_CLUSTER))))
+                .build();
+
+    HttpConnectionManager manager =
+        HttpConnectionManager.newBuilder()
+            .setCodecType(CodecType.AUTO)
+            .setStatPrefix("http")
+            .setRds(
+                io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.Rds
+                    .newBuilder()
+                    .setConfigSource(rdsSource)
+                    .setRouteConfigName(routeName))
+            .addHttpFilters(
+                io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpFilter
+                    .newBuilder()
+                    .setName(Resources.FILTER_ENVOY_ROUTER)
+                    .setTypedConfig(Any.pack(Router.newBuilder().build())))
             .build();
 
-    io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-        manager = io.envoyproxy.envoy.extensions.filters.network
-        .http_connection_manager.v3.HttpConnectionManager.newBuilder()
-        .setCodecType(
-            io.envoyproxy.envoy.extensions.filters.network
-                .http_connection_manager.v3.HttpConnectionManager.CodecType.AUTO)
-        .setStatPrefix("http")
-        .setRds(io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.Rds.newBuilder()
-            .setConfigSource(rdsSource)
-            .setRouteConfigName(routeName))
-        .addHttpFilters(
-            io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpFilter.newBuilder()
-                .setName(Resources.FILTER_ENVOY_ROUTER)
-                .setTypedConfig(Any.pack(Router.newBuilder().build())))
-        .build();
-
-    return io.envoyproxy.envoy.config.listener.v3.Listener.newBuilder()
+    return Listener.newBuilder()
         .setName(listenerName)
         .setAddress(
             Address.newBuilder()
