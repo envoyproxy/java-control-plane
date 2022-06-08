@@ -4,10 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.v2.SimpleCache;
-import io.envoyproxy.controlplane.cache.v2.Snapshot;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.core.Node;
+import io.envoyproxy.controlplane.cache.v3.SimpleCache;
+import io.envoyproxy.controlplane.cache.v3.Snapshot;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,21 +15,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.junit.Before;
 import org.junit.Test;
 
 public class SnapshotCollectingCallbackTest {
 
   private static final Clock CLOCK = Clock.fixed(Instant.now(), ZoneId.systemDefault());
-  private static final NodeGroup<String> NODE_GROUP = new NodeGroup<String>() {
-    @Override public String hash(Node node) {
-      return "group";
-    }
-
-    @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
-      return "group";
-    }
-  };
+  private static final NodeGroup<String> NODE_GROUP = node -> "group";
   private final ArrayList<String> collectedGroups = new ArrayList<>();
   private SnapshotCollectingCallback<String, Snapshot> callback;
   private SimpleCache<String> cache;
@@ -40,14 +32,14 @@ public class SnapshotCollectingCallbackTest {
     collectedGroups.clear();
     cache = new SimpleCache<>(NODE_GROUP);
     cache.setSnapshot("group", Snapshot.createEmpty(""));
-    callback = new SnapshotCollectingCallback<String, Snapshot>(cache, NODE_GROUP, CLOCK,
-        Collections.singleton(collectedGroups::add), 3, 100);
+    callback = new SnapshotCollectingCallback<>(cache, NODE_GROUP, CLOCK,
+            Collections.singleton(collectedGroups::add), 3, 100);
   }
 
   @Test
   public void testSingleSnapshot() {
-    callback.onV2StreamRequest(0, DiscoveryRequest.getDefaultInstance());
-    callback.onV2StreamRequest(1, DiscoveryRequest.getDefaultInstance());
+    callback.onV3StreamRequest(0, DiscoveryRequest.getDefaultInstance());
+    callback.onV3StreamRequest(1, DiscoveryRequest.getDefaultInstance());
 
     // We have 2 references to the snapshot, this should do nothing.
     callback.deleteUnreferenced(Clock.offset(CLOCK, Duration.ofMillis(5)));
@@ -84,7 +76,7 @@ public class SnapshotCollectingCallbackTest {
       }
     };
 
-    callback.onV2StreamRequest(0, DiscoveryRequest.getDefaultInstance());
+    callback.onV3StreamRequest(0, DiscoveryRequest.getDefaultInstance());
     assertThat(deleteUnreferencedLatch.await(100, TimeUnit.MILLISECONDS)).isTrue();
     assertThat(collectedGroups).isEmpty();
 

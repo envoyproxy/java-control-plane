@@ -533,11 +533,6 @@ public class SimpleCacheTest {
     private static final String GROUP = "node";
 
     @Override
-    public String hash(io.envoyproxy.envoy.api.v2.core.Node node) {
-      throw new IllegalStateException("should not have received a v2 node in a v3 test");
-    }
-
-    @Override
     public String hash(Node node) {
       if (node == null) {
         throw new IllegalArgumentException("node");

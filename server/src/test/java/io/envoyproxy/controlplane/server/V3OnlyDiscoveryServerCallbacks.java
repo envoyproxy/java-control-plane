@@ -30,21 +30,8 @@ public class V3OnlyDiscoveryServerCallbacks implements DiscoveryServerCallbacks 
   }
 
   @Override
-  public void onV2StreamRequest(long streamId,
-      io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-    throw new IllegalStateException("Unexpected v2 request in v3 test");
-  }
-
-  @Override
   public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
     onStreamRequestLatch.countDown();
-  }
-
-  @Override
-  public void onStreamResponse(long streamId,
-      io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-      io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-    throw new IllegalStateException("Unexpected v2 response in v3 test");
   }
 
   @Override

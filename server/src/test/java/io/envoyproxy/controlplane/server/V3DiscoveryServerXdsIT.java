@@ -6,9 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
-import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
-import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
@@ -31,15 +29,7 @@ public class V3DiscoveryServerXdsIT {
   private static final NettyGrpcServerRule XDS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
-        @Override public String hash(Node node) {
-          throw new IllegalStateException("Unexpected v2 request in a v3 test");
-        }
-
-        @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
-          return GROUP;
-        }
-      });
+      final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
       final DiscoveryServerCallbacks callbacks =
           new V3OnlyDiscoveryServerCallbacks(onStreamOpenLatch, onStreamRequestLatch,

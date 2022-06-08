@@ -24,12 +24,12 @@ class V3TestSnapshots {
       String routeName,
       String version) {
 
-    Cluster cluster = TestResources.createClusterV3(clusterName);
+    Cluster cluster = TestResources.createCluster(clusterName);
     ClusterLoadAssignment
-        endpoint = TestResources.createEndpointV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, V3, V3, listenerName,
+        endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
+    Listener listener = TestResources.createListener(ads, V3, V3, listenerName,
         listenerPort, routeName);
-    RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
+    RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(
         ImmutableList.of(cluster),
@@ -78,10 +78,10 @@ class V3TestSnapshots {
       String routeName,
       String version) {
 
-    Cluster cluster = TestResources.createClusterV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, rdsTransportVersion, rdsResourceVersion,
+    Cluster cluster = TestResources.createCluster(clusterName, endpointAddress, endpointPort);
+    Listener listener = TestResources.createListener(ads, rdsTransportVersion, rdsResourceVersion,
         listenerName, listenerPort, routeName);
-    RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
+    RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(
         ImmutableList.of(cluster),
