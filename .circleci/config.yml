@@ -8,6 +8,7 @@ jobs:
 
     environment:
       # Customize the JVM maximum heap limit
+      DEPLOY_BRANCH: "true"
       MAVEN_OPTS: -Xms512m -Xmx1024m
 
     steps:
