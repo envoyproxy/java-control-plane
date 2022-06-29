@@ -13,6 +13,7 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
+import io.envoyproxy.envoy.config.core.v3.ControlPlane;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
@@ -20,27 +21,32 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, DiscoveryResponse>  {
+
   public V3DiscoveryServer(ConfigWatcher configWatcher) {
-    this(Collections.emptyList(), configWatcher);
+    this(Collections.emptyList(), configWatcher, UUID.randomUUID().toString());
   }
 
   public V3DiscoveryServer(DiscoveryServerCallbacks callbacks,
-      ConfigWatcher configWatcher) {
-    this(Collections.singletonList(callbacks), configWatcher);
+                           ConfigWatcher configWatcher) {
+    this(Collections.singletonList(callbacks), configWatcher, UUID.randomUUID().toString());
   }
 
   public V3DiscoveryServer(
       List<DiscoveryServerCallbacks> callbacks,
-      ConfigWatcher configWatcher) {
+      ConfigWatcher configWatcher, String identifier) {
     this(callbacks, configWatcher, new DefaultExecutorGroup(),
-        new DefaultProtoResourcesSerializer());
+        new DefaultProtoResourcesSerializer(), identifier);
   }
 
   public V3DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
-      ConfigWatcher configWatcher, ExecutorGroup executorGroup, ProtoResourcesSerializer protoResourcesSerializer) {
-    super(callbacks, configWatcher, executorGroup, protoResourcesSerializer);
+                           ConfigWatcher configWatcher,
+                           ExecutorGroup executorGroup,
+                           ProtoResourcesSerializer protoResourcesSerializer,
+                           String identifier) {
+    super(callbacks, configWatcher, executorGroup, protoResourcesSerializer, identifier);
   }
 
   /**
@@ -154,6 +160,9 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
     return DiscoveryResponse.newBuilder()
         .setNonce(nonce)
         .setVersionInfo(version)
+        .setControlPlane(ControlPlane.newBuilder()
+            .setIdentifier(identifier)
+            .build())
         .addAllResources(resources)
         .setTypeUrl(typeUrl)
         .build();
