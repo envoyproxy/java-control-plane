@@ -19,6 +19,7 @@ import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
+import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -46,6 +47,7 @@ import io.grpc.testing.GrpcServerRule;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -954,6 +956,25 @@ public class V3DiscoveryServerTest {
     assertThat(callbacks.streamOpenCount).hasValue(1);
     assertThat(callbacks.streamRequestCount).hasValue(1);
     assertThat(callbacks.streamResponseCount).hasValue(0);
+  }
+
+  @Test
+  public void testResponseWithControlPlaneIdentifier() {
+    MockDiscoveryServerCallbacks discoveryServerCallbacks = new MockDiscoveryServerCallbacks();
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    V3DiscoveryServer server = new V3DiscoveryServer(Collections.singletonList(discoveryServerCallbacks),
+        configWatcher, new DefaultExecutorGroup(),
+        new DefaultProtoResourcesSerializer(), "control_plane_identifier");
+    DiscoveryResponse discoveryResponse = server.makeResponse("123", Collections.emptyList(), Resources.V3.CLUSTER_TYPE_URL, "abc");
+    assertThat(discoveryResponse.getControlPlane().getIdentifier()).isEqualTo("control_plane_identifier");
+  }
+
+  @Test
+  public void testResponseWithoutControlPlaneIdentifier() {
+    ConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    V3DiscoveryServer server = new V3DiscoveryServer(configWatcher);
+    DiscoveryResponse discoveryResponse = server.makeResponse("123", Collections.emptyList(), Resources.V3.CLUSTER_TYPE_URL, "abc");
+    assertThat(discoveryResponse.getControlPlane().getIdentifier()).isEqualTo("");
   }
 
   private static Table<String, String, Collection<? extends Message>> createResponses() {

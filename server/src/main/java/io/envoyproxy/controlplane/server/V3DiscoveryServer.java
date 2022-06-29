@@ -13,6 +13,7 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
+import io.envoyproxy.envoy.config.core.v3.ControlPlane;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
@@ -41,6 +42,11 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   public V3DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
       ConfigWatcher configWatcher, ExecutorGroup executorGroup, ProtoResourcesSerializer protoResourcesSerializer) {
     super(callbacks, configWatcher, executorGroup, protoResourcesSerializer);
+  }
+
+  public V3DiscoveryServer(List<DiscoveryServerCallbacks> callbacks, ConfigWatcher configWatcher,
+      ExecutorGroup executorGroup, ProtoResourcesSerializer protoResourcesSerializer, String identifier) {
+    super(callbacks, configWatcher, executorGroup, protoResourcesSerializer, identifier);
   }
 
   /**
@@ -151,11 +157,20 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   protected DiscoveryResponse makeResponse(String version, Collection<Any> resources,
       String typeUrl,
       String nonce) {
-    return DiscoveryResponse.newBuilder()
+    DiscoveryResponse.Builder builder = DiscoveryResponse.newBuilder()
         .setNonce(nonce)
         .setVersionInfo(version)
         .addAllResources(resources)
-        .setTypeUrl(typeUrl)
+        .setTypeUrl(typeUrl);
+    if (identifier != null) {
+      builder.setControlPlane(buildControlPlane());
+    }
+    return builder.build();
+  }
+
+  private ControlPlane buildControlPlane() {
+    return ControlPlane.newBuilder()
+        .setIdentifier(identifier)
         .build();
   }
 }

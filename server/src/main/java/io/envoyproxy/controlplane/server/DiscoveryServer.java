@@ -20,6 +20,7 @@ public abstract class DiscoveryServer<T, U> {
   final List<DiscoveryServerCallbacks> callbacks;
   final ConfigWatcher configWatcher;
   final ProtoResourcesSerializer protoResourcesSerializer;
+  final String identifier;
   private final ExecutorGroup executorGroup;
   private final AtomicLong streamCount = new AtomicLong();
 
@@ -30,10 +31,12 @@ public abstract class DiscoveryServer<T, U> {
    * @param configWatcher            source of configuration updates
    * @param protoResourcesSerializer serializer of proto buffer messages
    */
+
   protected DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
-                         ConfigWatcher configWatcher,
-                         ExecutorGroup executorGroup,
-                         ProtoResourcesSerializer protoResourcesSerializer) {
+                            ConfigWatcher configWatcher,
+                            ExecutorGroup executorGroup,
+                            ProtoResourcesSerializer protoResourcesSerializer,
+                            String identifier) {
     Preconditions.checkNotNull(executorGroup, "executorGroup cannot be null");
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
@@ -43,6 +46,14 @@ public abstract class DiscoveryServer<T, U> {
     this.configWatcher = configWatcher;
     this.protoResourcesSerializer = protoResourcesSerializer;
     this.executorGroup = executorGroup;
+    this.identifier = identifier;
+  }
+
+  protected DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
+                         ConfigWatcher configWatcher,
+                         ExecutorGroup executorGroup,
+                         ProtoResourcesSerializer protoResourcesSerializer) {
+    this(callbacks, configWatcher, executorGroup, protoResourcesSerializer, null);
   }
 
   protected abstract XdsRequest wrapXdsRequest(T request);
