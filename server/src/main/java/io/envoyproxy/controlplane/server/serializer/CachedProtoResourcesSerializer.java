@@ -32,7 +32,9 @@ public class CachedProtoResourcesSerializer extends DefaultProtoResourcesSeriali
         }
       };
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Any serialize(Message resource, ApiVersion apiVersion) {
     try {
