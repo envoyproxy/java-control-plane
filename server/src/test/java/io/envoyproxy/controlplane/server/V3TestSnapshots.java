@@ -1,6 +1,5 @@
 package io.envoyproxy.controlplane.server;
 
-import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V2;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 
 import io.envoyproxy.controlplane.cache.TestResources;
@@ -25,10 +24,10 @@ class V3TestSnapshots {
       String version) {
 
     Cluster cluster = TestResources.createCluster(clusterName);
-    ClusterLoadAssignment
-        endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListener(ads, V3, V3, listenerName,
-        listenerPort, routeName);
+    ClusterLoadAssignment endpoint =
+        TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
+    Listener listener =
+        TestResources.createListener(ads, V3, V3, listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(
@@ -40,19 +39,6 @@ class V3TestSnapshots {
         version);
   }
 
-  static Snapshot createSnapshotNoEdsV2Transport(
-      boolean ads,
-      String clusterName,
-      String endpointAddress,
-      int endpointPort,
-      String listenerName,
-      int listenerPort,
-      String routeName,
-      String version) {
-    return createSnapshotNoEds(ads, V2, V2, clusterName, endpointAddress,
-        endpointPort, listenerName, listenerPort, routeName, version);
-  }
-
   static Snapshot createSnapshotNoEds(
       boolean ads,
       String clusterName,
@@ -62,8 +48,17 @@ class V3TestSnapshots {
       int listenerPort,
       String routeName,
       String version) {
-    return createSnapshotNoEds(ads, V3, V3, clusterName, endpointAddress,
-        endpointPort, listenerName, listenerPort, routeName, version);
+    return createSnapshotNoEds(
+        ads,
+        V3,
+        V3,
+        clusterName,
+        endpointAddress,
+        endpointPort,
+        listenerName,
+        listenerPort,
+        routeName,
+        version);
   }
 
   private static Snapshot createSnapshotNoEds(
@@ -79,8 +74,9 @@ class V3TestSnapshots {
       String version) {
 
     Cluster cluster = TestResources.createCluster(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListener(ads, rdsTransportVersion, rdsResourceVersion,
-        listenerName, listenerPort, routeName);
+    Listener listener =
+        TestResources.createListener(
+            ads, rdsTransportVersion, rdsResourceVersion, listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(
@@ -92,5 +88,5 @@ class V3TestSnapshots {
         version);
   }
 
-  private V3TestSnapshots() { }
+  private V3TestSnapshots() {}
 }

@@ -11,7 +11,7 @@ Only v3 resources as well as transport versions are now supported. Migrating
 to v3 is necessary as Envoy dropped v2 support at EOY 2020 (see
 [API_VERSIONING.md](https://github.com/envoyproxy/envoy/blob/4c6206865061591155d18b55972b4d626e1703dd/api/API_VERSIONING.md))
 
-See the (v2-to-v3 migration guide)[V2_TO_V3_GUIDE.md] for an explanation of migration paths.
+See the [v2-to-v3 migration guide](https://github.com/envoyproxy/java-control-plane/blob/main/V2_TO_V3_GUIDE.md) for an explanation of migration paths.
 
 ### Requirements
 

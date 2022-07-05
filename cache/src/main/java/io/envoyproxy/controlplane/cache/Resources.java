@@ -54,23 +54,6 @@ public class Resources {
   static final String FILTER_ENVOY_ROUTER = "envoy.filters.http.router";
   static final String FILTER_HTTP_CONNECTION_MANAGER = "envoy.http_connection_manager";
 
-  public static class V2 {
-    private static final String TYPE_URL_PREFIX = "type.googleapis.com/envoy.api.v2.";
-    public static final String SECRET_TYPE_URL = TYPE_URL_PREFIX + "auth.Secret";
-    public static final String ROUTE_TYPE_URL = TYPE_URL_PREFIX + "RouteConfiguration";
-    public static final String LISTENER_TYPE_URL = TYPE_URL_PREFIX + "Listener";
-    public static final String ENDPOINT_TYPE_URL = TYPE_URL_PREFIX + "ClusterLoadAssignment";
-    public static final String CLUSTER_TYPE_URL = TYPE_URL_PREFIX + "Cluster";
-
-    public static final List<String> TYPE_URLS =
-        ImmutableList.of(
-            CLUSTER_TYPE_URL,
-            ENDPOINT_TYPE_URL,
-            LISTENER_TYPE_URL,
-            ROUTE_TYPE_URL,
-            SECRET_TYPE_URL);
-  }
-
   public static class V3 {
 
     public static final String CLUSTER_TYPE_URL =
@@ -218,7 +201,7 @@ public class Resources {
     return refs.build();
   }
 
-  /** Returns the API version (v2 or v3) for a given type URL. */
+  /** Returns the supported API version for a given type URL. */
   public static ApiVersion getResourceApiVersion(String typeUrl) {
     if (Resources.V3.TYPE_URLS.contains(typeUrl)) {
       return V3;

@@ -9,7 +9,6 @@ jobs:
     environment:
       # Customize the JVM maximum heap limit
       MAVEN_OPTS: -Xms512m -Xmx1024m
-      DEPLOY_BRANCH: "true"
 
     steps:
       - checkout
@@ -59,5 +58,4 @@ jobs:
 
               mvn -B -s .circleci/settings-snapshots.xml deploy
             fi
-            set +x
       - run: bash <(curl -s https://codecov.io/bash)
