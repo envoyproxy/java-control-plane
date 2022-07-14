@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
@@ -21,13 +22,14 @@ public class TestMain {
    * @param arg command-line args
    */
   public static void main(String[] arg) throws IOException, InterruptedException {
-    SimpleCache<String> cache =
-        new SimpleCache<>(node -> GROUP);
+    SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
     cache.setSnapshot(
         GROUP,
         Snapshot.create(
-            ImmutableList.of(TestResources.createCluster("cluster0", "127.0.0.1", 1234)),
+            ImmutableList.of(
+                TestResources.createCluster(
+                    "cluster0", "127.0.0.1", 1234, Cluster.DiscoveryType.STATIC)),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
@@ -57,7 +59,9 @@ public class TestMain {
     cache.setSnapshot(
         GROUP,
         Snapshot.create(
-            ImmutableList.of(TestResources.createCluster("cluster1", "127.0.0.1", 1235)),
+            ImmutableList.of(
+                TestResources.createCluster(
+                    "cluster1", "127.0.0.1", 1235, Cluster.DiscoveryType.STATIC)),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),

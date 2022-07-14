@@ -152,6 +152,15 @@ public class Resources {
     final ImmutableSet.Builder<String> refs = ImmutableSet.builder();
 
     for (Message r : resources) {
+      if (r instanceof ClusterLoadAssignment || r instanceof RouteConfiguration) {
+        // Endpoints have no dependencies.
+
+        // References to clusters in routes (and listeners) are not included in the result, because
+        // the clusters are
+        // currently retrieved in bulk, and not by name.
+
+        continue;
+      }
       if (r instanceof Cluster) {
         Cluster c = (Cluster) r;
 

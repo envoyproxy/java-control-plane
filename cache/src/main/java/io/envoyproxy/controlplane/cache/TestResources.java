@@ -31,8 +31,6 @@ import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.TlsCertificate;
 
-
-
 /**
  * {@code TestResources} provides helper methods for generating resource messages for testing. It is
  * not intended to be used in production code.
@@ -74,11 +72,12 @@ public class TestResources {
    * @param address address to use for the cluster endpoint
    * @param port port to use for the cluster endpoint
    */
-  public static Cluster createCluster(String clusterName, String address, int port) {
+  public static Cluster createCluster(
+      String clusterName, String address, int port, Cluster.DiscoveryType discoveryType) {
     return Cluster.newBuilder()
         .setName(clusterName)
         .setConnectTimeout(Durations.fromSeconds(5))
-        .setType(Cluster.DiscoveryType.STRICT_DNS)
+        .setType(discoveryType)
         .setLoadAssignment(
             ClusterLoadAssignment.newBuilder()
                 .setClusterName(clusterName)

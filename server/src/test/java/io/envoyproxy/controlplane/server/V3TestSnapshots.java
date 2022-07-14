@@ -73,7 +73,9 @@ class V3TestSnapshots {
       String routeName,
       String version) {
 
-    Cluster cluster = TestResources.createCluster(clusterName, endpointAddress, endpointPort);
+    Cluster cluster =
+        TestResources.createCluster(
+            clusterName, endpointAddress, endpointPort, Cluster.DiscoveryType.STRICT_DNS);
     Listener listener =
         TestResources.createListener(
             ads, rdsTransportVersion, rdsResourceVersion, listenerName, listenerPort, routeName);
