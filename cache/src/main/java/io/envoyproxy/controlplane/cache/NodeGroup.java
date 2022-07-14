@@ -1,6 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
-import io.envoyproxy.envoy.api.v2.core.Node;
+import io.envoyproxy.envoy.config.core.v3.Node;
+
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
@@ -15,11 +16,4 @@ public interface NodeGroup<T> {
    * @param node identifier for the envoy instance that is requesting config
    */
   T hash(Node node);
-
-  /**
-   * Returns a consistent identifier of the given {@link io.envoyproxy.envoy.config.core.v3.Node}.
-   *
-   * @param node identifier for the envoy instance that is requesting config
-   */
-  T hash(io.envoyproxy.envoy.config.core.v3.Node node);
 }
