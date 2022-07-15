@@ -84,15 +84,15 @@ public class V3DiscoveryServerTest {
 
   private static final String VERSION = Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
 
-  private static final Cluster CLUSTER = TestResources.createClusterV3(CLUSTER_NAME);
+  private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment
-      ENDPOINT = TestResources.createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT);
+      ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener
-      LISTENER = TestResources.createListenerV3(ADS, V3, V3, LISTENER_NAME, LISTENER_PORT,
+      LISTENER = TestResources.createListener(ADS, V3, V3, LISTENER_NAME, LISTENER_PORT,
       ROUTE_NAME);
-  private static final RouteConfiguration ROUTE = TestResources.createRouteV3(ROUTE_NAME,
+  private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
-  private static final Secret SECRET = TestResources.createSecretV3(SECRET_NAME);
+  private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
   @Rule
   public final GrpcServerRule grpcServer = new GrpcServerRule().directExecutor();
@@ -1067,12 +1067,6 @@ public class V3DiscoveryServerTest {
     }
 
     @Override
-    public void onV2StreamRequest(long streamId,
-        io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-      throw new IllegalStateException("Unexpected v2 request in v3 test");
-    }
-
-    @Override
     public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
       streamRequestCount.getAndIncrement();
 
@@ -1084,12 +1078,6 @@ public class V3DiscoveryServerTest {
             NODE,
             request.getNode()));
       }
-    }
-
-    @Override
-    public void onStreamResponse(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-        io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-      throw new IllegalStateException("Unexpected v2 response in v3 test");
     }
 
     @Override

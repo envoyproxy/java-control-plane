@@ -8,11 +8,9 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
 import com.google.protobuf.util.Durations;
-import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
-import io.envoyproxy.envoy.api.v2.core.Node;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
 import io.envoyproxy.envoy.config.core.v3.ConfigSource;
@@ -42,15 +40,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
   private static final String CONFIG = "envoy/ads.v3.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
-  private static final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
-    @Override public String hash(Node node) {
-      throw new IllegalStateException("Unexpected v2 request in v3 test");
-    }
-
-    @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
-      return GROUP;
-    }
-  });
+  private static final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
   private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(1);
   private static final CountDownLatch onStreamRequestLatch = new CountDownLatch(1);
@@ -66,20 +56,8 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         }
 
         @Override
-        public void onV2StreamRequest(long streamId,
-            io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-          throw new IllegalStateException("Unexpected v2 request in v3 test");
-        }
-
-        @Override
         public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
           onStreamRequestLatch.countDown();
-        }
-
-        @Override
-        public void onStreamResponse(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-            io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-          throw new IllegalStateException("Unexpected v2 response in v3 test");
         }
 
         @Override
@@ -194,10 +172,10 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         .setType(Cluster.DiscoveryType.EDS)
         .build();
     ClusterLoadAssignment
-        endpoint = TestResources.createEndpointV3(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListenerV3(ads, V3, V3, listenerName,
+        endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
+    Listener listener = TestResources.createListener(ads, V3, V3, listenerName,
         listenerPort, routeName);
-    RouteConfiguration route = TestResources.createRouteV3(routeName, clusterName);
+    RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     // here we have new version of resources other than CDS.
     return Snapshot.create(
