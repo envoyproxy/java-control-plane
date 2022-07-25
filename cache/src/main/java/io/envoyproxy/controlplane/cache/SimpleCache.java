@@ -110,11 +110,8 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
     Preconditions.checkNotNull(requestResourceType, "unsupported type URL %s",
         request.getTypeUrl());
     T group;
-    if (request.v3Request() != null) {
-      group = groups.hash(request.v3Request().getNode());
-    } else {
-      group = groups.hash(request.v2Request().getNode());
-    }
+
+    group = groups.hash(request.v3Request().getNode());
 
     // even though we're modifying, we take a readLock to allow multiple watches to be created in parallel since it
     // doesn't conflict
@@ -190,11 +187,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
     Preconditions.checkNotNull(requestResourceType, "unsupported type URL %s",
         request.getTypeUrl());
     T group;
-    if (request.v3Request() != null) {
-      group = groups.hash(request.v3Request().getNode());
-    } else {
-      group = groups.hash(request.v2Request().getNode());
-    }
+    group = groups.hash(request.v3Request().getNode());
 
     // even though we're modifying, we take a readLock to allow multiple watches to be created in parallel since it
     // doesn't conflict

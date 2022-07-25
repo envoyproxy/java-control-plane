@@ -12,10 +12,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(EnvoyContainer.class);
 
-  private static final int DEFAULT_API_VERSION = 3;
   private static final String CONFIG_DEST = "/etc/envoy/envoy.yaml";
-  private static final String HOST_IP_SCRIPT = "docker/host_ip.sh";
-  private static final String HOST_IP_SCRIPT_DEST = "/usr/local/bin/host_ip.sh";
   private static final String LAUNCH_ENVOY_SCRIPT = "envoy/launch_envoy.sh";
   private static final String LAUNCH_ENVOY_SCRIPT_DEST = "/usr/local/bin/launch_envoy.sh";
 
@@ -23,35 +20,29 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
 
   private final String config;
   private final Supplier<Integer> controlPlanePortSupplier;
-  private final int apiVersion;
 
   EnvoyContainer(String config, Supplier<Integer> controlPlanePortSupplier) {
-    this(config, controlPlanePortSupplier, DEFAULT_API_VERSION);
-  }
-
-  EnvoyContainer(String config, Supplier<Integer> controlPlanePortSupplier, int apiVersion) {
     // this version is changed automatically by /tools/update-sha.sh:57
     // if you change it make sure to reflect changes there
-    super("envoyproxy/envoy-alpine-dev:bef18019d8fc33a4ed6aca3679aff2100241ac5e");
+    super("envoyproxy/envoy-dev:c919bdec19d79e97f4f56e4095706f8e6a383f1c");
     this.config = config;
     this.controlPlanePortSupplier = controlPlanePortSupplier;
-    this.apiVersion = apiVersion;
   }
 
   @Override
   protected void configure() {
     super.configure();
 
-    withClasspathResourceMapping(HOST_IP_SCRIPT, HOST_IP_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(LAUNCH_ENVOY_SCRIPT, LAUNCH_ENVOY_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(config, CONFIG_DEST, BindMode.READ_ONLY);
 
+    withExtraHost("host.docker.internal","host-gateway");
+
     withCommand(
-        "/bin/sh", "/usr/local/bin/launch_envoy.sh",
+        "/bin/bash", "/usr/local/bin/launch_envoy.sh",
         Integer.toString(controlPlanePortSupplier.get()),
         CONFIG_DEST,
-        "-l", "debug",
-        "--bootstrap-version", Integer.toString(apiVersion)
+        "-l", "debug"
     );
 
     getExposedPorts().add(0, ADMIN_PORT);
@@ -63,4 +54,5 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
 
     super.containerIsStarting(containerInfo);
   }
+
 }

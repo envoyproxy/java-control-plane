@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.envoyproxy.envoy.api.v2.Cluster;
+
+import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import java.util.Map;
 import java.util.UUID;
+
 import org.junit.Test;
 
 public class SnapshotResourcesTest {

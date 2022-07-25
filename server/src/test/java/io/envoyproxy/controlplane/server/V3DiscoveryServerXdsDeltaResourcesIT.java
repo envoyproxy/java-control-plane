@@ -5,11 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
-import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources.V3;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
 import io.envoyproxy.controlplane.cache.v3.Snapshot;
-import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,17 +37,7 @@ public class V3DiscoveryServerXdsDeltaResourcesIT {
   private static StringBuffer nonce = new StringBuffer();
   private static StringBuffer errorDetails = new StringBuffer();
 
-  private static final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
-    @Override
-    public String hash(Node node) {
-      throw new IllegalStateException("Unexpected v2 request in v3 test");
-    }
-
-    @Override
-    public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
-      return GROUP;
-    }
-  });
+  private static final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
   private static final NettyGrpcServerRule XDS = new NettyGrpcServerRule() {
     @Override

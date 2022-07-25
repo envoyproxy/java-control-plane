@@ -29,7 +29,7 @@ import java.util.Set;
 public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot {
 
   /**
-   * Returns a new {@link io.envoyproxy.controlplane.cache.v2.Snapshot} instance that is versioned uniformly across all
+   * Returns a new {@link io.envoyproxy.controlplane.cache.v3.Snapshot} instance that is versioned uniformly across all
    * resources.
    *
    * @param clusters  the cluster resources in this snapshot
@@ -60,7 +60,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
   }
 
   /**
-   * Returns a new {@link io.envoyproxy.controlplane.cache.v2.Snapshot} instance that has separate versions for each
+   * Returns a new {@link io.envoyproxy.controlplane.cache.v3.Snapshot} instance that has separate versions for each
    * resource type.
    *
    * @param clusters         the cluster resources in this snapshot
@@ -96,6 +96,16 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
             .create(generateSnapshotResourceIterable(routes), routesVersion),
         SnapshotResources.create(generateSnapshotResourceIterable(secrets),
             secretsVersion));
+  }
+
+  /**
+   * Creates an empty snapshot with the given version.
+   *
+   * @param version the version of the snapshot resources
+   */
+  public static Snapshot createEmpty(String version) {
+    return create(Collections.emptySet(), Collections.emptySet(),
+            Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), version);
   }
 
   /**

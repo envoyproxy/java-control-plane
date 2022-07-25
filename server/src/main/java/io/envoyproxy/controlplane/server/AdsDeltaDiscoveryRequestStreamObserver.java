@@ -2,7 +2,6 @@ package io.envoyproxy.controlplane.server;
 
 import static io.envoyproxy.controlplane.server.DiscoveryServer.ANY_TYPE_URL;
 
-import com.google.common.base.Preconditions;
 import io.envoyproxy.controlplane.cache.DeltaWatch;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.grpc.Status;
@@ -38,12 +37,11 @@ public class AdsDeltaDiscoveryRequestStreamObserver<V, X, Y> extends DeltaDiscov
                                          DiscoveryServer<?, ?, V, X, Y> discoveryServer) {
     super(ANY_TYPE_URL, responseObserver, streamId, executor, discoveryServer);
 
-    Preconditions.checkState(Resources.V2.TYPE_URLS.size() == Resources.V3.TYPE_URLS.size());
-    this.watches = new ConcurrentHashMap<>(Resources.V2.TYPE_URLS.size());
-    this.latestVersion = new ConcurrentHashMap<>(Resources.V2.TYPE_URLS.size());
-    this.responses = new ConcurrentHashMap<>(Resources.V2.TYPE_URLS.size());
-    this.trackedResourceMap = new HashMap<>(Resources.V2.TYPE_URLS.size());
-    this.pendingResourceMap = new HashMap<>(Resources.V2.TYPE_URLS.size());
+    this.watches = new ConcurrentHashMap<>(Resources.V3.TYPE_URLS.size());
+    this.latestVersion = new ConcurrentHashMap<>(Resources.V3.TYPE_URLS.size());
+    this.responses = new ConcurrentHashMap<>(Resources.V3.TYPE_URLS.size());
+    this.trackedResourceMap = new HashMap<>(Resources.V3.TYPE_URLS.size());
+    this.pendingResourceMap = new HashMap<>(Resources.V3.TYPE_URLS.size());
   }
 
   @Override
@@ -73,9 +71,9 @@ public class AdsDeltaDiscoveryRequestStreamObserver<V, X, Y> extends DeltaDiscov
   @Override
   void setLatestVersion(String typeUrl, String version) {
     latestVersion.put(typeUrl, version);
-    if (typeUrl.equals(Resources.V2.CLUSTER_TYPE_URL) || typeUrl.equals(Resources.V3.CLUSTER_TYPE_URL)) {
+    if (typeUrl.equals(Resources.V3.CLUSTER_TYPE_URL)) {
       hasClusterChanged = true;
-    } else if (typeUrl.equals(Resources.V2.ENDPOINT_TYPE_URL) || typeUrl.equals(Resources.V3.ENDPOINT_TYPE_URL)) {
+    } else if (typeUrl.equals(Resources.V3.ENDPOINT_TYPE_URL)) {
       hasClusterChanged = false;
     }
   }

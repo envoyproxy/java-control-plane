@@ -1,6 +1,6 @@
 package io.envoyproxy.controlplane.server;
 
-import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,12 +47,6 @@ public class V3DeltaDiscoveryServerCallbacks implements DiscoveryServerCallbacks
   }
 
   @Override
-  public void onV2StreamRequest(long streamId,
-      io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-    throw new IllegalStateException("Unexpected v2 request in v3 test");
-  }
-
-  @Override
   public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
     LOGGER.error("request={}", request);
     throw new IllegalStateException("Unexpected stream request");
@@ -60,13 +54,8 @@ public class V3DeltaDiscoveryServerCallbacks implements DiscoveryServerCallbacks
   }
 
   @Override
-  public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
-    throw new IllegalStateException("Unexpected v2 request in v3 test");
-  }
-
-  @Override
   public void onV3StreamDeltaRequest(long streamId,
-      io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
+      DeltaDiscoveryRequest request) {
     LOGGER.info("Got a v3StreamDeltaRequest");
     errorDetail.append(request.getErrorDetail().getMessage());
     StringBuffer resourceNonce = resourceToNonceMap
@@ -75,13 +64,6 @@ public class V3DeltaDiscoveryServerCallbacks implements DiscoveryServerCallbacks
     resourceToNonceMap.put(request.getTypeUrl(), resourceNonce);
     nonce.append(request.getResponseNonce());
     onStreamRequestLatch.countDown();
-  }
-
-  @Override
-  public void onStreamResponse(long streamId,
-      io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-      io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-    throw new IllegalStateException("Unexpected v2 response in v3 test");
   }
 
   @Override

@@ -22,7 +22,6 @@ import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.WatchCancelledException;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
-import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -33,6 +32,7 @@ import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc;
@@ -86,15 +86,15 @@ public class V3DiscoveryServerTest {
 
   private static final String VERSION = Integer.toString(ThreadLocalRandom.current().nextInt(1, 1000));
 
-  private static final Cluster CLUSTER = TestResources.createClusterV3(CLUSTER_NAME);
+  private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
   private static final ClusterLoadAssignment
-      ENDPOINT = TestResources.createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT);
+      ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener
-      LISTENER = TestResources.createListenerV3(ADS, false, V3, V3, LISTENER_NAME, LISTENER_PORT,
+      LISTENER = TestResources.createListener(ADS, false, V3, V3, LISTENER_NAME, LISTENER_PORT,
       ROUTE_NAME);
-  private static final RouteConfiguration ROUTE = TestResources.createRouteV3(ROUTE_NAME,
+  private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
-  private static final Secret SECRET = TestResources.createSecretV3(SECRET_NAME);
+  private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
   @Rule
   public final GrpcServerRule grpcServer = new GrpcServerRule().directExecutor();
@@ -987,7 +987,7 @@ public class V3DiscoveryServerTest {
     public Watch createWatch(
         boolean ads,
         XdsRequest request,
-        Set<String> knownResources,
+        Set<String> knownResourceNames,
         Consumer<Response> responseConsumer,
         boolean hasClusterChanged) {
 
@@ -1065,12 +1065,6 @@ public class V3DiscoveryServerTest {
     }
 
     @Override
-    public void onV2StreamRequest(long streamId,
-        io.envoyproxy.envoy.api.v2.DiscoveryRequest request) {
-      throw new IllegalStateException("Unexpected v2 request in v3 test");
-    }
-
-    @Override
     public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
       streamRequestCount.getAndIncrement();
 
@@ -1085,20 +1079,9 @@ public class V3DiscoveryServerTest {
     }
 
     @Override
-    public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
-      throw new IllegalStateException("Unexpected v2 request in v3 test");
-    }
-
-    @Override
     public void onV3StreamDeltaRequest(long streamId,
-                                       io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
+                                       DeltaDiscoveryRequest request) {
       throw new IllegalStateException("Unexpected delta request");
-    }
-
-    @Override
-    public void onStreamResponse(long streamId, io.envoyproxy.envoy.api.v2.DiscoveryRequest request,
-        io.envoyproxy.envoy.api.v2.DiscoveryResponse response) {
-      throw new IllegalStateException("Unexpected v2 response in v3 test");
     }
 
     @Override

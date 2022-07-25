@@ -1,0 +1,36 @@
+name: compare-envoy-versions
+on:
+  workflow_call:
+    outputs:
+      target-version:
+        description: "Envoy version we need to update to"
+        value: ${{ jobs.compare-envoy-versions.outputs.target-version }}
+
+jobs:
+  compare-envoy-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      target-version: ${{ steps.compare-latest-to-current-version.outputs.target-version }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fetch latest Envoy version
+        id: latest-envoy-version
+        run: |
+          echo 'ENVOY_LATEST<<EOF' >> $GITHUB_ENV
+          curl -s https://api.github.com/repos/envoyproxy/envoy/releases/latest | jq -r '.tag_name' >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Read current Envoy version
+        id: current-envoy-version
+        run: |
+          echo 'ENVOY_CURRENT<<EOF' >> $GITHUB_ENV
+          cat ./tools/envoy_release >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+      - name: Compare latest to current
+        id: compare-latest-to-current-version
+        run: |
+          if [[ "${{ env.ENVOY_LATEST }}" > "${{ env.ENVOY_CURRENT }}" ]]
+          then
+            echo "::set-output name=target-version::${{ env.ENVOY_LATEST }}"
+          else
+            echo "::set-output name=target-version::noop"
+          fi

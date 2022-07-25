@@ -6,9 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 
-import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.v3.SimpleCache;
-import io.envoyproxy.envoy.api.v2.core.Node;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.concurrent.CountDownLatch;
@@ -24,7 +22,6 @@ public class V3DiscoveryServerXdsIT {
   private static final String CONFIG = "envoy/xds.v3.config.yaml";
   private static final String GROUP = "key";
   private static final Integer LISTENER_PORT = 10000;
-  private static final int API_VERSION = 3;
 
   private static final CountDownLatch onStreamOpenLatch = new CountDownLatch(2);
   private static final CountDownLatch onStreamRequestLatch = new CountDownLatch(2);
@@ -33,15 +30,7 @@ public class V3DiscoveryServerXdsIT {
   private static final NettyGrpcServerRule XDS = new NettyGrpcServerRule() {
     @Override
     protected void configureServerBuilder(NettyServerBuilder builder) {
-      final SimpleCache<String> cache = new SimpleCache<>(new NodeGroup<String>() {
-        @Override public String hash(Node node) {
-          throw new IllegalStateException("Unexpected v2 request in a v3 test");
-        }
-
-        @Override public String hash(io.envoyproxy.envoy.config.core.v3.Node node) {
-          return GROUP;
-        }
-      });
+      final SimpleCache<String> cache = new SimpleCache<>(node -> GROUP);
 
       final DiscoveryServerCallbacks callbacks =
           new V3OnlyDiscoveryServerCallbacks(onStreamOpenLatch, onStreamRequestLatch,
@@ -71,7 +60,7 @@ public class V3DiscoveryServerXdsIT {
 
   private static final Network NETWORK = Network.newNetwork();
 
-  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> XDS.getServer().getPort(), API_VERSION)
+  private static final EnvoyContainer ENVOY = new EnvoyContainer(CONFIG, () -> XDS.getServer().getPort())
       .withExposedPorts(LISTENER_PORT)
       .withNetwork(NETWORK);
 

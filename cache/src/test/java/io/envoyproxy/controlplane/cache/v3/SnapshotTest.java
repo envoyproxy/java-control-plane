@@ -33,14 +33,14 @@ public class SnapshotTest {
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
 
-  private static final Cluster CLUSTER = TestResources.createClusterV3(CLUSTER_NAME);
-  private static final ClusterLoadAssignment ENDPOINT = TestResources
-      .createEndpointV3(CLUSTER_NAME, ENDPOINT_PORT);
-  private static final Listener LISTENER = TestResources.createListenerV3(ADS, false, V3, V3,
-      LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
-  private static final RouteConfiguration ROUTE = TestResources
-      .createRouteV3(ROUTE_NAME, CLUSTER_NAME);
-  private static final Secret SECRET = TestResources.createSecretV3(SECRET_NAME);
+  private static final Cluster CLUSTER = TestResources.createCluster(CLUSTER_NAME);
+  private static final ClusterLoadAssignment
+      ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
+  private static final Listener
+      LISTENER = TestResources.createListener(ADS, false, V3, V3, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+  private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
+      CLUSTER_NAME);
+  private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -230,7 +230,7 @@ public class SnapshotTest {
 
     Snapshot snapshot1 = Snapshot.create(
         ImmutableList.of(CLUSTER),
-        ImmutableList.of(TestResources.createEndpointV3(otherClusterName, ENDPOINT_PORT)),
+        ImmutableList.of(TestResources.createEndpoint(otherClusterName, ENDPOINT_PORT)),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
@@ -249,7 +249,7 @@ public class SnapshotTest {
         ImmutableList.of(CLUSTER),
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
-        ImmutableList.of(TestResources.createRouteV3(otherRouteName, CLUSTER_NAME)),
+        ImmutableList.of(TestResources.createRoute(otherRouteName, CLUSTER_NAME)),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 

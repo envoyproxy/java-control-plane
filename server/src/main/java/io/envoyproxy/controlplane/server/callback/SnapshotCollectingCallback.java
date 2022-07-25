@@ -4,10 +4,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.SnapshotCache;
-import io.envoyproxy.controlplane.cache.v2.Snapshot;
+import io.envoyproxy.controlplane.cache.v3.Snapshot;
 import io.envoyproxy.controlplane.server.DiscoveryServerCallbacks;
-import io.envoyproxy.envoy.api.v2.DeltaDiscoveryRequest;
-import io.envoyproxy.envoy.api.v2.DiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -75,28 +76,14 @@ public class SnapshotCollectingCallback<T, X extends io.envoyproxy.controlplane.
         collectionIntervalMillis, TimeUnit.MILLISECONDS);
   }
 
-  @Override
-  public synchronized void onV2StreamRequest(long streamId, DiscoveryRequest request) {
-    T groupIdentifier = nodeGroup.hash(request.getNode());
-    updateState(streamId, groupIdentifier);
-  }
-
-  @Override
-  public synchronized void onV3StreamRequest(long streamId,
-                                             io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest request) {
-    T groupIdentifier = nodeGroup.hash(request.getNode());
-    updateState(streamId, groupIdentifier);
-  }
-
-  @Override
-  public void onV2StreamDeltaRequest(long streamId, DeltaDiscoveryRequest request) {
+  public synchronized void onV3StreamRequest(long streamId, DiscoveryRequest request) {
     T groupIdentifier = nodeGroup.hash(request.getNode());
     updateState(streamId, groupIdentifier);
   }
 
   @Override
   public void onV3StreamDeltaRequest(long streamId,
-                                     io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest request) {
+                                     DeltaDiscoveryRequest request) {
     T groupIdentifier = nodeGroup.hash(request.getNode());
     updateState(streamId, groupIdentifier);
   }
