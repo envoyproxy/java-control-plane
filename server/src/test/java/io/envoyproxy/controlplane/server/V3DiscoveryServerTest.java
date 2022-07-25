@@ -1019,7 +1019,7 @@ public class V3DiscoveryServerTest {
         watch.cancel();
       } else {
         Set<String> expectedKnown = expectedKnownResources.get(request.getTypeUrl());
-        if (expectedKnown != null && !expectedKnown.equals(knownResources)) {
+        if (expectedKnown != null && !expectedKnown.equals(knownResourceNames)) {
           fail("unexpected known resources after sending all responses");
         }
       }

@@ -71,6 +71,7 @@ public class TestResources {
    * @param clusterName name of the new cluster
    * @param address address to use for the cluster endpoint
    * @param port port to use for the cluster endpoint
+   * @param discoveryType service discovery type
    */
   public static Cluster createCluster(
       String clusterName, String address, int port, Cluster.DiscoveryType discoveryType) {
