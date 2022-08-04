@@ -35,9 +35,6 @@ PGV_GIT_DATE=$(find_date "$CURL_OUTPUT" com_envoyproxy_protoc_gen_validate)
 PROMETHEUS_SHA=$(find_sha "$CURL_OUTPUT" prometheus_metrics_model)
 PROMETHEUS_DATE=$(find_date "$CURL_OUTPUT" prometheus_metrics_model)
 
-OPENCENSUS_SHA=$(find_sha "$CURL_OUTPUT" opencensus_proto)
-OPENCENSUS_DATE=$(find_date "$CURL_OUTPUT" opencensus_proto)
-
 UDPA_SHA=$(find_sha "$CURL_OUTPUT" com_github_cncf_udpa)
 UDPA_DATE=$(find_date "$CURL_OUTPUT" com_github_cncf_udpa)
 
@@ -53,7 +50,6 @@ ENVOY_SHA=\"$ENVOY_VERSION\"
 GOOGLEAPIS_SHA=\"$GOOGLEAPIS_SHA\"  # $GOOGLEAPIS_DATE
 PGV_VERSION=\"$PGV_GIT_SHA\"  # $PGV_GIT_DATE
 PROMETHEUS_SHA=\"$PROMETHEUS_SHA\"  # $PROMETHEUS_DATE
-OPENCENSUS_VERSION=\"$OPENCENSUS_SHA\"  # $OPENCENSUS_DATE
 OPENTELEMETRY_VERSION=\"$OPENTELEMETRY_SHA\"  # $OPENTELEMETRY_DATE
 UDPA_SHA=\"$UDPA_SHA\"  # $UDPA_DATE
 "

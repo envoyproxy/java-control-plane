@@ -28,6 +28,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.opencensus</groupId>
+            <artifactId>opencensus-proto</artifactId>
+            <version>${opencensus.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>${protobuf.version}</version>
