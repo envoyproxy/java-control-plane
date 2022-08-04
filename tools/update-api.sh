@@ -34,13 +34,9 @@ mkdir -p "${protodir}/envoy"
 cp -r envoy-*/api/envoy/* "${protodir}/envoy"
 
 curl -sL https://github.com/googleapis/googleapis/archive/${GOOGLEAPIS_SHA}.tar.gz | tar xz --wildcards '*.proto'
-mkdir -p "${protodir}/google/api"
 mkdir -p "${protodir}/google/api/expr/v1alpha1"
-mkdir -p "${protodir}/google/rpc"
-cp googleapis-*/google/api/annotations.proto googleapis-*/google/api/http.proto "${protodir}/google/api"
 cp googleapis-*/google/api/expr/v1alpha1/syntax.proto "${protodir}/google/api/expr/v1alpha1"
 cp googleapis-*/google/api/expr/v1alpha1/checked.proto "${protodir}/google/api/expr/v1alpha1"
-cp googleapis-*/google/rpc/status.proto "${protodir}/google/rpc"
 
 curl -sL https://github.com/envoyproxy/protoc-gen-validate/archive/v${PGV_VERSION}.tar.gz | tar xz --wildcards '*.proto'
 mkdir -p "${protodir}/validate"

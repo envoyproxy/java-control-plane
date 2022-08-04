@@ -27,6 +27,7 @@
         <auto-value.version>1.6.3</auto-value.version>
         <awaitility.version>3.1.6</awaitility.version>
         <checkstyle.version>8.18</checkstyle.version>
+        <google-common-protos.version>1.18.1</google-common-protos.version>
         <grpc.version>1.22.1</grpc.version>
         <guava.version>26.0-android</guava.version><!-- Keep the Guava version in sync with grpc-java -->
         <junit.version>4.13.1</junit.version>
