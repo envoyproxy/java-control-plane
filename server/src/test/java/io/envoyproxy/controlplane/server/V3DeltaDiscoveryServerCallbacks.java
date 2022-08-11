@@ -21,8 +21,8 @@ public class V3DeltaDiscoveryServerCallbacks implements DiscoveryServerCallbacks
 
 
   /**
-   * Returns an implementation of DiscoveryServerCallbacks that throws if it sees a v2 request, and counts down on
-   * provided latches in response to certain events.
+   * Returns an implementation of DiscoveryServerCallbacks that throws if it sees a nod-delta v3 request,
+   * and counts down on provided latches in response to certain events.
    *
    * @param onStreamOpenLatch    latch to call countDown() on when a v3 stream is opened.
    * @param onStreamRequestLatch latch to call countDown() on when a v3 request is seen.
