@@ -27,10 +27,10 @@
         <auto-value.version>1.6.3</auto-value.version>
         <awaitility.version>3.1.6</awaitility.version>
         <checkstyle.version>8.18</checkstyle.version>
-        <grpc.version>1.22.1</grpc.version>
-        <guava.version>26.0-android</guava.version><!-- Keep the Guava version in sync with grpc-java -->
+        <grpc.version>1.48.1</grpc.version>
+        <guava.version>31.1-android</guava.version><!-- Keep the Guava version in sync with grpc-java -->
         <junit.version>4.13.1</junit.version>
-        <protobuf.version>3.9.1</protobuf.version><!-- Keep the Protobuf version in sync with grpc-java -->
+        <protobuf.version>3.21.5</protobuf.version><!-- Keep the Protobuf version in sync with grpc-java -->
         <rest-assured.version>3.1.0</rest-assured.version>
         <slf4j.version>1.7.26</slf4j.version>
         <testcontainers.version>1.17.1</testcontainers.version>
