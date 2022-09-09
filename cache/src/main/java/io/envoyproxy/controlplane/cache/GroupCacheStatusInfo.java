@@ -8,10 +8,10 @@ import javax.annotation.concurrent.ThreadSafe;
  * {@code GroupCacheStatusInfo} provides an implementation of {@link StatusInfo} for a group of {@link CacheStatusInfo}.
  */
 @ThreadSafe
-class GroupCacheStatusInfo<T> implements StatusInfo<T> {
-  private final Collection<CacheStatusInfo<T>> statuses;
+public class GroupCacheStatusInfo<T> implements StatusInfo<T> {
+  private final Collection<StatusInfo<T>> statuses;
 
-  public GroupCacheStatusInfo(Collection<CacheStatusInfo<T>> statuses) {
+  public GroupCacheStatusInfo(Collection<StatusInfo<T>> statuses) {
     this.statuses = new ArrayList<>(statuses);
   }
 
@@ -20,7 +20,7 @@ class GroupCacheStatusInfo<T> implements StatusInfo<T> {
    */
   @Override
   public long lastWatchRequestTime() {
-    return statuses.stream().mapToLong(CacheStatusInfo::lastWatchRequestTime).max().orElse(0);
+    return statuses.stream().mapToLong(StatusInfo::lastWatchRequestTime).max().orElse(0);
   }
 
   /**
@@ -28,7 +28,7 @@ class GroupCacheStatusInfo<T> implements StatusInfo<T> {
    */
   @Override
   public T nodeGroup() {
-    return statuses.stream().map(CacheStatusInfo::nodeGroup).findFirst().orElse(null);
+    return statuses.stream().map(StatusInfo::nodeGroup).findFirst().orElse(null);
   }
 
   /**
@@ -36,6 +36,7 @@ class GroupCacheStatusInfo<T> implements StatusInfo<T> {
    */
   @Override
   public int numWatches() {
-    return statuses.stream().mapToInt(CacheStatusInfo::numWatches).sum();
+    return statuses.stream().mapToInt(StatusInfo::numWatches).sum();
   }
+
 }

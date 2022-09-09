@@ -16,8 +16,10 @@ public class SnapshotResourcesTest {
   private static final String CLUSTER0_NAME  = "cluster0";
   private static final String CLUSTER1_NAME  = "cluster1";
 
-  private static final Cluster CLUSTER0 = TestResources.createCluster(CLUSTER0_NAME);
-  private static final Cluster CLUSTER1 = TestResources.createCluster(CLUSTER1_NAME);
+  private static final VersionedResource<Cluster> CLUSTER0 = VersionedResource.create(
+      TestResources.createCluster(CLUSTER0_NAME), UUID.randomUUID().toString());
+  private static final VersionedResource<Cluster> CLUSTER1 = VersionedResource.create(
+      TestResources.createCluster(CLUSTER1_NAME), UUID.randomUUID().toString());
 
   @Test
   public void createBuildsResourcesMapWithNameAndPopulatesVersion() {
@@ -26,8 +28,8 @@ public class SnapshotResourcesTest {
     SnapshotResources<Cluster> snapshot = SnapshotResources.create(ImmutableList.of(CLUSTER0, CLUSTER1), version);
 
     assertThat(snapshot.resources())
-        .containsEntry(CLUSTER0_NAME, CLUSTER0)
-        .containsEntry(CLUSTER1_NAME, CLUSTER1)
+        .containsEntry(CLUSTER0_NAME, CLUSTER0.resource())
+        .containsEntry(CLUSTER1_NAME, CLUSTER1.resource())
         .hasSize(2);
 
     assertThat(snapshot.version()).isEqualTo(version);

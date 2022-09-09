@@ -15,6 +15,7 @@ class V3TestSnapshots {
 
   static Snapshot createSnapshot(
       boolean ads,
+      boolean delta,
       String clusterName,
       String endpointAddress,
       int endpointPort,
@@ -24,10 +25,10 @@ class V3TestSnapshots {
       String version) {
 
     Cluster cluster = TestResources.createCluster(clusterName);
-    ClusterLoadAssignment endpoint =
-        TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
-    Listener listener =
-        TestResources.createListener(ads, V3, V3, listenerName, listenerPort, routeName);
+    ClusterLoadAssignment
+        endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
+    Listener listener = TestResources.createListener(ads, delta, V3, V3, listenerName,
+        listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(
@@ -41,6 +42,7 @@ class V3TestSnapshots {
 
   static Snapshot createSnapshotNoEds(
       boolean ads,
+      boolean delta,
       String clusterName,
       String endpointAddress,
       int endpointPort,
@@ -48,21 +50,13 @@ class V3TestSnapshots {
       int listenerPort,
       String routeName,
       String version) {
-    return createSnapshotNoEds(
-        ads,
-        V3,
-        V3,
-        clusterName,
-        endpointAddress,
-        endpointPort,
-        listenerName,
-        listenerPort,
-        routeName,
-        version);
+    return createSnapshotNoEds(ads, delta, V3, V3, clusterName, endpointAddress,
+        endpointPort, listenerName, listenerPort, routeName, version);
   }
 
   private static Snapshot createSnapshotNoEds(
       boolean ads,
+      boolean delta,
       ApiVersion rdsTransportVersion,
       ApiVersion rdsResourceVersion,
       String clusterName,
@@ -73,12 +67,11 @@ class V3TestSnapshots {
       String routeName,
       String version) {
 
-    Cluster cluster =
-        TestResources.createCluster(
-            clusterName, endpointAddress, endpointPort, Cluster.DiscoveryType.STRICT_DNS);
-    Listener listener =
-        TestResources.createListener(
-            ads, rdsTransportVersion, rdsResourceVersion, listenerName, listenerPort, routeName);
+    Cluster cluster = TestResources.createCluster(clusterName, endpointAddress,
+        endpointPort, Cluster.DiscoveryType.STRICT_DNS);
+    Listener listener = TestResources
+        .createListener(ads, delta, rdsTransportVersion, rdsResourceVersion,
+            listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 
     return Snapshot.create(

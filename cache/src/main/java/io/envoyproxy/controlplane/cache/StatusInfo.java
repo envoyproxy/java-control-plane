@@ -6,7 +6,6 @@ import io.envoyproxy.envoy.config.core.v3.Node;
  * {@code StatusInfo} tracks the state for remote envoy nodes.
  */
 public interface StatusInfo<T> {
-
   /**
    * Returns the timestamp of the last discovery watch request.
    */
@@ -22,4 +21,5 @@ public interface StatusInfo<T> {
    * Returns the number of open watches.
    */
   int numWatches();
+
 }

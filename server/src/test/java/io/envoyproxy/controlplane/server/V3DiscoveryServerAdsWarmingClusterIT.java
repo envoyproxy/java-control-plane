@@ -19,6 +19,7 @@ import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.extensions.upstreams.http.v3.HttpProtocolOptions;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.grpc.netty.NettyServerBuilder;
@@ -58,6 +59,12 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         @Override
         public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
           onStreamRequestLatch.countDown();
+        }
+
+        @Override
+        public void onV3StreamDeltaRequest(long streamId,
+                                           DeltaDiscoveryRequest request) {
+          throw new IllegalStateException("Unexpected delta request");
         }
 
         @Override
@@ -131,6 +138,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
     cache.setSnapshot(
         GROUP,
         createSnapshot(true,
+            false,
             "upstream",
             UPSTREAM.ipAddress(),
             EchoContainer.PORT,
@@ -173,7 +181,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         .build();
     ClusterLoadAssignment
         endpoint = TestResources.createEndpoint(clusterName, endpointAddress, endpointPort);
-    Listener listener = TestResources.createListener(ads, V3, V3, listenerName,
+    Listener listener = TestResources.createListener(ads, false, V3, V3, listenerName,
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
 

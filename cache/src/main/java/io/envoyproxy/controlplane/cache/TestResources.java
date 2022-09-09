@@ -71,6 +71,7 @@ public class TestResources {
    * @param clusterName name of the new cluster
    * @param address address to use for the cluster endpoint
    * @param port port to use for the cluster endpoint
+   * @param discoveryType service discovery type
    */
   public static Cluster createCluster(
       String clusterName, String address, int port, Cluster.DiscoveryType discoveryType) {
@@ -148,6 +149,7 @@ public class TestResources {
    */
   public static Listener createListener(
       boolean ads,
+      boolean delta,
       ApiVersion rdsTransportVersion,
       ApiVersion rdsResourceVersion,
       String listenerName,
@@ -165,7 +167,7 @@ public class TestResources {
                 .setApiConfigSource(
                     ApiConfigSource.newBuilder()
                         .setTransportApiVersion(rdsTransportVersion)
-                        .setApiType(ApiConfigSource.ApiType.GRPC)
+                        .setApiType(delta ? ApiConfigSource.ApiType.DELTA_GRPC : ApiConfigSource.ApiType.GRPC)
                         .addGrpcServices(
                             GrpcService.newBuilder()
                                 .setEnvoyGrpc(

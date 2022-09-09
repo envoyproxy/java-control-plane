@@ -18,10 +18,10 @@ public class XdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStr
   private Set<String> ackedResources;
 
   XdsDiscoveryRequestStreamObserver(String defaultTypeUrl,
-      StreamObserver<U> responseObserver,
-      long streamId,
-      Executor executor,
-      DiscoveryServer discoveryServer) {
+                                    StreamObserver<U> responseObserver,
+                                    long streamId,
+                                    Executor executor,
+                                    DiscoveryServer<T, U, ?, ?, ?> discoveryServer) {
     super(defaultTypeUrl, responseObserver, streamId, executor, discoveryServer);
     this.ackedResources = Collections.emptySet();
   }
