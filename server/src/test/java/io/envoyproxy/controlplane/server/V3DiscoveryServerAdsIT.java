@@ -42,6 +42,7 @@ public class V3DiscoveryServerAdsIT {
               GROUP,
               createSnapshot(
                   true,
+                  false,
                   "upstream",
                   UPSTREAM.ipAddress(),
                   EchoContainer.PORT,

@@ -9,22 +9,26 @@ import static io.envoyproxy.envoy.service.secret.v3.SecretDiscoveryServiceGrpc.S
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Any;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
+import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
 import io.envoyproxy.envoy.config.core.v3.ControlPlane;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 import io.grpc.stub.StreamObserver;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, DiscoveryResponse>  {
-
+public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, DiscoveryResponse, DeltaDiscoveryRequest,
+    DeltaDiscoveryResponse, Resource> {
   public V3DiscoveryServer(ConfigWatcher configWatcher) {
     this(Collections.emptyList(), configWatcher, UUID.randomUUID().toString());
   }
@@ -60,6 +64,13 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
 
         return createRequestHandler(responseObserver, true, ANY_TYPE_URL);
       }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaAggregatedResources(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, true, ANY_TYPE_URL);
+      }
     };
   }
 
@@ -73,6 +84,13 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
           StreamObserver<DiscoveryResponse> responseObserver) {
 
         return createRequestHandler(responseObserver, false, Resources.V3.CLUSTER_TYPE_URL);
+      }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaClusters(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.CLUSTER_TYPE_URL);
       }
     };
   }
@@ -88,6 +106,13 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
 
         return createRequestHandler(responseObserver, false, Resources.V3.ENDPOINT_TYPE_URL);
       }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaEndpoints(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.ENDPOINT_TYPE_URL);
+      }
     };
   }
 
@@ -101,6 +126,13 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
           StreamObserver<DiscoveryResponse> responseObserver) {
 
         return createRequestHandler(responseObserver, false, Resources.V3.LISTENER_TYPE_URL);
+      }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaListeners(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.LISTENER_TYPE_URL);
       }
     };
   }
@@ -116,6 +148,13 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
 
         return createRequestHandler(responseObserver, false, Resources.V3.ROUTE_TYPE_URL);
       }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaRoutes(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.ROUTE_TYPE_URL);
+      }
     };
   }
 
@@ -127,7 +166,15 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
       @Override
       public StreamObserver<DiscoveryRequest> streamSecrets(
           StreamObserver<DiscoveryResponse> responseObserver) {
+
         return createRequestHandler(responseObserver, false, Resources.V3.SECRET_TYPE_URL);
+      }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaSecrets(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.SECRET_TYPE_URL);
       }
     };
   }
@@ -138,14 +185,25 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   }
 
   @Override
+  protected DeltaXdsRequest wrapDeltaXdsRequest(DeltaDiscoveryRequest request) {
+    return DeltaXdsRequest.create(request);
+  }
+
+  @Override
   protected void runStreamRequestCallbacks(long streamId, DiscoveryRequest discoveryRequest) {
     callbacks.forEach(
         cb -> cb.onV3StreamRequest(streamId, discoveryRequest));
   }
 
   @Override
+  protected void runStreamDeltaRequestCallbacks(long streamId, DeltaDiscoveryRequest request) {
+    callbacks.forEach(
+        cb -> cb.onV3StreamDeltaRequest(streamId, request));
+  }
+
+  @Override
   protected void runStreamResponseCallbacks(long streamId, XdsRequest request,
-      DiscoveryResponse discoveryResponse) {
+                                            DiscoveryResponse discoveryResponse) {
     Preconditions.checkArgument(request.v3Request() != null);
     callbacks.forEach(
         cb -> cb.onV3StreamResponse(streamId,
@@ -154,9 +212,19 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   }
 
   @Override
+  protected void runStreamDeltaResponseCallbacks(long streamId, DeltaXdsRequest request,
+                                                 DeltaDiscoveryResponse response) {
+    Preconditions.checkArgument(request.v3Request() != null);
+    callbacks.forEach(
+        cb -> cb.onV3StreamDeltaResponse(streamId,
+            request.v3Request(),
+            response));
+  }
+
+  @Override
   protected DiscoveryResponse makeResponse(String version, Collection<Any> resources,
-      String typeUrl,
-      String nonce) {
+                                           String typeUrl,
+                                           String nonce) {
     return DiscoveryResponse.newBuilder()
         .setNonce(nonce)
         .setVersionInfo(version)
@@ -165,6 +233,31 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
             .build())
         .addAllResources(resources)
         .setTypeUrl(typeUrl)
+        .build();
+  }
+
+  @Override
+  public DeltaDiscoveryResponse makeDeltaResponse(String typeUrl, String version, String nonce,
+                                                  List<Resource> resources,
+                                                  List<String> removedResources) {
+    return DeltaDiscoveryResponse.newBuilder()
+        .setTypeUrl(typeUrl)
+        .setSystemVersionInfo(version)
+        .setControlPlane(ControlPlane.newBuilder()
+            .setIdentifier(identifier)
+            .build())
+        .setNonce(nonce)
+        .addAllResources(resources)
+        .addAllRemovedResources(removedResources)
+        .build();
+  }
+
+  @Override
+  protected Resource makeResource(String name, String version, Any resource) {
+    return Resource.newBuilder()
+        .setName(name)
+        .setVersion(version)
+        .setResource(resource)
         .build();
   }
 }

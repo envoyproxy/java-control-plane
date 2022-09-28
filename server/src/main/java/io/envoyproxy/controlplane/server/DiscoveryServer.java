@@ -3,6 +3,7 @@ package io.envoyproxy.controlplane.server;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Any;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
+import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
 import io.grpc.stub.ServerCallStreamObserver;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DiscoveryServer<T, U> {
+public abstract class DiscoveryServer<T, U, V, X, Y> {
   static final String ANY_TYPE_URL = "";
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryServer.class);
   final List<DiscoveryServerCallbacks> callbacks;
@@ -53,12 +54,23 @@ public abstract class DiscoveryServer<T, U> {
 
   protected abstract XdsRequest wrapXdsRequest(T request);
 
+  protected abstract DeltaXdsRequest wrapDeltaXdsRequest(V request);
+
   protected abstract U makeResponse(String version, Collection<Any> resources, String typeUrl,
-      String nonce);
+                                    String nonce);
+
+  public abstract X makeDeltaResponse(String typeUrl, String version, String nonce, List<Y> resources,
+                                      List<String> removedResources);
+
+  protected abstract Y makeResource(String name, String version, Any resource);
 
   protected abstract void runStreamRequestCallbacks(long streamId, T request);
 
+  protected abstract void runStreamDeltaRequestCallbacks(long streamId, V request);
+
   protected abstract void runStreamResponseCallbacks(long streamId, XdsRequest request, U response);
+
+  protected abstract void runStreamDeltaResponseCallbacks(long streamId, DeltaXdsRequest request, X response);
 
   StreamObserver<T> createRequestHandler(
       StreamObserver<U> responseObserver,
@@ -86,6 +98,43 @@ public abstract class DiscoveryServer<T, U> {
           streamId,
           executor,
           this);
+    }
+
+    if (responseObserver instanceof ServerCallStreamObserver) {
+      ((ServerCallStreamObserver) responseObserver).setOnCancelHandler(requestStreamObserver::onCancelled);
+    }
+
+    return requestStreamObserver;
+  }
+
+  StreamObserver<V> createDeltaRequestHandler(
+      StreamObserver<X> responseObserver,
+      boolean ads,
+      String defaultTypeUrl) {
+
+    long streamId = streamCount.getAndIncrement();
+    Executor executor = executorGroup.next();
+
+    LOGGER.debug("[{}] open stream from {}", streamId, defaultTypeUrl);
+
+    callbacks.forEach(cb -> cb.onStreamOpen(streamId, defaultTypeUrl));
+
+    final DeltaDiscoveryRequestStreamObserver<V, X, Y> requestStreamObserver;
+    if (ads) {
+      requestStreamObserver = new AdsDeltaDiscoveryRequestStreamObserver<>(
+          responseObserver,
+          streamId,
+          executor,
+          this
+      );
+    } else {
+      requestStreamObserver = new XdsDeltaDiscoveryRequestStreamObserver<>(
+          defaultTypeUrl,
+          responseObserver,
+          streamId,
+          executor,
+          this
+      );
     }
 
     if (responseObserver instanceof ServerCallStreamObserver) {

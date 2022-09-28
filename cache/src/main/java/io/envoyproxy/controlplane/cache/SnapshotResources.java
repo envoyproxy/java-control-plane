@@ -1,9 +1,7 @@
 package io.envoyproxy.controlplane.cache;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Message;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
@@ -16,40 +14,53 @@ public abstract class SnapshotResources<T extends Message> {
    * Returns a new {@link SnapshotResources} instance.
    *
    * @param resources the resources in this collection
-   * @param version the version associated with the resources in this collection
-   * @param <T> the type of resources in this collection
+   * @param version   the version associated with the resources in this collection
+   * @param <T>       the type of resources in this collection
    */
-  public static <T extends Message> SnapshotResources<T> create(Iterable<T> resources, String version) {
+  public static <T extends Message> SnapshotResources<T> create(
+      Iterable<?> resources,
+      String version) {
+    ResourceMapBuilder<T> resourcesMapBuilder = createResourcesMap(resources);
     return new AutoValue_SnapshotResources<>(
-        resourcesMap(resources),
+        resourcesMapBuilder.getVersionedResources(),
+        resourcesMapBuilder.getResources(),
         (r) -> version
     );
   }
 
+
   /**
    * Returns a new {@link SnapshotResources} instance with versions by resource name.
    *
-   * @param resources the resources in this collection
+   * @param resources       the resources in this collection
    * @param versionResolver version resolver for the resources in this collection
-   * @param <T> the type of resources in this collection
+   * @param <T>             the type of resources in this collection
    */
   public static <T extends Message> SnapshotResources<T> create(
-      Iterable<T> resources,
+      Iterable<VersionedResource<T>> resources,
       ResourceVersionResolver versionResolver) {
+    ResourceMapBuilder<T> resourcesMapBuilder = createResourcesMap(resources);
     return new AutoValue_SnapshotResources<>(
-        resourcesMap(resources),
+        resourcesMapBuilder.getVersionedResources(),
+        resourcesMapBuilder.getResources(),
         versionResolver);
   }
 
-  private static <T extends Message> ImmutableMap<String, T> resourcesMap(Iterable<T> resources) {
+  private static <T extends Message> ResourceMapBuilder<T> createResourcesMap(
+      Iterable<?> resources) {
+
     return StreamSupport.stream(resources.spliterator(), false)
         .collect(
             Collector.of(
-                ImmutableMap.Builder<String, T>::new,
-                (b, e) -> b.put(Resources.getResourceName(e), e),
-                (b1, b2) -> b1.putAll(b2.build()),
-                ImmutableMap.Builder::build));
+                ResourceMapBuilder<T>::new,
+                ResourceMapBuilder::put,
+                ResourceMapBuilder::putAll));
   }
+
+  /**
+   * Returns a map of the resources in this collection, where the key is the name of the resource.
+   */
+  public abstract Map<String, VersionedResource<T>> versionedResources();
 
   /**
    * Returns a map of the resources in this collection, where the key is the name of the resource.

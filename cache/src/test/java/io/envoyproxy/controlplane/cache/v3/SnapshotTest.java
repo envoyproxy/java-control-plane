@@ -10,20 +10,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.TestResources;
+import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.Test;
 
 public class SnapshotTest {
+
   private static final boolean ADS = ThreadLocalRandom.current().nextBoolean();
   private static final String CLUSTER_NAME = "cluster0";
   private static final String LISTENER_NAME = "listener0";
@@ -37,7 +37,7 @@ public class SnapshotTest {
   private static final ClusterLoadAssignment
       ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener
-      LISTENER = TestResources.createListener(ADS, V3, V3, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
+      LISTENER = TestResources.createListener(ADS, false, V3, V3, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
@@ -129,20 +129,20 @@ public class SnapshotTest {
     // due to limitations with
     // generic type constraints.
 
-    assertThat((Map<String, Message>) snapshot.resources(CLUSTER_TYPE_URL))
-        .containsEntry(CLUSTER_NAME, CLUSTER)
+    assertThat(snapshot.resources(CLUSTER_TYPE_URL))
+        .containsEntry(CLUSTER_NAME, VersionedResource.create(CLUSTER))
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(ENDPOINT_TYPE_URL))
-        .containsEntry(CLUSTER_NAME, ENDPOINT)
+    assertThat(snapshot.resources(ENDPOINT_TYPE_URL))
+        .containsEntry(CLUSTER_NAME, VersionedResource.create(ENDPOINT))
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(LISTENER_TYPE_URL))
-        .containsEntry(LISTENER_NAME, LISTENER)
+    assertThat(snapshot.resources(LISTENER_TYPE_URL))
+        .containsEntry(LISTENER_NAME, VersionedResource.create(LISTENER))
         .hasSize(1);
 
-    assertThat((Map<String, Message>) snapshot.resources(ROUTE_TYPE_URL))
-        .containsEntry(ROUTE_NAME, ROUTE)
+    assertThat(snapshot.resources(ROUTE_TYPE_URL))
+        .containsEntry(ROUTE_NAME, VersionedResource.create(ROUTE))
         .hasSize(1);
 
     String nullString = null;

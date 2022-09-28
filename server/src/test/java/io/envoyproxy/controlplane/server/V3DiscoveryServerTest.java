@@ -12,6 +12,9 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
+import io.envoyproxy.controlplane.cache.DeltaResponse;
+import io.envoyproxy.controlplane.cache.DeltaWatch;
+import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.TestResources;
@@ -30,6 +33,7 @@ import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceStub;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc;
@@ -88,7 +92,7 @@ public class V3DiscoveryServerTest {
   private static final ClusterLoadAssignment
       ENDPOINT = TestResources.createEndpoint(CLUSTER_NAME, ENDPOINT_PORT);
   private static final Listener
-      LISTENER = TestResources.createListener(ADS, V3, V3, LISTENER_NAME, LISTENER_PORT,
+      LISTENER = TestResources.createListener(ADS, false, V3, V3, LISTENER_NAME, LISTENER_PORT,
       ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
@@ -999,7 +1003,7 @@ public class V3DiscoveryServerTest {
     public Watch createWatch(
         boolean ads,
         XdsRequest request,
-        Set<String> knownResources,
+        Set<String> knownResourceNames,
         Consumer<Response> responseConsumer,
         boolean hasClusterChanged) {
 
@@ -1031,12 +1035,22 @@ public class V3DiscoveryServerTest {
         watch.cancel();
       } else {
         Set<String> expectedKnown = expectedKnownResources.get(request.getTypeUrl());
-        if (expectedKnown != null && !expectedKnown.equals(knownResources)) {
+        if (expectedKnown != null && !expectedKnown.equals(knownResourceNames)) {
           fail("unexpected known resources after sending all responses");
         }
       }
 
       return watch;
+    }
+
+    @Override
+    public DeltaWatch createDeltaWatch(DeltaXdsRequest request, String requesterVersion,
+                                       Map<String, String> resourceVersions,
+                                       Set<String> pendingResources,
+                                       boolean isWildcard,
+                                       Consumer<DeltaResponse> responseConsumer,
+                                       boolean hasClusterChanged) {
+      throw new IllegalStateException("not implemented");
     }
   }
 
@@ -1078,6 +1092,12 @@ public class V3DiscoveryServerTest {
             NODE,
             request.getNode()));
       }
+    }
+
+    @Override
+    public void onV3StreamDeltaRequest(long streamId,
+                                       DeltaDiscoveryRequest request) {
+      throw new IllegalStateException("Unexpected delta request");
     }
 
     @Override

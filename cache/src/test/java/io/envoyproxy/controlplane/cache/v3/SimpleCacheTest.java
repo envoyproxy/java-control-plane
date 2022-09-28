@@ -11,6 +11,7 @@ import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
 import io.envoyproxy.controlplane.cache.StatusInfo;
+import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
@@ -68,6 +69,23 @@ public class SimpleCacheTest {
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION2);
+
+  private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
+    assertThat(watchAndTracker.watch.isCancelled()).isFalse();
+    Assertions.assertThat(watchAndTracker.tracker.responses).isEmpty();
+  }
+
+  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
+    Assertions.assertThat(watchAndTracker.tracker.responses).isNotEmpty();
+
+    Response response = watchAndTracker.tracker.responses.getFirst();
+
+    assertThat(response).isNotNull();
+    assertThat(response.version()).isEqualTo(snapshot.version(watchAndTracker.watch.request().getTypeUrl()));
+    assertThat(response.resources().toArray(new Message[0]))
+        .containsExactlyElementsOf(snapshot.resources(watchAndTracker.watch.request().getTypeUrl()).values()
+            .stream().map(VersionedResource::resource).collect(Collectors.toList()));
+  }
 
   @Test
   public void invalidNamesListShouldReturnWatcherWithNoResponseInAdsMode() {
@@ -420,7 +438,7 @@ public class SimpleCacheTest {
             .setNode(Node.getDefaultInstance())
             .setTypeUrl(ROUTE_TYPE_URL)
             .addAllResourceNames(Collections.singleton(ROUTE_NAME))
-          .build()),
+            .build()),
         Collections.singleton(ROUTE_NAME),
         responseTracker);
 
@@ -461,7 +479,8 @@ public class SimpleCacheTest {
             .setVersionInfo(SNAPSHOT1.version(CLUSTER_TYPE_URL))
             .build()),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     // clearSnapshot should fail and the snapshot should be left untouched
     assertThat(cache.clearSnapshot(SingleNodeGroup.GROUP)).isFalse();
@@ -487,25 +506,10 @@ public class SimpleCacheTest {
             .setTypeUrl(CLUSTER_TYPE_URL)
             .build()),
         Collections.emptySet(),
-        r -> { });
+        r -> {
+        });
 
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
-  }
-
-  private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
-    assertThat(watchAndTracker.watch.isCancelled()).isFalse();
-    Assertions.assertThat(watchAndTracker.tracker.responses).isEmpty();
-  }
-
-  private static void assertThatWatchReceivesSnapshot(WatchAndTracker watchAndTracker, Snapshot snapshot) {
-    Assertions.assertThat(watchAndTracker.tracker.responses).isNotEmpty();
-
-    Response response = watchAndTracker.tracker.responses.getFirst();
-
-    assertThat(response).isNotNull();
-    assertThat(response.version()).isEqualTo(snapshot.version(watchAndTracker.watch.request().getTypeUrl()));
-    assertThat(response.resources().toArray(new Message[0]))
-        .containsExactlyElementsOf(snapshot.resources(watchAndTracker.watch.request().getTypeUrl()).values());
   }
 
   private static class ResponseTracker implements Consumer<Response> {
@@ -523,7 +527,8 @@ public class SimpleCacheTest {
 
     private final LinkedList<String> responseTypes = new LinkedList<>();
 
-    @Override public void accept(Response response) {
+    @Override
+    public void accept(Response response) {
       responseTypes.add(response.request().getTypeUrl());
     }
   }

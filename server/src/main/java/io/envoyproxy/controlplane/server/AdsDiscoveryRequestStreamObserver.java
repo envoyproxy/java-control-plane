@@ -22,19 +22,16 @@ public class AdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStr
   private final ConcurrentMap<String, Watch> watches;
   private final ConcurrentMap<String, LatestDiscoveryResponse> latestResponse;
   private final ConcurrentMap<String, Set<String>> ackedResources;
-  private final DiscoveryServer<T, U> discoveryServer;
 
-  AdsDiscoveryRequestStreamObserver(
-      StreamObserver<U> responseObserver,
-      long streamId,
-      Executor executor,
-      DiscoveryServer discoveryServer) {
+  AdsDiscoveryRequestStreamObserver(StreamObserver<U> responseObserver,
+                                    long streamId,
+                                    Executor executor,
+                                    DiscoveryServer<T, U, ?, ?, ?> discoveryServer) {
     super(ANY_TYPE_URL, responseObserver, streamId, executor, discoveryServer);
 
     this.watches = new ConcurrentHashMap<>(Resources.V3.TYPE_URLS.size());
     this.latestResponse = new ConcurrentHashMap<>(Resources.V3.TYPE_URLS.size());
     this.ackedResources = new ConcurrentHashMap<>(Resources.V3.TYPE_URLS.size());
-    this.discoveryServer = discoveryServer;
   }
 
   @Override

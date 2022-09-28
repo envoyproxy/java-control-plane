@@ -20,5 +20,5 @@ public interface Cache<T> extends ConfigWatcher {
    *
    * @param group the node group whose status is being fetched
    */
-  StatusInfo statusInfo(T group);
+  StatusInfo<T> statusInfo(T group);
 }
