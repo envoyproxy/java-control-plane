@@ -34,6 +34,7 @@ import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.Cluste
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceStub;
 import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc;
@@ -973,7 +974,13 @@ public class V3DiscoveryServerTest {
         Collections.emptyList(),
         Resources.V3.CLUSTER_TYPE_URL,
         "abc");
+    DeltaDiscoveryResponse deltaDiscoveryResponse = server.makeDeltaResponse(Resources.V3.CLUSTER_TYPE_URL,
+        "123",
+        "abc",
+        Collections.emptyList(),
+        Collections.emptyList());
     assertThat(discoveryResponse.getControlPlane().getIdentifier()).isEqualTo("control_plane_identifier");
+    assertThat(deltaDiscoveryResponse.getControlPlane().getIdentifier()).isEqualTo("control_plane_identifier");
   }
 
   private static Table<String, String, Collection<? extends Message>> createResponses() {
