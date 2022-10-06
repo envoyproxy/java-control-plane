@@ -67,7 +67,7 @@ public abstract class DeltaDiscoveryRequestStreamObserver<V, X, Y> implements St
     try {
       discoveryServer.runStreamDeltaRequestCallbacks(streamId, rawRequest);
     } catch (RequestException e) {
-      closeWithError(e);
+      onError(e);
       return;
     }
 

@@ -5,6 +5,7 @@ import static io.envoyproxy.controlplane.server.DiscoveryServer.ANY_TYPE_URL;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Watch;
 import io.grpc.Status;
+import io.grpc.StatusException;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.Set;
@@ -37,11 +38,8 @@ public class AdsDiscoveryRequestStreamObserver<T, U> extends DiscoveryRequestStr
   @Override
   public void onNext(T request) {
     if (discoveryServer.wrapXdsRequest(request).getTypeUrl().isEmpty()) {
-      closeWithError(
-          Status.UNKNOWN
-              .withDescription(String.format("[%d] type URL is required for ADS", streamId))
-              .asRuntimeException());
-
+      onError(new StatusException(Status.UNKNOWN.withDescription(
+          String.format("[%d] type URL is required for ADS", streamId))));
       return;
     }
 

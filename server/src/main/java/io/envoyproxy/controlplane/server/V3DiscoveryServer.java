@@ -12,6 +12,7 @@ import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.XdsRequest;
+import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
@@ -187,15 +188,17 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   }
 
   @Override
-  protected void runStreamRequestCallbacks(long streamId, DiscoveryRequest discoveryRequest) {
-    callbacks.forEach(
-        cb -> cb.onV3StreamRequest(streamId, discoveryRequest));
+  protected void runStreamRequestCallbacks(long streamId, DiscoveryRequest discoveryRequest) throws RequestException {
+    for (DiscoveryServerCallbacks cb : callbacks) {
+      cb.onV3StreamRequest(streamId, discoveryRequest);
+    }
   }
 
   @Override
-  protected void runStreamDeltaRequestCallbacks(long streamId, DeltaDiscoveryRequest request) {
-    callbacks.forEach(
-        cb -> cb.onV3StreamDeltaRequest(streamId, request));
+  protected void runStreamDeltaRequestCallbacks(long streamId, DeltaDiscoveryRequest request) throws RequestException {
+    for (DiscoveryServerCallbacks cb : callbacks) {
+      cb.onV3StreamDeltaRequest(streamId, request);
+    }
   }
 
   @Override
