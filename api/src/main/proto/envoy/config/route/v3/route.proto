@@ -36,12 +36,12 @@ message RouteConfiguration {
   // An array of virtual hosts that make up the route table.
   repeated VirtualHost virtual_hosts = 2;
 
-  // An array of virtual hosts will be dynamically loaded via the VHDS API.
-  // Both *virtual_hosts* and *vhds* fields will be used when present. *virtual_hosts* can be used
-  // for a base routing table or for infrequently changing virtual hosts. *vhds* is used for
-  // on-demand discovery of virtual hosts. The contents of these two fields will be merged to
-  // generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
-  // taking precedence.
+//   An array of virtual hosts will be dynamically loaded via the VHDS API.
+//   Both *virtual_hosts* and *vhds* fields will be used when present. *virtual_hosts* can be used
+//   for a base routing table or for infrequently changing virtual hosts. *vhds* is used for
+//   on-demand discovery of virtual hosts. The contents of these two fields will be merged to
+//   generate a routing table for a given RouteConfiguration, with *vhds* derived configuration
+//   taking precedence.
   Vhds vhds = 9;
 
   // Optionally specifies a list of HTTP headers that the connection manager

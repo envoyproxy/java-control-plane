@@ -7,13 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
-import io.envoyproxy.controlplane.cache.NodeGroup;
-import io.envoyproxy.controlplane.cache.Resources;
-import io.envoyproxy.controlplane.cache.Response;
-import io.envoyproxy.controlplane.cache.StatusInfo;
-import io.envoyproxy.controlplane.cache.VersionedResource;
-import io.envoyproxy.controlplane.cache.Watch;
-import io.envoyproxy.controlplane.cache.XdsRequest;
+import io.envoyproxy.controlplane.cache.*;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -49,7 +43,9 @@ public class SimpleCacheTest {
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(TestResources.createVirtualHost("v1", 1, "a")),
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+
       VERSION1);
 
   private static final Snapshot SNAPSHOT2 = Snapshot.create(
@@ -57,6 +53,8 @@ public class SimpleCacheTest {
       ImmutableList.of(ClusterLoadAssignment.getDefaultInstance()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(TestResources.createVirtualHost("v1", 1, "a")),
+
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION2);
 
@@ -67,6 +65,8 @@ public class SimpleCacheTest {
           ClusterLoadAssignment.newBuilder().setClusterName(SECONDARY_CLUSTER_NAME).build()),
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
+      ImmutableList.of(TestResources.createVirtualHost("v1", 1, "a")),
+
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
       VERSION2);
 
@@ -429,7 +429,7 @@ public class SimpleCacheTest {
   public void watchIsLeftOpenIfNotRespondedImmediately() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
     cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
-        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(),VERSION1));
 
     ResponseTracker responseTracker = new ResponseTracker();
     Watch watch = cache.createWatch(
