@@ -2,6 +2,8 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.auto.value.AutoValue;
 import com.google.protobuf.Message;
+import com.google.protobuf.MessageLiteOrBuilder;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
