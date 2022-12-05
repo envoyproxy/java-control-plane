@@ -2,7 +2,6 @@ package io.envoyproxy.controlplane.cache;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V3;
-import static io.envoyproxy.controlplane.cache.Resources.ResourceType.*;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -78,16 +77,21 @@ public class Resources {
   }
 
   public static final List<ResourceType> RESOURCE_TYPES_IN_ORDER =
-      ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, VIRTUAL_HOST, SECRET);
+      ImmutableList.of(ResourceType.CLUSTER,
+          ResourceType.ENDPOINT,
+          ResourceType.LISTENER,
+          ResourceType.ROUTE,
+          ResourceType.VIRTUAL_HOST,
+          ResourceType.SECRET);
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
-          .put(Resources.V3.CLUSTER_TYPE_URL, CLUSTER)
-          .put(Resources.V3.ENDPOINT_TYPE_URL, ENDPOINT)
-          .put(Resources.V3.LISTENER_TYPE_URL, LISTENER)
-          .put(Resources.V3.ROUTE_TYPE_URL, ROUTE)
-          .put(Resources.V3.VIRTUAL_HOST_TYPE_URL, VIRTUAL_HOST)
-          .put(Resources.V3.SECRET_TYPE_URL, SECRET)
+          .put(Resources.V3.CLUSTER_TYPE_URL, ResourceType.CLUSTER)
+          .put(Resources.V3.ENDPOINT_TYPE_URL, ResourceType.ENDPOINT)
+          .put(Resources.V3.LISTENER_TYPE_URL, ResourceType.LISTENER)
+          .put(Resources.V3.ROUTE_TYPE_URL, ResourceType.ROUTE)
+          .put(Resources.V3.VIRTUAL_HOST_TYPE_URL, ResourceType.VIRTUAL_HOST)
+          .put(Resources.V3.SECRET_TYPE_URL, ResourceType.SECRET)
           .build();
 
   public static final Map<String, Class<? extends Message>> RESOURCE_TYPE_BY_URL =

@@ -32,6 +32,7 @@ public class TestMain {
                     "cluster0", "127.0.0.1", 1234, Cluster.DiscoveryType.STATIC)),
             ImmutableList.of(),
             ImmutableList.of(),
+            ImmutableList.of(TestResources.createVhdsRoute("name1")),
             ImmutableList.of(),
             ImmutableList.of(),
             "1"));
@@ -39,12 +40,13 @@ public class TestMain {
 
     V3DiscoveryServer v3DiscoveryServer = new V3DiscoveryServer(cache);
 
-    ServerBuilder builder =
+    ServerBuilder<NettyServerBuilder> builder =
         NettyServerBuilder.forPort(12345)
             .addService(v3DiscoveryServer.getAggregatedDiscoveryServiceImpl())
             .addService(v3DiscoveryServer.getClusterDiscoveryServiceImpl())
             .addService(v3DiscoveryServer.getEndpointDiscoveryServiceImpl())
             .addService(v3DiscoveryServer.getListenerDiscoveryServiceImpl())
+            .addService(v3DiscoveryServer.getVirtualHostDiscoveryServiceImpl())
             .addService(v3DiscoveryServer.getRouteDiscoveryServiceImpl());
 
     Server server = builder.build();
@@ -65,6 +67,7 @@ public class TestMain {
                     "cluster1", "127.0.0.1", 1235, Cluster.DiscoveryType.STATIC)),
             ImmutableList.of(),
             ImmutableList.of(),
+            ImmutableList.of(TestResources.createVhdsRoute("name2")),
             ImmutableList.of(),
             ImmutableList.of(),
             "1"));

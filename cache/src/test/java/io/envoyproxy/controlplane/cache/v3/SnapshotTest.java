@@ -1,6 +1,9 @@
 package io.envoyproxy.controlplane.cache.v3;
 
-import static io.envoyproxy.controlplane.cache.Resources.V3.*;
+import static io.envoyproxy.controlplane.cache.Resources.V3.CLUSTER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.LISTENER_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.ROUTE_TYPE_URL;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +43,7 @@ public class SnapshotTest {
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
-  private static final VirtualHost VIRTUAL_HOST = TestResources.createVirtualHost(VIRTUAL_HOST_NAME, 1, "a");
+  private static final VirtualHost VIRTUAL_HOST = TestResources.createVirtualHost(VIRTUAL_HOST_NAME, "a");
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {

@@ -1,5 +1,12 @@
 package io.envoyproxy.controlplane.server;
 
+import static io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.route.v3.VirtualHostDiscoveryServiceGrpc.VirtualHostDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.secret.v3.SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase;
+
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Any;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
@@ -8,20 +15,19 @@ import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.serializer.DefaultProtoResourcesSerializer;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
+
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc.ClusterDiscoveryServiceImplBase;
-import io.envoyproxy.envoy.service.discovery.v3.*;
+
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
+import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 import io.grpc.stub.StreamObserver;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import static io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
-import static io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase;
-import static io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
-import static io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
-import static io.envoyproxy.envoy.service.secret.v3.SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase;
-import static io.envoyproxy.envoy.service.route.v3.VirtualHostDiscoveryServiceGrpc.VirtualHostDiscoveryServiceImplBase;
 
 public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, DiscoveryResponse, DeltaDiscoveryRequest,
     DeltaDiscoveryResponse, Resource> {
@@ -165,6 +171,11 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
         return createRequestHandler(responseObserver, false, Resources.V3.SECRET_TYPE_URL);
       }
 
+      /**
+       * Returns delta Secrets.
+       *
+       * @param responseObserver Stream observer
+       */
       @Override
       public StreamObserver<DeltaDiscoveryRequest> deltaSecrets(
           StreamObserver<DeltaDiscoveryResponse> responseObserver) {
@@ -174,6 +185,9 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
     };
   }
 
+  /**
+   * Returns VHDS implementation that uses this server.
+   */
   public VirtualHostDiscoveryServiceImplBase getVirtualHostDiscoveryServiceImpl() {
     return new VirtualHostDiscoveryServiceImplBase() {
 

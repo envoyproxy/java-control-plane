@@ -15,12 +15,13 @@ import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import io.envoyproxy.envoy.config.route.v3.VirtualHost;
+
 
 /**
  * {@code Snapshot} is a data class that contains an internally consistent snapshot of v3 xDS resources. Snapshots
@@ -50,7 +51,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
 
       String version) {
 
-    return new AutoValue_Snapshot(
+    return new io.envoyproxy.controlplane.cache.v3.AutoValue_Snapshot(
         SnapshotResources
             .create(generateSnapshotResourceIterable(clusters), version),
         SnapshotResources
@@ -93,7 +94,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       String secretsVersion) {
 
     // TODO(snowp): add a builder alternative
-    return new AutoValue_Snapshot(
+    return new io.envoyproxy.controlplane.cache.v3.AutoValue_Snapshot(
         SnapshotResources.create(generateSnapshotResourceIterable(clusters),
             clustersVersion),
         SnapshotResources.create(generateSnapshotResourceIterable(endpoints),
@@ -142,6 +143,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns all secret items in the SDS payload.
    */
   public abstract SnapshotResources<Secret> secrets();
+
   public abstract SnapshotResources<VirtualHost> virtualHosts();
 
   /**
