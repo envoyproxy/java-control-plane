@@ -17,6 +17,7 @@ import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -29,6 +30,7 @@ public class SnapshotTest {
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
   private static final String SECRET_NAME = "secret0";
+  private static final String VIRTUAL_HOST_NAME = "virtual0";
 
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
@@ -41,6 +43,7 @@ public class SnapshotTest {
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
+  private static final VirtualHost VIRTUAL_HOST = TestResources.createVirtualHost(VIRTUAL_HOST_NAME, "a");
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -51,6 +54,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         version);
 
@@ -83,13 +87,16 @@ public class SnapshotTest {
     final String listenersVersion = UUID.randomUUID().toString();
     final String routesVersion = UUID.randomUUID().toString();
     final String secretsVersion = UUID.randomUUID().toString();
+    final String virtualHostsVersion = UUID.randomUUID().toString();
 
     Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER), clustersVersion,
         ImmutableList.of(ENDPOINT), endpointsVersion,
         ImmutableList.of(LISTENER), listenersVersion,
         ImmutableList.of(ROUTE), routesVersion,
+        ImmutableList.of(VIRTUAL_HOST), virtualHostsVersion,
         ImmutableList.of(SECRET), secretsVersion
+
     );
 
     assertThat(snapshot.clusters().resources())
@@ -122,6 +129,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -160,6 +168,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         version);
 
@@ -182,6 +191,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -195,6 +205,7 @@ public class SnapshotTest {
         ImmutableList.of(),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -211,6 +222,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -233,6 +245,7 @@ public class SnapshotTest {
         ImmutableList.of(TestResources.createEndpoint(otherClusterName, ENDPOINT_PORT)),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -250,6 +263,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(TestResources.createRoute(otherRouteName, CLUSTER_NAME)),
+        ImmutableList.of(VIRTUAL_HOST),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 

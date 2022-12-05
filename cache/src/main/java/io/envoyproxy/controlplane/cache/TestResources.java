@@ -24,12 +24,14 @@ import io.envoyproxy.envoy.config.route.v3.Route;
 import io.envoyproxy.envoy.config.route.v3.RouteAction;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.config.route.v3.RouteMatch;
+import io.envoyproxy.envoy.config.route.v3.Vhds;
 import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.extensions.filters.http.router.v3.Router;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.CodecType;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.TlsCertificate;
+
 
 /**
  * {@code TestResources} provides helper methods for generating resource messages for testing. It is
@@ -213,6 +215,34 @@ public class TestResources {
    * Returns a new test v3 route.
    *
    * @param routeName name of the new route
+   */
+  public static RouteConfiguration createVhdsRoute(String routeName) {
+
+    ApiVersion adsTransportVersion = ApiVersion.V3;
+
+    ConfigSource edsSource =
+        ConfigSource.newBuilder()
+            .setResourceApiVersion(ApiVersion.V3)
+            .setApiConfigSource(
+                ApiConfigSource.newBuilder()
+                    .setTransportApiVersion(adsTransportVersion)
+                    .setApiType(ApiConfigSource.ApiType.DELTA_GRPC)
+                    .addGrpcServices(
+                        GrpcService.newBuilder()
+                            .setEnvoyGrpc(
+                                GrpcService.EnvoyGrpc.newBuilder()
+                                    .setClusterName(XDS_CLUSTER))))
+            .build();
+
+    return RouteConfiguration.newBuilder()
+        .setVhds(Vhds.newBuilder().setConfigSource(edsSource).build())
+        .setName(routeName).build();
+  }
+
+  /**
+   * Returns a new test v3 route.
+   *
+   * @param routeName name of the new route
    * @param clusterName name of the test cluster that is associated with this route
    */
   public static RouteConfiguration createRoute(String routeName, String clusterName) {
@@ -226,6 +256,22 @@ public class TestResources {
                     Route.newBuilder()
                         .setMatch(RouteMatch.newBuilder().setPrefix("/"))
                         .setRoute(RouteAction.newBuilder().setCluster(clusterName))))
+        .build();
+  }
+
+  /**
+   * Returns a new Virtual Host.
+   *
+   * @param name Virtual host name
+   * @param domain domain name
+   */
+  public static VirtualHost createVirtualHost(String name, String domain) {
+    return VirtualHost.newBuilder()
+        .setName(name)
+        .addDomains(domain)
+        .addRoutes(
+            Route.newBuilder()
+                .setMatch(RouteMatch.newBuilder().setPrefix("/")))
         .build();
   }
 

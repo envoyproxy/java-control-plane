@@ -36,7 +36,8 @@ public class XdsDeltaDiscoveryRequestStreamObserver<V, X, Y> extends DeltaDiscov
     this.pendingResources = new HashSet<>();
     Resources.ResourceType resourceType = Resources.TYPE_URLS_TO_RESOURCE_TYPE.get(defaultTypeUrl);
     this.isWildcard = Resources.ResourceType.CLUSTER.equals(resourceType)
-        || Resources.ResourceType.LISTENER.equals(resourceType);
+        || Resources.ResourceType.LISTENER.equals(resourceType)
+        || Resources.ResourceType.VIRTUAL_HOST.equals(resourceType);
     this.responses = new ConcurrentHashMap<>();
   }
 

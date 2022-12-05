@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.auto.value.AutoValue;
 import com.google.protobuf.Message;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
@@ -21,7 +22,7 @@ public abstract class SnapshotResources<T extends Message> {
       Iterable<?> resources,
       String version) {
     ResourceMapBuilder<T> resourcesMapBuilder = createResourcesMap(resources);
-    return new AutoValue_SnapshotResources<>(
+    return new io.envoyproxy.controlplane.cache.AutoValue_SnapshotResources<>(
         resourcesMapBuilder.getVersionedResources(),
         resourcesMapBuilder.getResources(),
         (r) -> version
@@ -40,7 +41,7 @@ public abstract class SnapshotResources<T extends Message> {
       Iterable<VersionedResource<T>> resources,
       ResourceVersionResolver versionResolver) {
     ResourceMapBuilder<T> resourcesMapBuilder = createResourcesMap(resources);
-    return new AutoValue_SnapshotResources<>(
+    return new io.envoyproxy.controlplane.cache.AutoValue_SnapshotResources<>(
         resourcesMapBuilder.getVersionedResources(),
         resourcesMapBuilder.getResources(),
         versionResolver);
