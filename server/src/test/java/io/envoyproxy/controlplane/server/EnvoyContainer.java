@@ -24,7 +24,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
   EnvoyContainer(String config, Supplier<Integer> controlPlanePortSupplier) {
     // this version is changed automatically by /tools/update-sha.sh:57
     // if you change it make sure to reflect changes there
-    super("envoyproxy/envoy-dev:15baf56003f33a07e0ab44f82f75a660040db438");
+    super("envoyproxy/envoy-dev:69958e4fe32da561376d8b1d367b5e6942dfba24");
     this.config = config;
     this.controlPlanePortSupplier = controlPlanePortSupplier;
   }
