@@ -18,4 +18,5 @@
 * Michał Gawarzyński ([gawarz](https://github.com/gawarz)) (michal.gawarzynski@allegro.pl)
 * Erica Manno ([rulex123](https://github.com/rulex123)) (ericam@spotify.com)
 * Erik Lindblad ([onemanbucket](https://github.com/onemanbucket)) (erili@spotify.com)
+* Kateryna Nezdolii ([nezdolik](https://github.com/nezdolik)) (nezdolik@spotify.com)
 
