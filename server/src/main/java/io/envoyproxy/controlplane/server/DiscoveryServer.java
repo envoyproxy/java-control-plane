@@ -5,7 +5,9 @@ import com.google.protobuf.Any;
 import io.envoyproxy.controlplane.cache.ConfigWatcher;
 import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.XdsRequest;
+import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.controlplane.server.serializer.ProtoResourcesSerializer;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import java.util.Collection;
@@ -58,9 +60,9 @@ public abstract class DiscoveryServer<T, U, V, X, Y> {
 
   protected abstract Y makeResource(String name, String version, Any resource);
 
-  protected abstract void runStreamRequestCallbacks(long streamId, T request);
+  protected abstract void runStreamRequestCallbacks(long streamId, T request) throws RequestException;
 
-  protected abstract void runStreamDeltaRequestCallbacks(long streamId, V request);
+  protected abstract void runStreamDeltaRequestCallbacks(long streamId, V request) throws RequestException;
 
   protected abstract void runStreamResponseCallbacks(long streamId, XdsRequest request, U response);
 
@@ -76,7 +78,14 @@ public abstract class DiscoveryServer<T, U, V, X, Y> {
 
     LOGGER.debug("[{}] open stream from {}", streamId, defaultTypeUrl);
 
-    callbacks.forEach(cb -> cb.onStreamOpen(streamId, defaultTypeUrl));
+    for (DiscoveryServerCallbacks cb : callbacks) {
+      try {
+        cb.onStreamOpen(streamId, defaultTypeUrl);
+      } catch (RequestException e) {
+        callbacks.forEach(cb2 -> cb2.onStreamCloseWithError(streamId, defaultTypeUrl, e));
+        throw new StatusRuntimeException(e.getStatus());
+      }
+    }
 
     final DiscoveryRequestStreamObserver<T, U> requestStreamObserver;
     if (ads) {
@@ -111,7 +120,14 @@ public abstract class DiscoveryServer<T, U, V, X, Y> {
 
     LOGGER.debug("[{}] open stream from {}", streamId, defaultTypeUrl);
 
-    callbacks.forEach(cb -> cb.onStreamOpen(streamId, defaultTypeUrl));
+    for (DiscoveryServerCallbacks cb : callbacks) {
+      try {
+        cb.onStreamOpen(streamId, defaultTypeUrl);
+      } catch (RequestException e) {
+        callbacks.forEach(cb2 -> cb2.onStreamCloseWithError(streamId, defaultTypeUrl, e));
+        throw new StatusRuntimeException(e.getStatus());
+      }
+    }
 
     final DeltaDiscoveryRequestStreamObserver<V, X, Y> requestStreamObserver;
     if (ads) {

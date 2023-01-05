@@ -445,7 +445,7 @@ public class V3DiscoveryServerTest {
       }
 
       @Override
-      public void onStreamOpen(long streamId, String typeUrl) {
+      public void onStreamOpen(long streamId, String typeUrl) throws RequestException {
         super.onStreamOpen(streamId, typeUrl);
 
         if (!typeUrl.equals(DiscoveryServer.ANY_TYPE_URL)) {
@@ -459,7 +459,8 @@ public class V3DiscoveryServerTest {
       }
 
       @Override
-      public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
+      public void onV3StreamRequest(long streamId, DiscoveryRequest request)
+          throws RequestException {
         super.onV3StreamRequest(streamId, request);
         streamRequestLatch.get().countDown();
       }
@@ -620,7 +621,7 @@ public class V3DiscoveryServerTest {
       }
 
       @Override
-      public void onStreamOpen(long streamId, String typeUrl) {
+      public void onStreamOpen(long streamId, String typeUrl) throws RequestException {
         super.onStreamOpen(streamId, typeUrl);
 
         if (!Resources.V3.TYPE_URLS.contains(typeUrl)) {
@@ -634,7 +635,8 @@ public class V3DiscoveryServerTest {
       }
 
       @Override
-      public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
+      public void onV3StreamRequest(long streamId, DiscoveryRequest request)
+          throws RequestException {
         super.onV3StreamRequest(streamId, request);
 
         streamRequestLatches.get(request.getTypeUrl()).countDown();
@@ -880,7 +882,7 @@ public class V3DiscoveryServerTest {
   public void testCallbacksRequestException() throws InterruptedException {
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
-      public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
+      public void onV3StreamRequest(long streamId, DiscoveryRequest request) throws RequestException {
         super.onV3StreamRequest(streamId, request);
         throw new RequestException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
       }
@@ -912,9 +914,51 @@ public class V3DiscoveryServerTest {
     });
 
     assertThat(callbacks.streamCloseCount).hasValue(0);
-    assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(1);
     assertThat(callbacks.streamOpenCount).hasValue(1);
     assertThat(callbacks.streamRequestCount).hasValue(1);
+    assertThat(callbacks.streamResponseCount).hasValue(0);
+  }
+
+  @Test
+  public void testCallbacksOpenException() throws InterruptedException {
+    MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
+      @Override
+      public void onStreamOpen(long streamId, String typeUrl) throws RequestException {
+        super.onStreamOpen(streamId, typeUrl);
+        throw new RequestException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
+      }
+    };
+
+    MockConfigWatcher configWatcher = new MockConfigWatcher(false, createResponses());
+    V3DiscoveryServer server = new V3DiscoveryServer(callbacks, configWatcher);
+
+    grpcServer.getServiceRegistry().addService(server.getAggregatedDiscoveryServiceImpl());
+    AggregatedDiscoveryServiceStub stub = AggregatedDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+
+    MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
+    StreamObserver<DiscoveryRequest> requestObserver = stub.streamAggregatedResources(responseObserver);
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.V3.LISTENER_TYPE_URL)
+        .build());
+
+    if (!responseObserver.errorLatch.await(1, TimeUnit.SECONDS) || responseObserver.completed.get()) {
+      fail(format("failed to error before timeout, completed = %b", responseObserver.completed.get()));
+    }
+
+    callbacks.assertThatNoErrors();
+
+    assertThat(responseObserver.errorException).isInstanceOfSatisfying(StatusRuntimeException.class, ex -> {
+      assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
+      assertThat(ex.getStatus().getDescription()).isEqualTo("request not valid");
+    });
+
+    assertThat(callbacks.streamCloseCount).hasValue(0);
+    assertThat(callbacks.streamCloseWithErrorCount).hasValue(1);
+    assertThat(callbacks.streamOpenCount).hasValue(1);
+    assertThat(callbacks.streamRequestCount).hasValue(0);
     assertThat(callbacks.streamResponseCount).hasValue(0);
   }
 
@@ -922,7 +966,7 @@ public class V3DiscoveryServerTest {
   public void testCallbacksOtherStatusException() throws InterruptedException {
     MockDiscoveryServerCallbacks callbacks = new MockDiscoveryServerCallbacks() {
       @Override
-      public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
+      public void onV3StreamRequest(long streamId, DiscoveryRequest request) throws RequestException {
         super.onV3StreamRequest(streamId, request);
         throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("request not valid"));
       }
@@ -1060,12 +1104,12 @@ public class V3DiscoveryServerTest {
     }
 
     @Override
-    public void onStreamOpen(long streamId, String typeUrl) {
+    public void onStreamOpen(long streamId, String typeUrl) throws RequestException {
       streamOpenCount.getAndIncrement();
     }
 
     @Override
-    public void onV3StreamRequest(long streamId, DiscoveryRequest request) {
+    public void onV3StreamRequest(long streamId, DiscoveryRequest request) throws RequestException {
       streamRequestCount.getAndIncrement();
 
       if (request == null) {
@@ -1080,7 +1124,7 @@ public class V3DiscoveryServerTest {
 
     @Override
     public void onV3StreamDeltaRequest(long streamId,
-                                       DeltaDiscoveryRequest request) {
+                                       DeltaDiscoveryRequest request) throws RequestException {
       throw new IllegalStateException("Unexpected delta request");
     }
 

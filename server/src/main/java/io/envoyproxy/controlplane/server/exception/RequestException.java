@@ -2,11 +2,10 @@ package io.envoyproxy.controlplane.server.exception;
 
 import io.grpc.Metadata;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
-
+import io.grpc.StatusException;
 import javax.annotation.Nullable;
 
-public class RequestException extends StatusRuntimeException {
+public class RequestException extends StatusException {
   public RequestException(Status status) {
     this(status, null);
   }

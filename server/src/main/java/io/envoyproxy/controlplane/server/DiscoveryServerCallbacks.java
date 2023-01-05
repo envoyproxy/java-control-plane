@@ -41,8 +41,10 @@ public interface DiscoveryServerCallbacks {
    *
    * @param streamId an ID for this stream that is only unique to this discovery server instance
    * @param typeUrl the resource type of the stream, or {@link DiscoveryServer#ANY_TYPE_URL} for ADS
+   * @throws RequestException can throw {@link RequestException} with custom status. That status
+   *     will be returned to the client and the stream will be closed with error.
    */
-  default void onStreamOpen(long streamId, String typeUrl) {
+  default void onStreamOpen(long streamId, String typeUrl) throws RequestException {
 
   }
 
@@ -53,10 +55,10 @@ public interface DiscoveryServerCallbacks {
    * @param streamId an ID for this stream that is only unique to this discovery server instance
    * @param request the discovery request sent by the envoy instance
    *
-   * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
+   * @throws RequestException can throw {@link RequestException} with custom status. That status
    *     will be returned to the client and the stream will be closed with error.
    */
-  void onV3StreamRequest(long streamId, DiscoveryRequest request);
+  void onV3StreamRequest(long streamId, DiscoveryRequest request) throws RequestException;
 
   /**
    * {@code onV3StreamRequest} is called for each {@link io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest}
@@ -65,11 +67,11 @@ public interface DiscoveryServerCallbacks {
    * @param streamId an ID for this stream that is only unique to this discovery server instance
    * @param request the discovery request sent by the envoy instance
    *
-   * @throws RequestException optionally can throw {@link RequestException} with custom status. That status
+   * @throws RequestException can throw {@link RequestException} with custom status. That status
    *     will be returned to the client and the stream will be closed with error.
    */
   void onV3StreamDeltaRequest(long streamId,
-                              DeltaDiscoveryRequest request);
+                              DeltaDiscoveryRequest request) throws RequestException;
 
   /**
    * {@code onV3StreamResponse} is called just before each

@@ -70,7 +70,7 @@ public abstract class DiscoveryRequestStreamObserver<T, U> implements StreamObse
     try {
       discoveryServer.runStreamRequestCallbacks(streamId, rawRequest);
     } catch (RequestException e) {
-      closeWithError(e);
+      onError(e);
       return;
     }
 
