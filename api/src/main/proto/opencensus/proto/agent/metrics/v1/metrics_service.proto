@@ -26,7 +26,7 @@ option java_outer_classname = "MetricsServiceProto";
 
 option go_package = "github.com/census-instrumentation/opencensus-proto/gen-go/agent/metrics/v1";
 
-option ruby_package = "OpenCensus.Proto.Agent.Metrics.V1";
+option ruby_package = "OpenCensus::Proto::Agent::Metrics::V1";
 
 // Service that can be used to push metrics between one Application
 // instrumented with OpenCensus and an agent, or between an agent and a
