@@ -22,6 +22,7 @@ function find_envoy_sha_from_tag() {
   curl -s https://api.github.com/repos/envoyproxy/envoy/tags | grep "$TAG" -A 4 | grep sha | awk '{print $2}' | tr -d '"' | tr -d ","
 }
 
+CURRENT_ENVOY_RELEASE=$(cat envoy_release)
 ENVOY_VERSION=$(find_envoy_sha_from_tag "$1")
 
 CURL_OUTPUT=$(curl -s "https://raw.githubusercontent.com/envoyproxy/envoy/$ENVOY_VERSION/api/bazel/repository_locations.bzl")
@@ -59,7 +60,7 @@ UDPA_SHA=\"$UDPA_SHA\"  # $UDPA_DATE
 "
 
 # replace version in EnvoyContainer.java
-sed -i 's/\(envoy-dev:\).*\(\");\)/\1'"$ENVOY_VERSION"'\2/g'  ../server/src/test/java/io/envoyproxy/controlplane/server/EnvoyContainer.java
+sed -i "s/$CURRENT_ENVOY_RELEASE/$1/g" ../server/src/test/java/io/envoyproxy/controlplane/server/EnvoyContainer.java
 
 # update tag in envoy_release file
 echo $1 > envoy_release
