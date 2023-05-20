@@ -31,7 +31,7 @@ option java_multiple_files = true;
 option java_package = "io.opencensus.proto.metrics.v1";
 option java_outer_classname = "MetricsProto";
 
-option ruby_package = "OpenCensus.Proto.Metrics.V1";
+option ruby_package = "OpenCensus::Proto::Metrics::V1";
 
 // Defines a Metric which has one or more timeseries.
 message Metric {

@@ -30,7 +30,7 @@ option java_outer_classname = "TraceServiceProto";
 
 option go_package = "github.com/census-instrumentation/opencensus-proto/gen-go/agent/trace/v1";
 
-option ruby_package = "OpenCensus.Proto.Agent.Trace.V1";
+option ruby_package = "OpenCensus::Proto::Agent::Trace::V1";
 
 // Service that can be used to push spans and configs between one Application
 // instrumented with OpenCensus and an agent, or between an agent and a
