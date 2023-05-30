@@ -45,7 +45,7 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
         "-l", "debug"
     );
 
-    getExposedPorts().add(0, ADMIN_PORT);
+    addExposedPort(ADMIN_PORT);
   }
 
   @Override

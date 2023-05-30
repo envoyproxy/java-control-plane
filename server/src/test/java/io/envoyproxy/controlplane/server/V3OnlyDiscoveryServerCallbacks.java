@@ -6,7 +6,7 @@ import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import java.util.concurrent.CountDownLatch;
 
-public class V3OnlyDiscoveryServerCallbacks implements DiscoveryServerCallbacks  {
+public class V3OnlyDiscoveryServerCallbacks implements DiscoveryServerCallbacks {
   private final CountDownLatch onStreamOpenLatch;
   private final CountDownLatch onStreamRequestLatch;
   private final CountDownLatch onStreamResponseLatch;

@@ -19,7 +19,7 @@ class EchoContainer extends GenericContainer<EchoContainer> {
   protected void configure() {
     super.configure();
 
-    getExposedPorts().add(0, PORT);
+    addExposedPort(PORT);
 
     withCommand(String.format("-text=%s", response));
 

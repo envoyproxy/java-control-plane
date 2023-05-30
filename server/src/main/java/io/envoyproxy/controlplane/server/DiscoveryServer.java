@@ -25,6 +25,7 @@ public abstract class DiscoveryServer<T, U, V, X, Y> {
   final ProtoResourcesSerializer protoResourcesSerializer;
   private final ExecutorGroup executorGroup;
   private final AtomicLong streamCount = new AtomicLong();
+  private final StartupConfigs startupConfigs;
 
   /**
    * Creates the server.
@@ -32,20 +33,24 @@ public abstract class DiscoveryServer<T, U, V, X, Y> {
    * @param callbacks                server callbacks
    * @param configWatcher            source of configuration updates
    * @param protoResourcesSerializer serializer of proto buffer messages
+   * @param startupConfigs           server start up configs
    */
   protected DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
                             ConfigWatcher configWatcher,
                             ExecutorGroup executorGroup,
-                            ProtoResourcesSerializer protoResourcesSerializer) {
+                            ProtoResourcesSerializer protoResourcesSerializer,
+                            StartupConfigs startupConfigs) {
     Preconditions.checkNotNull(executorGroup, "executorGroup cannot be null");
     Preconditions.checkNotNull(callbacks, "callbacks cannot be null");
     Preconditions.checkNotNull(configWatcher, "configWatcher cannot be null");
     Preconditions.checkNotNull(protoResourcesSerializer, "protoResourcesSerializer cannot be null");
+    Preconditions.checkNotNull(protoResourcesSerializer, "startupConfigs cannot be null");
 
     this.callbacks = callbacks;
     this.configWatcher = configWatcher;
     this.protoResourcesSerializer = protoResourcesSerializer;
     this.executorGroup = executorGroup;
+    this.startupConfigs = startupConfigs;
   }
 
   protected abstract XdsRequest wrapXdsRequest(T request);
@@ -67,6 +72,10 @@ public abstract class DiscoveryServer<T, U, V, X, Y> {
   protected abstract void runStreamResponseCallbacks(long streamId, XdsRequest request, U response);
 
   protected abstract void runStreamDeltaResponseCallbacks(long streamId, DeltaXdsRequest request, X response);
+
+  public StartupConfigs startupConfigs() {
+    return startupConfigs;
+  }
 
   StreamObserver<T> createRequestHandler(
       StreamObserver<U> responseObserver,

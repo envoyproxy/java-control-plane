@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
 import io.envoyproxy.controlplane.cache.Resources.ResourceType;
-
+import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -26,16 +27,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.GuardedBy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * {@code SimpleCache} provides a default implementation of {@link SnapshotCache}. It maintains a single versioned
  * {@link Snapshot} per node group. For the protocol to work correctly in ADS mode, EDS/RDS requests are responded to
- * only when all resources in the snapshot xDS response are named as part of the request. It is expected that the CDS
- * response names all EDS clusters, and the LDS response names all RDS routes in a snapshot, to ensure that Envoy makes
- * the request for all EDS clusters or RDS routes eventually.
+ * only when all resources in the snapshot xDS response are named as part of the request by default. It is expected
+ * that the CDS response names all EDS clusters, and the LDS response names all RDS routes in a snapshot, to ensure
+ * that Envoy makes the request for all EDS clusters or RDS routes eventually.
+ *<p/>
+ * when allowIncompleteEdsUpdate is true, we will send EDS response even if some clusters names are missing in the
+ * snapshot in ADS.
  *
  * <p>The snapshot can be partial, e.g. only include RDS or EDS resources.
  */
@@ -93,7 +96,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       XdsRequest request,
       Set<String> knownResourceNames,
       Consumer<Response> responseConsumer) {
-    return createWatch(ads, request, knownResourceNames, responseConsumer, false);
+    return createWatch(ads, request, knownResourceNames, responseConsumer, false, false);
   }
 
   /**
@@ -105,7 +108,8 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       XdsRequest request,
       Set<String> knownResourceNames,
       Consumer<Response> responseConsumer,
-      boolean hasClusterChanged) {
+      boolean hasClusterChanged,
+      boolean allowDefaultEmptyEdsUpdate) {
     ResourceType requestResourceType = request.getResourceType();
     Preconditions.checkNotNull(requestResourceType, "unsupported type URL %s",
         request.getTypeUrl());
@@ -124,7 +128,7 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
       String version = snapshot == null ? "" : snapshot.version(requestResourceType,
           request.getResourceNamesList());
 
-      Watch watch = new Watch(ads, request, responseConsumer);
+      Watch watch = new Watch(ads, allowDefaultEmptyEdsUpdate, request, responseConsumer);
 
       if (snapshot != null) {
         Set<String> requestedResources = ImmutableSet.copyOf(request.getResourceNamesList());
@@ -440,13 +444,14 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
   }
 
   private Response createResponse(XdsRequest request, Map<String, VersionedResource<?>> resources,
-                                  String version) {
+                                  String version, boolean allowDefaultResource) {
     Collection<? extends Message> filtered = request.getResourceNamesList().isEmpty()
         ? resources.values().stream()
         .map(VersionedResource::resource)
         .collect(Collectors.toList())
         : request.getResourceNamesList().stream()
-        .map(resources::get)
+        .map(name -> resources.getOrDefault(name,
+            allowDefaultResource ? defaultResource(name, request.getResourceType()) : null))
         .filter(Objects::nonNull)
         .map(VersionedResource::resource)
         .collect(Collectors.toList());
@@ -458,21 +463,35 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
     Map<String, VersionedResource<?>> snapshotResources =
         snapshot.versionedResources(watch.request().getResourceType());
 
+    boolean allowDefaultResource = false;
     if (!watch.request().getResourceNamesList().isEmpty() && watch.ads()) {
       Collection<String> missingNames = watch.request().getResourceNamesList().stream()
           .filter(name -> !snapshotResources.containsKey(name))
           .collect(Collectors.toList());
 
       if (!missingNames.isEmpty()) {
-        LOGGER.info(
-            "not responding in ADS mode for {} from node {} at version {} for request [{}] since [{}] not in snapshot",
-            watch.request().getTypeUrl(),
-            group,
-            snapshot.version(watch.request().getResourceType(), watch.request().getResourceNamesList()),
-            String.join(", ", watch.request().getResourceNamesList()),
-            String.join(", ", missingNames));
+        if (watch.allowDefaultEmptyEdsUpdate() && watch.request().getResourceType().equals(ResourceType.ENDPOINT)) {
+          allowDefaultResource = true;
+          LOGGER.info(
+              "responding with empty ClusterLoadAssignments in ADS mode for {} from node {} at version {} "
+                  + "for request [{}] and [{}] not in snapshot",
+              watch.request().getTypeUrl(),
+              group,
+              snapshot.version(watch.request().getResourceType(), watch.request().getResourceNamesList()),
+              String.join(", ", watch.request().getResourceNamesList()),
+              String.join(", ", missingNames));
+        } else {
+          LOGGER.info(
+              "not responding in ADS mode for {} from node {} at version {} for request [{}] since [{}] not in"
+                  + " snapshot",
+              watch.request().getTypeUrl(),
+              group,
+              snapshot.version(watch.request().getResourceType(), watch.request().getResourceNamesList()),
+              String.join(", ", watch.request().getResourceNamesList()),
+              String.join(", ", missingNames));
 
-        return false;
+          return false;
+        }
       }
     }
 
@@ -488,7 +507,8 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
     Response response = createResponse(
         watch.request(),
         snapshotResources,
-        version);
+        version,
+        allowDefaultResource);
 
     try {
       watch.respond(response);
@@ -571,6 +591,14 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
     }
 
     return ResponseState.CANCELLED;
+  }
+
+  private VersionedResource<?> defaultResource(String resourceName, ResourceType resourceType) {
+    if (resourceType.equals(ResourceType.ENDPOINT)) {
+      return VersionedResource.create(ClusterLoadAssignment.newBuilder().setClusterName(resourceName).build(),
+          UUID.randomUUID().toString());
+    }
+    throw new IllegalArgumentException(String.format("no default resource for resourceType: [%s]", resourceType));
   }
 
   private enum ResponseState {

@@ -87,7 +87,8 @@ public abstract class DiscoveryRequestStreamObserver<T, U> implements StreamObse
           request,
           ackedResources(requestTypeUrl),
           r -> executor.execute(() -> send(r, requestTypeUrl)),
-          hasClusterChanged
+          hasClusterChanged,
+          discoveryServer.startupConfigs().allowDefaultEmptyEdsUpdate()
       ));
     }
   }

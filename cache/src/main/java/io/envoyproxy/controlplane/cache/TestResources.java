@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.Any;
+import com.google.protobuf.Duration;
 import com.google.protobuf.util.Durations;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Address;
@@ -50,6 +51,7 @@ public class TestResources {
   public static Cluster createCluster(String clusterName) {
     ConfigSource edsSource =
         ConfigSource.newBuilder()
+            .setInitialFetchTimeout(Duration.newBuilder().setSeconds(0))
             .setAds(AggregatedConfigSource.getDefaultInstance())
             .setResourceApiVersion(ApiVersion.V3)
             .build();

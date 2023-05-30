@@ -8,17 +8,22 @@ import java.util.function.Consumer;
  */
 public class Watch extends AbstractWatch<XdsRequest, Response> {
   private final boolean ads;
+  private final boolean allowDefaultEmptyEdsUpdate;
 
   /**
    * Construct a watch.
    *
-   * @param ads              is this watch for an ADS request?
-   * @param request          the original request for the watch
-   * @param responseConsumer handler for outgoing response messages
+   * @param ads                      is this watch for an ADS request?
+   * @param allowDefaultEmptyEdsUpdate whether allow responding incomplete EDS response
+   *                                 when some clusters are missing in the snapshot
+   * @param request                  the original request for the watch
+   * @param responseConsumer         handler for outgoing response messages
    */
-  public Watch(boolean ads, XdsRequest request, Consumer<Response> responseConsumer) {
+  public Watch(boolean ads, boolean allowDefaultEmptyEdsUpdate,
+      XdsRequest request, Consumer<Response> responseConsumer) {
     super(request, responseConsumer);
     this.ads = ads;
+    this.allowDefaultEmptyEdsUpdate = allowDefaultEmptyEdsUpdate;
   }
 
   /**
@@ -28,4 +33,7 @@ public class Watch extends AbstractWatch<XdsRequest, Response> {
     return ads;
   }
 
+  public boolean allowDefaultEmptyEdsUpdate() {
+    return allowDefaultEmptyEdsUpdate;
+  }
 }
