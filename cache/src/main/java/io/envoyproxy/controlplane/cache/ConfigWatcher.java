@@ -22,13 +22,18 @@ public interface ConfigWatcher {
    * @param responseConsumer   the response handler, used to process outgoing response messages
    * @param hasClusterChanged  Indicates if EDS should be sent immediately, even if version has not been changed.
    *                           Supported in ADS mode.
+   *
+   * @param allowDefaultEmptyEdsUpdate indicates if default empty EDS response should be sent when some clusters
+   *                                   in request are missing in snapshot. Supported in ADS mode.
+   *
    */
   Watch createWatch(
       boolean ads,
       XdsRequest request,
       Set<String> knownResourceNames,
       Consumer<Response> responseConsumer,
-      boolean hasClusterChanged);
+      boolean hasClusterChanged,
+      boolean allowDefaultEmptyEdsUpdate);
 
   /**
    * Returns a new configuration resource {@link Watch} for the given discovery request.

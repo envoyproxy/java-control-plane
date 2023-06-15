@@ -19,9 +19,10 @@ public class WatchTest {
   @Test
   public void adsReturnsGivenValue() {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
+    final boolean allowDefaultEmptyEdsUpdate = ThreadLocalRandom.current().nextBoolean();
 
-    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
-        r -> { });
+    Watch watch = new Watch(ads, allowDefaultEmptyEdsUpdate,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
 
     assertThat(watch.ads()).isEqualTo(ads);
   }
@@ -29,8 +30,10 @@ public class WatchTest {
   @Test
   public void isCancelledTrueAfterCancel() {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
+    final boolean allowDefaultEmptyEdsUpdate = ThreadLocalRandom.current().nextBoolean();
 
-    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
+    Watch watch = new Watch(ads, allowDefaultEmptyEdsUpdate,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
 
     assertThat(watch.isCancelled()).isFalse();
 
@@ -42,10 +45,12 @@ public class WatchTest {
   @Test
   public void cancelWithStopCallsStop() {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
+    final boolean allowDefaultEmptyEdsUpdate = ThreadLocalRandom.current().nextBoolean();
 
     AtomicInteger stopCount = new AtomicInteger();
 
-    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
+    Watch watch = new Watch(ads, allowDefaultEmptyEdsUpdate,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), r -> { });
 
     watch.setStop(stopCount::getAndIncrement);
 
@@ -62,6 +67,7 @@ public class WatchTest {
   @Test
   public void responseHandlerExecutedForResponsesUntilCancelled() {
     final boolean ads = ThreadLocalRandom.current().nextBoolean();
+    final boolean allowDefaultEmptyEdsUpdate = ThreadLocalRandom.current().nextBoolean();
 
     Response response1 = Response.create(
         XdsRequest.create(DiscoveryRequest.getDefaultInstance()),
@@ -80,7 +86,8 @@ public class WatchTest {
 
     List<Response> responses = new LinkedList<>();
 
-    Watch watch = new Watch(ads, XdsRequest.create(DiscoveryRequest.getDefaultInstance()), responses::add);
+    Watch watch = new Watch(ads, allowDefaultEmptyEdsUpdate,
+        XdsRequest.create(DiscoveryRequest.getDefaultInstance()), responses::add);
 
     try {
       watch.respond(response1);

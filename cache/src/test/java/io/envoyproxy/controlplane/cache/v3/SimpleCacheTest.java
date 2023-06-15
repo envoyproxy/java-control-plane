@@ -109,6 +109,36 @@ public class SimpleCacheTest {
   }
 
   @Test
+  public void invalidNamesListShouldReturnWatcherWithDefaultEmptyResponseInAdsModeAndAllowDefaultEmptyEdsUpdate() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    ResponseTracker responseTracker = new ResponseTracker();
+
+    Watch watch = cache.createWatch(
+        true,
+        XdsRequest.create(DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setTypeUrl(Resources.V3.ENDPOINT_TYPE_URL)
+            .addResourceNames("none")
+            .build()),
+        Collections.emptySet(),
+        responseTracker,
+        false,
+        true);
+
+    assertThat(watch.isCancelled()).isFalse();
+    Assertions.assertThat(responseTracker.responses).isNotEmpty();
+    Assertions.assertThat(responseTracker.responses.size()).isEqualTo(1);
+    Message[] messages = responseTracker.responses.getFirst().resources().toArray(new Message[0]);
+
+    assertThat(messages).containsExactlyElementsOf(
+        Collections.singleton(ClusterLoadAssignment.newBuilder()
+            .setClusterName("none").build()));
+  }
+
+  @Test
   public void invalidNamesListShouldReturnWatcherWithResponseInXdsMode() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
@@ -175,7 +205,8 @@ public class SimpleCacheTest {
             .build()),
         Sets.newHashSet(""),
         responseTracker,
-        true);
+        true,
+        false);
 
     assertThat(watch.request().getTypeUrl()).isEqualTo(Resources.V3.ENDPOINT_TYPE_URL);
     assertThat(watch.request().getResourceNamesList()).containsExactlyElementsOf(

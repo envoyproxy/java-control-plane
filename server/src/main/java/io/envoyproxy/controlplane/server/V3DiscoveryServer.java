@@ -45,10 +45,18 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
   }
 
   public V3DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
+      ConfigWatcher configWatcher,
+      ExecutorGroup executorGroup,
+      ProtoResourcesSerializer protoResourcesSerializer) {
+    this(callbacks, configWatcher, executorGroup, protoResourcesSerializer, new DefaultStartupConfigs());
+  }
+
+  public V3DiscoveryServer(List<DiscoveryServerCallbacks> callbacks,
                            ConfigWatcher configWatcher,
                            ExecutorGroup executorGroup,
-                           ProtoResourcesSerializer protoResourcesSerializer) {
-    super(callbacks, configWatcher, executorGroup, protoResourcesSerializer);
+                           ProtoResourcesSerializer protoResourcesSerializer,
+                           StartupConfigs startupConfigs) {
+    super(callbacks, configWatcher, executorGroup, protoResourcesSerializer, startupConfigs);
   }
 
   /**
