@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * only when all resources in the snapshot xDS response are named as part of the request by default. It is expected
  * that the CDS response names all EDS clusters, and the LDS response names all RDS routes in a snapshot, to ensure
  * that Envoy makes the request for all EDS clusters or RDS routes eventually.
- *<p/>
+
  * when allowIncompleteEdsUpdate is true, we will send EDS response even if some clusters names are missing in the
  * snapshot in ADS.
  *
