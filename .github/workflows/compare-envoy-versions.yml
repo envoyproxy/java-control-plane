@@ -12,7 +12,7 @@ jobs:
     outputs:
       target-version: ${{ steps.compare-latest-to-current-version.outputs.target-version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2.7.0
       - name: Fetch latest Envoy version
         id: latest-envoy-version
         run: |
