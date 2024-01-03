@@ -6,6 +6,9 @@ on:
         description: "Envoy version we need to update to"
         value: ${{ jobs.compare-envoy-versions.outputs.target-version }}
 
+permissions:
+  contents: read
+
 jobs:
   compare-envoy-versions:
     runs-on: ubuntu-latest

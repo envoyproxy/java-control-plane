@@ -1,4 +1,8 @@
 name: update-protobuf
+
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
@@ -9,6 +13,9 @@ on:
 
 jobs:
   update-protobuf:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5  # v2.7.0
