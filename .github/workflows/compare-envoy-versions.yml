@@ -1,4 +1,8 @@
 name: compare-envoy-versions
+
+permissions:
+  contents: read
+
 on:
   workflow_call:
     outputs:
