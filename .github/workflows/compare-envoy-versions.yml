@@ -1,13 +1,14 @@
 name: compare-envoy-versions
+
+permissions:
+  contents: read
+
 on:
   workflow_call:
     outputs:
       target-version:
         description: "Envoy version we need to update to"
         value: ${{ jobs.compare-envoy-versions.outputs.target-version }}
-
-permissions:
-  contents: read
 
 jobs:
   compare-envoy-versions:
