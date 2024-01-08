@@ -13,6 +13,8 @@ jobs:
     uses: ./.github/workflows/compare-envoy-versions.yml
 
   call-update-protobuf:
+    permissions:
+      pull-requests: write
     needs: call-compare-envoy-versions-workflow
     if: ${{ needs.call-compare-envoy-versions-workflow.outputs.target-version != 'noop' }}
     uses: ./.github/workflows/update-protobuf.yml
