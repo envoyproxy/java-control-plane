@@ -1,6 +1,6 @@
 # java-control-plane
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/envoyproxy/java-control-plane/badge)](https://api.securityscorecards.dev/projects/github.com/envoyproxy/java-control-plane)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/envoyproxy/java-control-plane/badge)](https://securityscorecards.dev/viewer/?uri=github.com/envoyproxy/java-control-plane)
 [![CircleCI](https://circleci.com/gh/envoyproxy/java-control-plane.svg?style=svg)](https://circleci.com/gh/envoyproxy/java-control-plane) [![codecov](https://codecov.io/gh/envoyproxy/java-control-plane/branch/main/graph/badge.svg)](https://codecov.io/gh/envoyproxy/java-control-plane) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.envoyproxy.controlplane/java-control-plane/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.envoyproxy.controlplane/java-control-plane)
 
 This repository contains a Java-based implementation of an API server that implements the discovery service APIs defined
