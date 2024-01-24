@@ -35,4 +35,8 @@ option (xds.annotations.v3.file_status).work_in_progress = true;
 message CelMatcher {
   // Either parsed or checked representation of the CEL program.
   type.v3.CelExpression expr_match = 1 [(validate.rules).message = {required: true}];
+
+  // Free-form description of the CEL AST, e.g. the original expression text, to be
+  // used for debugging assistance.
+  string description = 2;
 }
