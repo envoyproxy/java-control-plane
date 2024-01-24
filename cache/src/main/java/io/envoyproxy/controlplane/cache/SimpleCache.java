@@ -526,10 +526,12 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
   }
 
   private List<String> findRemovedResources(DeltaWatch watch, Map<String, VersionedResource<?>> snapshotResources) {
-    // remove resources for which client has a tracked version but do not exist in snapshot
-    return watch.trackedResources().keySet()
-        .stream()
+    // remove resources for which client has a tracked version or is pending a response but do not exist in snapshot.
+    // when reconnections occur, envoy sends a request subscribing to resources that could no longer exist,
+    // and we don't count those as trackedResources because we don't know the version.
+    return Stream.concat(watch.trackedResources().keySet().stream(), watch.pendingResources().stream())
         .filter(s -> !snapshotResources.containsKey(s))
+        .distinct()
         .collect(Collectors.toList());
   }
 
