@@ -995,7 +995,7 @@ public class V3DiscoveryServerTest {
 
     assertThat(responseObserver.errorException).isInstanceOfSatisfying(StatusRuntimeException.class, ex -> {
       assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.UNKNOWN);
-      assertThat(ex.getStatus().getDescription()).isNull();
+      assertThat(ex.getStatus().getDescription()).isEqualTo("Application error processing RPC");
     });
 
     assertThat(callbacks.streamCloseCount).hasValue(0);
