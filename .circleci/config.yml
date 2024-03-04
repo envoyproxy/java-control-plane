@@ -42,7 +42,6 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "main" ]; then
               echo $GPG_KEY | base64 --decode > signing-key
               gpg --batch --passphrase $GPG_PASSPHRASE --import signing-key
-              gpg -v --list-keys
               shred signing-key
 
               if [[ -n "${RELEASE}" && -n "${NEXT}" ]]; then
