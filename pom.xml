@@ -27,16 +27,16 @@
         <auto-value.version>1.6.3</auto-value.version>
         <awaitility.version>3.1.6</awaitility.version>
         <checkstyle.version>8.18</checkstyle.version>
-        <grpc.version>1.48.1</grpc.version>
-        <guava.version>31.1-android</guava.version><!-- Keep the Guava version in sync with grpc-java -->
+        <grpc.version>1.62.2</grpc.version>
+        <guava.version>32.1.3-android</guava.version><!-- Keep the Guava version in sync with grpc-java -->
         <junit.version>4.13.2</junit.version>
-        <protobuf.version>3.21.5</protobuf.version><!-- Keep the Protobuf version in sync with grpc-java -->
+        <protobuf.version>3.25.1</protobuf.version><!-- Keep the Protobuf version in sync with grpc-java -->
         <rest-assured.version>3.1.0</rest-assured.version>
         <slf4j.version>1.7.26</slf4j.version>
         <testcontainers.version>1.17.1</testcontainers.version>
 
         <!-- Maven Plugin Versions -->
-        <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.0.0</maven-checkstyle-plugin.version>
         <maven-failsafe-plugin.version>2.21.0</maven-failsafe-plugin.version>
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
