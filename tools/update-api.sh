@@ -64,4 +64,8 @@ curl -sL https://github.com/open-telemetry/opentelemetry-proto/archive/v${OPENTE
 mkdir -p "${protodir}/opentelemetry/proto"
 cp -r opentelemetry-proto-*/opentelemetry/proto/* "${protodir}/opentelemetry/proto"
 
+curl -sL https://github.com/google/cel-spec/archive/v${CEL_VERSION}.tar.gz | tar xz --wildcards '*.proto'
+mkdir -p "${protodir}/cel-spec"
+cp -r cel-spec-*/proto/* "${protodir}/cel-spec"
+
 popd >/dev/null

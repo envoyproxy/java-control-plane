@@ -8,13 +8,13 @@ set -o xtrace
 function find_sha() {
   local CONTENT=$1
   local DEPENDENCY=$2
-  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 version | awk '{ print $3 }' | tr -d '"' | tr -d ","
+  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 "version =" | awk '{ print $3 }' | tr -d '"' | tr -d ","
 }
 
 function find_date() {
   local CONTENT=$1
   local DEPENDENCY=$2
-  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 release_date | awk '{ print $3 }' | tr -d '"' | tr -d ","
+  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 "release_date =" | awk '{ print $3 }' | tr -d '"' | tr -d ","
 }
 
 function find_envoy_sha_from_tag() {
@@ -45,6 +45,9 @@ XDS_DATE=$(find_date "$CURL_OUTPUT" com_github_cncf_xds)
 OPENTELEMETRY_SHA=$(find_sha "$CURL_OUTPUT" opentelemetry_proto)
 OPENTELEMETRY_DATE=$(find_date "$CURL_OUTPUT" opentelemetry_proto)
 
+CEL_SHA=$(find_sha "$CURL_OUTPUT" dev_cel)
+CEL_DATE=$(find_date "$CURL_OUTPUT" dev_cel)
+
 echo -n "# Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
@@ -56,6 +59,7 @@ PGV_VERSION=\"$PGV_GIT_SHA\"  # $PGV_GIT_DATE
 PROMETHEUS_SHA=\"$PROMETHEUS_SHA\"  # $PROMETHEUS_DATE
 OPENCENSUS_VERSION=\"$OPENCENSUS_SHA\"  # $OPENCENSUS_DATE
 OPENTELEMETRY_VERSION=\"$OPENTELEMETRY_SHA\"  # $OPENTELEMETRY_DATE
+CEL_VERSION=\"$CEL_SHA\"  # $CEL_DATE
 XDS_SHA=\"$XDS_SHA\"  # $XDS_DATE
 "
 
