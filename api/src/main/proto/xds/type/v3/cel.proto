@@ -4,6 +4,8 @@ package xds.type.v3;
 
 import "google/api/expr/v1alpha1/checked.proto";
 import "google/api/expr/v1alpha1/syntax.proto";
+import "cel/expr/checked.proto";
+import "cel/expr/syntax.proto";
 import "google/protobuf/wrappers.proto";
 
 import "xds/annotations/v3/status.proto";
@@ -23,14 +25,28 @@ option (xds.annotations.v3.file_status).work_in_progress = true;
 // <https://github.com/google/cel-spec>`_ (CEL) program.
 message CelExpression {
   oneof expr_specifier {
-    option (validate.required) = true;
-
     // Parsed expression in abstract syntax tree (AST) form.
-    google.api.expr.v1alpha1.ParsedExpr parsed_expr = 1;
+    //
+    // Deprecated -- use ``cel_expr_parsed`` field instead.
+    // If ``cel_expr_parsed`` or ``cel_expr_checked`` is set, this field is not used.
+    google.api.expr.v1alpha1.ParsedExpr parsed_expr = 1  [deprecated = true];
 
     // Parsed expression in abstract syntax tree (AST) form that has been successfully type checked.
-    google.api.expr.v1alpha1.CheckedExpr checked_expr = 2;
+    //
+    // Deprecated -- use ``cel_expr_checked`` field instead.
+    // If ``cel_expr_parsed`` or ``cel_expr_checked`` is set, this field is not used.
+    google.api.expr.v1alpha1.CheckedExpr checked_expr = 2  [deprecated = true];
   }
+
+  // Parsed expression in abstract syntax tree (AST) form.
+  //
+  // If ``cel_expr_checked`` is set, this field is not used.
+  cel.expr.ParsedExpr cel_expr_parsed = 3;
+
+  // Parsed expression in abstract syntax tree (AST) form that has been successfully type checked.
+  //
+  // If set, takes precedence over ``cel_expr_parsed``.
+  cel.expr.CheckedExpr cel_expr_checked = 4;
 }
 
 // Extracts a string by evaluating a `Common Expression Language
