@@ -477,6 +477,64 @@ public class SimpleCacheTest {
   }
 
   @Test
+  public void watchIsLeftOpenIfNotRespondedImmediatelyAndThroughSubsequentSetEmptySnapshots() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
+
+    ResponseTracker responseTracker = new ResponseTracker();
+    Watch watch = cache.createWatch(
+        true,
+        XdsRequest.create(DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setTypeUrl(ROUTE_TYPE_URL)
+            .addAllResourceNames(Collections.singleton(ROUTE_NAME))
+            .build()),
+        Collections.singleton(ROUTE_NAME),
+        responseTracker);
+
+    assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
+    assertThat(cache.statusInfo(SingleNodeGroup.GROUP).numWatches()).isEqualTo(1);
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION2));
+
+    assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
+    assertThat(cache.statusInfo(SingleNodeGroup.GROUP).numWatches()).isEqualTo(1);
+  }
+
+  @Test
+  public void watchIsLeftOpenIfNotRespondedImmediatelyAndLaterSetSnapshotSendsUpdate() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
+
+    ResponseTracker responseTracker = new ResponseTracker();
+    Watch watch = cache.createWatch(
+        true,
+        XdsRequest.create(DiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setTypeUrl(ROUTE_TYPE_URL)
+            .addAllResourceNames(SNAPSHOT1.resources(ROUTE_TYPE_URL).keySet())
+            .build()),
+        Collections.emptySet(),
+        responseTracker);
+
+    assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
+    assertThat(cache.statusInfo(SingleNodeGroup.GROUP).numWatches()).isEqualTo(1);
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION2));
+
+    assertThatWatchIsOpenWithNoResponses(new WatchAndTracker(watch, responseTracker));
+    assertThat(cache.statusInfo(SingleNodeGroup.GROUP).numWatches()).isEqualTo(1);
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    assertThatWatchReceivesSnapshot(new WatchAndTracker(watch, responseTracker), SNAPSHOT1);
+  }
+
+  @Test
   public void getSnapshot() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
 
