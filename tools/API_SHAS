@@ -1,9 +1,9 @@
 # Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
-ENVOY_SHA="816188b86a0a52095b116b107f576324082c7c02"
+ENVOY_SHA="d79f6e8d453ee260e9094093b8dd31af0056e67b"
 
-# dependencies (source: https://github.com/envoyproxy/envoy/blob/816188b86a0a52095b116b107f576324082c7c02/api/bazel/repository_locations.bzl)
+# dependencies (source: https://github.com/envoyproxy/envoy/blob/d79f6e8d453ee260e9094093b8dd31af0056e67b/api/bazel/repository_locations.bzl)
 GOOGLEAPIS_SHA="114a745b2841a044e98cdbb19358ed29fcf4a5f1"  # 2023-01-10
 PGV_VERSION="1.0.4"  # 2024-01-17
 PROMETHEUS_SHA="0.6.1"  # 2024-04-03
