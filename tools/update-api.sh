@@ -46,10 +46,6 @@ curl -sL https://github.com/envoyproxy/protoc-gen-validate/archive/v${PGV_VERSIO
 mkdir -p "${protodir}/validate"
 cp -r protoc-gen-validate-*/validate/* "${protodir}/validate"
 
-curl -sL https://github.com/census-instrumentation/opencensus-proto/archive/v${OPENCENSUS_VERSION}.tar.gz | tar xz --wildcards '*.proto'
-mkdir -p "${protodir}/opencensus/proto"
-cp -r opencensus-proto-*/src/opencensus/proto/* "${protodir}/opencensus/proto"
-
 curl -sL https://github.com/prometheus/client_model/archive/v${PROMETHEUS_SHA}.tar.gz | tar xz --wildcards '*.proto'
 mkdir -p "${protodir}/io/prometheus/client/"
 cp client_model-*/io/prometheus/client/metrics.proto "${protodir}/io/prometheus/client/"
