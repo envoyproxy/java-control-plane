@@ -10,7 +10,6 @@
 * Snow Pettersen ([snowp](https://github.com/snowp)) (snowp@squareup.com)
 * Michael Puncel ([mpuncel](https://github.com/mpuncel)) (mpuncel@squareup.com)
 * Dariusz Jędrzejczyk ([chemicL](https://github.com/chemicL)) (dariusz.jedrzejczyk@allegro.pl)
-* Krzysztof Słonka ([slonka](https://github.com/slonka)) (krzysztof.slonka@allegro.pl)
 * Łukasz Dziedziak ([lukidzi](https://github.com/lukidzi)) (lukasz.dziedziak@allegro.pl)
 * Radosław Chrzanowski ([Ferdudas97](https://github.com/Ferdudas97)) (radoslaw.chrzanowski@allegro.pl)
 * Marcin Skalski ([Automaat](https://github.com/Automaat)) (marcin.skalski@allegro.pl)
