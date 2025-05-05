@@ -5,8 +5,12 @@ import static io.envoyproxy.controlplane.cache.Resources.V3.ROUTE_TYPE_URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Message;
+import io.envoyproxy.controlplane.cache.DeltaResponse;
+import io.envoyproxy.controlplane.cache.DeltaWatch;
+import io.envoyproxy.controlplane.cache.DeltaXdsRequest;
 import io.envoyproxy.controlplane.cache.NodeGroup;
 import io.envoyproxy.controlplane.cache.Resources;
 import io.envoyproxy.controlplane.cache.Response;
@@ -20,6 +24,7 @@ import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import java.util.Collections;
 import java.util.HashMap;
@@ -543,6 +548,35 @@ public class SimpleCacheTest {
     assertThat(cache.groups()).containsExactly(SingleNodeGroup.GROUP);
   }
 
+
+  @Test
+  public void respondRemovedResourcesWhenPendingResourceButNotTracked() {
+    SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
+
+    cache.setSnapshot(SingleNodeGroup.GROUP, SNAPSHOT1);
+
+    DeltaResponseTracker responseTracker = new DeltaResponseTracker();
+
+    DeltaWatch watch = cache.createDeltaWatch(
+        DeltaXdsRequest.create(DeltaDiscoveryRequest.newBuilder()
+            .setNode(Node.getDefaultInstance())
+            .setTypeUrl(CLUSTER_TYPE_URL)
+            .addResourceNamesSubscribe("non_existant")
+            .addResourceNamesSubscribe("cluster0")
+            .build()),
+        "",
+        Collections.emptyMap(),
+        ImmutableSet.of("non_existant"),
+        true,
+        responseTracker, false);
+
+    assertThat(watch.isCancelled()).isFalse();
+    Assertions.assertThat(responseTracker.responses).isNotEmpty();
+
+    Assertions.assertThat(responseTracker.responses.get(0).removedResources()).isNotEmpty();
+    Assertions.assertThat(responseTracker.responses.get(0).removedResources()).containsOnly("non_existant");
+  }
+
   private static class ResponseTracker implements Consumer<Response> {
 
     private final LinkedList<Response> responses = new LinkedList<>();
@@ -562,6 +596,17 @@ public class SimpleCacheTest {
     public void accept(Response response) {
       responseTypes.add(response.request().getTypeUrl());
     }
+  }
+
+  private static class DeltaResponseTracker implements Consumer<DeltaResponse> {
+
+    private final LinkedList<DeltaResponse> responses = new LinkedList<>();
+
+    @Override
+    public void accept(DeltaResponse response) {
+      responses.add(response);
+    }
+
   }
 
   private static class SingleNodeGroup implements NodeGroup<String> {
