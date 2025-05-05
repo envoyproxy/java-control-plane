@@ -12,6 +12,7 @@ import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.SnapshotResources;
 import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -44,6 +45,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       Iterable<Listener> listeners,
       Iterable<RouteConfiguration> routes,
       Iterable<Secret> secrets,
+      Iterable<TypedExtensionConfig> extensions,
       String version) {
 
     return new AutoValue_Snapshot(
@@ -56,7 +58,9 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         SnapshotResources
             .create(generateSnapshotResourceIterable(routes), version),
         SnapshotResources
-            .create(generateSnapshotResourceIterable(secrets), version));
+            .create(generateSnapshotResourceIterable(secrets), version),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(extensions), version));
   }
 
   /**
@@ -82,7 +86,9 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       Iterable<RouteConfiguration> routes,
       String routesVersion,
       Iterable<Secret> secrets,
-      String secretsVersion) {
+      String secretsVersion,
+      Iterable<TypedExtensionConfig> extensions,
+      String extensionsVersion) {
 
     // TODO(snowp): add a builder alternative
     return new AutoValue_Snapshot(
@@ -95,7 +101,9 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         SnapshotResources
             .create(generateSnapshotResourceIterable(routes), routesVersion),
         SnapshotResources.create(generateSnapshotResourceIterable(secrets),
-            secretsVersion));
+            secretsVersion),
+        SnapshotResources.create(generateSnapshotResourceIterable(extensions),
+            extensionsVersion));
   }
 
   /**
@@ -105,7 +113,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    */
   public static Snapshot createEmpty(String version) {
     return create(Collections.emptySet(), Collections.emptySet(),
-            Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), version);
+            Collections.emptySet(), Collections.emptySet(), Collections.emptySet(),
+            Collections.emptySet(), version);
   }
 
   /**
@@ -132,6 +141,11 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns all secret items in the SDS payload.
    */
   public abstract SnapshotResources<Secret> secrets();
+
+  /**
+   * Returns all extensions config items in the ECDS payload.
+  */
+  public abstract SnapshotResources<TypedExtensionConfig> extensions();
 
   /**
    * Asserts that all dependent resources are included in the snapshot. All EDS resources are listed by name in CDS
@@ -191,6 +205,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return (Map) routes().resources();
       case SECRET:
         return (Map) secrets().resources();
+      case EXTENSION_CONFIG:
+        return (Map) extensions().resources();
       default:
         return ImmutableMap.of();
     }
@@ -213,6 +229,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return (Map) routes().versionedResources();
       case SECRET:
         return (Map) secrets().versionedResources();
+      case EXTENSION_CONFIG:
+        return (Map) extensions().versionedResources();
       default:
         return ImmutableMap.of();
     }
@@ -268,6 +286,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return routes().version(resourceNames);
       case SECRET:
         return secrets().version(resourceNames);
+      case EXTENSION_CONFIG:
+        return extensions().version(resourceNames);
       default:
         return "";
     }

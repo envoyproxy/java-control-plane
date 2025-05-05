@@ -16,6 +16,7 @@ import io.envoyproxy.controlplane.cache.Watch;
 import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -40,6 +41,7 @@ public class SimpleCacheTest {
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
   private static final String SECRET_NAME = "secret0";
+  private static final String EXTENSION_CONFIG_NAME = "extension_config0";
 
   private static final String VERSION1 = UUID.randomUUID().toString();
   private static final String VERSION2 = UUID.randomUUID().toString();
@@ -50,6 +52,7 @@ public class SimpleCacheTest {
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+      ImmutableList.of(TypedExtensionConfig.newBuilder().setName(EXTENSION_CONFIG_NAME).build()),
       VERSION1);
 
   private static final Snapshot SNAPSHOT2 = Snapshot.create(
@@ -58,6 +61,7 @@ public class SimpleCacheTest {
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+      ImmutableList.of(TypedExtensionConfig.newBuilder().setName(EXTENSION_CONFIG_NAME).build()),
       VERSION2);
 
   private static final Snapshot MULTIPLE_RESOURCES_SNAPSHOT2 = Snapshot.create(
@@ -68,6 +72,7 @@ public class SimpleCacheTest {
       ImmutableList.of(Listener.newBuilder().setName(LISTENER_NAME).build()),
       ImmutableList.of(RouteConfiguration.newBuilder().setName(ROUTE_NAME).build()),
       ImmutableList.of(Secret.newBuilder().setName(SECRET_NAME).build()),
+      ImmutableList.of(TypedExtensionConfig.newBuilder().setName(EXTENSION_CONFIG_NAME).build()),
       VERSION2);
 
   private static void assertThatWatchIsOpenWithNoResponses(WatchAndTracker watchAndTracker) {
@@ -297,7 +302,8 @@ public class SimpleCacheTest {
         Resources.V3.CLUSTER_TYPE_URL, Resources.V3.ENDPOINT_TYPE_URL,
         Resources.V3.ENDPOINT_TYPE_URL, Resources.V3.LISTENER_TYPE_URL,
         Resources.V3.LISTENER_TYPE_URL, ROUTE_TYPE_URL, ROUTE_TYPE_URL,
-        Resources.V3.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL);
+        Resources.V3.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL,
+        Resources.V3.EXTENSION_CONFIG_TYPE_URL, Resources.V3.EXTENSION_CONFIG_TYPE_URL);
   }
 
   @Test
@@ -460,7 +466,8 @@ public class SimpleCacheTest {
   public void watchIsLeftOpenIfNotRespondedImmediately() {
     SimpleCache<String> cache = new SimpleCache<>(new SingleNodeGroup());
     cache.setSnapshot(SingleNodeGroup.GROUP, Snapshot.create(
-        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), VERSION1));
+        ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(), ImmutableList.of(),
+        ImmutableList.of(), VERSION1));
 
     ResponseTracker responseTracker = new ResponseTracker();
     Watch watch = cache.createWatch(
