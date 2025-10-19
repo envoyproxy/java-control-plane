@@ -34,6 +34,7 @@ public class TestMain {
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
+            ImmutableList.of(),
             "1"));
 
     V3DiscoveryServer v3DiscoveryServer = new V3DiscoveryServer(cache);
@@ -62,6 +63,7 @@ public class TestMain {
             ImmutableList.of(
                 TestResources.createCluster(
                     "cluster1", "127.0.0.1", 1235, Cluster.DiscoveryType.STATIC)),
+            ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),
             ImmutableList.of(),

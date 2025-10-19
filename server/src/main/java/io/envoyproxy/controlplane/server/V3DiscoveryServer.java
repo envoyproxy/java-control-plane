@@ -4,6 +4,7 @@ import static io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServic
 import static io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.route.v3.ScopedRoutesDiscoveryServiceGrpc.ScopedRoutesDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.secret.v3.SecretDiscoveryServiceGrpc.SecretDiscoveryServiceImplBase;
 
 import com.google.common.base.Preconditions;
@@ -160,6 +161,25 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
           StreamObserver<DeltaDiscoveryResponse> responseObserver) {
 
         return createDeltaRequestHandler(responseObserver, false, Resources.V3.ROUTE_TYPE_URL);
+      }
+    };
+  }
+
+  /**
+   * Returns a SRDS implementation that uses this server's {@link ConfigWatcher}.
+   */
+  public ScopedRoutesDiscoveryServiceImplBase getScopedRoutesDiscoveryServiceImpl() {
+    return new ScopedRoutesDiscoveryServiceImplBase() {
+      @Override
+      public StreamObserver<DiscoveryRequest> streamScopedRoutes(
+          StreamObserver<DiscoveryResponse> responseObserver) {
+        return createRequestHandler(responseObserver, false, Resources.V3.SCOPED_ROUTE_TYPE_URL);
+      }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaScopedRoutes(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.SCOPED_ROUTE_TYPE_URL);
       }
     };
   }
