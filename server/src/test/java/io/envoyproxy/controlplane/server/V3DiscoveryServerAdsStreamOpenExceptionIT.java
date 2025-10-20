@@ -60,6 +60,7 @@ public class V3DiscoveryServerAdsStreamOpenExceptionIT {
                   "listener0",
                   LISTENER_PORT,
                   "route0",
+                  "scoped_route0",
                   "1"));
 
           V3DiscoveryServer server = new V3DiscoveryServer(callbacks, cache);
