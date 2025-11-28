@@ -32,6 +32,7 @@ rm -rf "${protodir}"
 curl -sL https://github.com/envoyproxy/envoy/archive/${ENVOY_SHA}.tar.gz | tar xz --wildcards '*.proto'
 mkdir -p "${protodir}/envoy"
 cp -r envoy-*/api/envoy/* "${protodir}/envoy"
+cp -r envoy-*/api/contrib/* "${protodir}/contrib"
 
 curl -sL https://github.com/googleapis/googleapis/archive/${GOOGLEAPIS_SHA}.tar.gz | tar xz --wildcards '*.proto'
 mkdir -p "${protodir}/google/api"
