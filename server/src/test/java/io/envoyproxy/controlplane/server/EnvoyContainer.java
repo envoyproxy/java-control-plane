@@ -4,6 +4,7 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -36,11 +37,11 @@ class EnvoyContainer extends GenericContainer<EnvoyContainer> {
     withClasspathResourceMapping(LAUNCH_ENVOY_SCRIPT, LAUNCH_ENVOY_SCRIPT_DEST, BindMode.READ_ONLY);
     withClasspathResourceMapping(config, CONFIG_DEST, BindMode.READ_ONLY);
 
-    withExtraHost("host.docker.internal","host-gateway");
-
+    final Integer controlPlanePort = controlPlanePortSupplier.get();
+    Testcontainers.exposeHostPorts(controlPlanePort);
     withCommand(
         "/bin/bash", "/usr/local/bin/launch_envoy.sh",
-        Integer.toString(controlPlanePortSupplier.get()),
+        Integer.toString(controlPlanePort),
         CONFIG_DEST,
         "-l", "debug"
     );
