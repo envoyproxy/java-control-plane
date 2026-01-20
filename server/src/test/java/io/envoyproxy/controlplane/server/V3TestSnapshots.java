@@ -9,6 +9,7 @@ import io.envoyproxy.envoy.config.core.v3.ApiVersion;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 class V3TestSnapshots {
@@ -22,6 +23,7 @@ class V3TestSnapshots {
       String listenerName,
       int listenerPort,
       String routeName,
+      String scopedRouteName,
       String version) {
 
     Cluster cluster = TestResources.createCluster(clusterName);
@@ -30,12 +32,14 @@ class V3TestSnapshots {
     Listener listener = TestResources.createListener(ads, delta, V3, V3, listenerName,
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
+    ScopedRouteConfiguration scopedRoute = TestResources.createScopedRoute(scopedRouteName, routeName);
 
     return Snapshot.create(
         ImmutableList.of(cluster),
         ImmutableList.of(endpoint),
         ImmutableList.of(listener),
         ImmutableList.of(route),
+        ImmutableList.of(scopedRoute),
         ImmutableList.of(),
         version);
   }
@@ -49,9 +53,10 @@ class V3TestSnapshots {
       String listenerName,
       int listenerPort,
       String routeName,
+      String scopedRouteName,
       String version) {
     return createSnapshotNoEds(ads, delta, V3, V3, clusterName, endpointAddress,
-        endpointPort, listenerName, listenerPort, routeName, version);
+        endpointPort, listenerName, listenerPort, routeName, scopedRouteName, version);
   }
 
   private static Snapshot createSnapshotNoEds(
@@ -65,6 +70,7 @@ class V3TestSnapshots {
       String listenerName,
       int listenerPort,
       String routeName,
+      String scopedRouteName,
       String version) {
 
     Cluster cluster = TestResources.createCluster(clusterName, endpointAddress,
@@ -73,12 +79,14 @@ class V3TestSnapshots {
         .createListener(ads, delta, rdsTransportVersion, rdsResourceVersion,
             listenerName, listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
+    ScopedRouteConfiguration scopedRoute = TestResources.createScopedRoute(scopedRouteName, routeName);
 
     return Snapshot.create(
         ImmutableList.of(cluster),
         ImmutableList.of(),
         ImmutableList.of(listener),
         ImmutableList.of(route),
+        ImmutableList.of(scopedRoute),
         ImmutableList.of(),
         version);
   }

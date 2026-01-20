@@ -25,6 +25,7 @@ import io.envoyproxy.envoy.config.route.v3.Route;
 import io.envoyproxy.envoy.config.route.v3.RouteAction;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.config.route.v3.RouteMatch;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.extensions.filters.http.router.v3.Router;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
@@ -228,6 +229,19 @@ public class TestResources {
                     Route.newBuilder()
                         .setMatch(RouteMatch.newBuilder().setPrefix("/"))
                         .setRoute(RouteAction.newBuilder().setCluster(clusterName))))
+        .build();
+  }
+
+  /**
+   * Returns a new test v3 scoped route.
+   *
+   * @param scppedRouteName name of the new scoped route
+   * @param routeName name of the route that is associated with this scoped route
+   */
+  public static ScopedRouteConfiguration createScopedRoute(String scppedRouteName, String routeName) {
+    return ScopedRouteConfiguration.newBuilder()
+        .setName(scppedRouteName)
+        .setRouteConfigurationName(routeName)
         .build();
   }
 
