@@ -24,6 +24,7 @@ import io.envoyproxy.controlplane.cache.XdsRequest;
 import io.envoyproxy.controlplane.server.exception.RequestException;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.Node;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -37,6 +38,8 @@ import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceStub;
+import io.envoyproxy.envoy.service.extension.v3.ExtensionConfigDiscoveryServiceGrpc;
+import io.envoyproxy.envoy.service.extension.v3.ExtensionConfigDiscoveryServiceGrpc.ExtensionConfigDiscoveryServiceStub;
 import io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc;
 import io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceStub;
 import io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc;
@@ -75,6 +78,7 @@ public class V3DiscoveryServerTest {
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME    = "route0";
   private static final String SECRET_NAME   = "secret0";
+  private static final String EXTENSION_CONFIG_NAME   = "extension_config0";
 
   private static final int ENDPOINT_PORT = Ports.getAvailablePort();
   private static final int LISTENER_PORT = Ports.getAvailablePort();
@@ -95,6 +99,8 @@ public class V3DiscoveryServerTest {
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
+  private static final TypedExtensionConfig
+      EXTENSION_CONFIG = TestResources.createExtensionConfig(EXTENSION_CONFIG_NAME);
 
   @Rule
   public final GrpcServerRule grpcServer = new GrpcServerRule().directExecutor();
@@ -140,6 +146,12 @@ public class V3DiscoveryServerTest {
         .addResourceNames(SECRET_NAME)
         .build());
 
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.V3.EXTENSION_CONFIG_TYPE_URL)
+        .addResourceNames(EXTENSION_CONFIG_NAME)
+        .build());
+
     requestObserver.onCompleted();
 
     if (!responseObserver.completedLatch.await(1, TimeUnit.SECONDS) || responseObserver.error.get()) {
@@ -171,12 +183,15 @@ public class V3DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getExtensionConfigDiscoveryServiceImpl());
 
     ClusterDiscoveryServiceStub clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ExtensionConfigDiscoveryServiceStub
+        extensionsStub = ExtensionConfigDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -204,6 +219,10 @@ public class V3DiscoveryServerTest {
         case Resources.V3.SECRET_TYPE_URL:
           requestObserver = secretStub.streamSecrets(responseObserver);
           discoveryRequestBuilder.addResourceNames(SECRET_NAME);
+          break;
+        case Resources.V3.EXTENSION_CONFIG_TYPE_URL:
+          requestObserver = extensionsStub.streamExtensionConfigs(responseObserver);
+          discoveryRequestBuilder.addResourceNames(EXTENSION_CONFIG_NAME);
           break;
         default:
           fail("Unsupported resource type: " + typeUrl);
@@ -372,12 +391,15 @@ public class V3DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getExtensionConfigDiscoveryServiceImpl());
 
     ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub   = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ExtensionConfigDiscoveryServiceStub
+        extensionsStub = ExtensionConfigDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -399,6 +421,9 @@ public class V3DiscoveryServerTest {
           break;
         case Resources.V3.SECRET_TYPE_URL:
           requestObserver = secretStub.streamSecrets(responseObserver);
+          break;
+        case Resources.V3.EXTENSION_CONFIG_TYPE_URL:
+          requestObserver = extensionsStub.streamExtensionConfigs(responseObserver);
           break;
         default:
           fail("Unsupported resource type: " + typeUrl);
@@ -517,6 +542,12 @@ public class V3DiscoveryServerTest {
         .addResourceNames(SECRET_NAME)
         .build());
 
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setTypeUrl(Resources.V3.EXTENSION_CONFIG_TYPE_URL)
+        .addResourceNames(EXTENSION_CONFIG_NAME)
+        .build());
+
     if (!streamRequestLatch.get().await(1, TimeUnit.SECONDS)) {
       fail("failed to execute onStreamRequest callback before timeout");
     }
@@ -564,6 +595,14 @@ public class V3DiscoveryServerTest {
         .setResponseNonce("4")
         .setTypeUrl(Resources.V3.SECRET_TYPE_URL)
         .addResourceNames(SECRET_NAME)
+        .setVersionInfo(VERSION)
+        .build());
+
+    requestObserver.onNext(DiscoveryRequest.newBuilder()
+        .setNode(NODE)
+        .setResponseNonce("5")
+        .setTypeUrl(Resources.V3.EXTENSION_CONFIG_TYPE_URL)
+        .addResourceNames(EXTENSION_CONFIG_NAME)
         .setVersionInfo(VERSION)
         .build());
 
@@ -659,12 +698,15 @@ public class V3DiscoveryServerTest {
     grpcServer.getServiceRegistry().addService(server.getListenerDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getRouteDiscoveryServiceImpl());
     grpcServer.getServiceRegistry().addService(server.getSecretDiscoveryServiceImpl());
+    grpcServer.getServiceRegistry().addService(server.getExtensionConfigDiscoveryServiceImpl());
 
     ClusterDiscoveryServiceStub  clusterStub  = ClusterDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     EndpointDiscoveryServiceStub endpointStub = EndpointDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     ListenerDiscoveryServiceStub listenerStub = ListenerDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     RouteDiscoveryServiceStub    routeStub    = RouteDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
     SecretDiscoveryServiceStub   secretStub    = SecretDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
+    ExtensionConfigDiscoveryServiceStub
+        extensionsStub = ExtensionConfigDiscoveryServiceGrpc.newStub(grpcServer.getChannel());
 
     for (String typeUrl : Resources.V3.TYPE_URLS) {
       MockDiscoveryResponseObserver responseObserver = new MockDiscoveryResponseObserver();
@@ -686,6 +728,9 @@ public class V3DiscoveryServerTest {
           break;
         case Resources.V3.SECRET_TYPE_URL:
           requestObserver = secretStub.streamSecrets(responseObserver);
+          break;
+        case Resources.V3.EXTENSION_CONFIG_TYPE_URL:
+          requestObserver = extensionsStub.streamExtensionConfigs(responseObserver);
           break;
         default:
           fail("Unsupported resource type: " + typeUrl);
@@ -719,11 +764,11 @@ public class V3DiscoveryServerTest {
 
     callbacks.assertThatNoErrors();
 
-    assertThat(callbacks.streamCloseCount).hasValue(5);
+    assertThat(callbacks.streamCloseCount).hasValue(6);
     assertThat(callbacks.streamCloseWithErrorCount).hasValue(0);
-    assertThat(callbacks.streamOpenCount).hasValue(5);
-    assertThat(callbacks.streamRequestCount).hasValue(5);
-    assertThat(callbacks.streamResponseCount).hasValue(5);
+    assertThat(callbacks.streamOpenCount).hasValue(6);
+    assertThat(callbacks.streamRequestCount).hasValue(6);
+    assertThat(callbacks.streamResponseCount).hasValue(6);
   }
 
   @Test
@@ -1012,6 +1057,7 @@ public class V3DiscoveryServerTest {
         .put(Resources.V3.LISTENER_TYPE_URL, VERSION, ImmutableList.of(LISTENER))
         .put(Resources.V3.ROUTE_TYPE_URL, VERSION, ImmutableList.of(ROUTE))
         .put(Resources.V3.SECRET_TYPE_URL, VERSION, ImmutableList.of(SECRET))
+        .put(Resources.V3.EXTENSION_CONFIG_TYPE_URL, VERSION, ImmutableList.of(EXTENSION_CONFIG))
         .build();
   }
 

@@ -11,6 +11,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.Message;
 import com.google.type.Color;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -31,6 +32,7 @@ public class ResourcesTest {
   private static final String LISTENER_NAME = "v3listener";
   private static final String ROUTE_NAME = "v3route";
   private static final String SECRET_NAME = "v3secret";
+  private static final String EXTENSION_CONFIG_NAME = "v3extension_config";
 
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
@@ -47,6 +49,9 @@ public class ResourcesTest {
   private static final VersionedResource<Secret> SECRET = VersionedResource.create(
       TestResources.createSecret(SECRET_NAME),
       UUID.randomUUID().toString());
+  private static final VersionedResource<TypedExtensionConfig> EXTENSION_CONFIG = VersionedResource.create(
+      TestResources.createExtensionConfig(EXTENSION_CONFIG_NAME),
+      UUID.randomUUID().toString());
 
   @Test
   public void getResourceNameReturnsExpectedNameForValidResourceMessage() {
@@ -56,7 +61,8 @@ public class ResourcesTest {
             ENDPOINT, CLUSTER_NAME,
             LISTENER, LISTENER_NAME,
             ROUTE, ROUTE_NAME,
-            SECRET, SECRET_NAME);
+            SECRET, SECRET_NAME,
+            EXTENSION_CONFIG, EXTENSION_CONFIG_NAME);
 
     cases.forEach(
         (resource, expectedName) ->

@@ -66,6 +66,7 @@ public class V3DiscoveryServerAdsAllowDefaultEmptyEdsIT {
               ImmutableList.of(listener),
               ImmutableList.of(route),
               ImmutableList.of(),
+              ImmutableList.of(),
               "1");
 
           cache.setSnapshot(GROUP, snapshot);

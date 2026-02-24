@@ -21,6 +21,7 @@ import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
 import io.envoyproxy.envoy.service.discovery.v3.Resource;
+import io.envoyproxy.envoy.service.extension.v3.ExtensionConfigDiscoveryServiceGrpc.ExtensionConfigDiscoveryServiceImplBase;
 import io.grpc.stub.StreamObserver;
 import java.util.Collection;
 import java.util.Collections;
@@ -181,6 +182,27 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
           StreamObserver<DeltaDiscoveryResponse> responseObserver) {
 
         return createDeltaRequestHandler(responseObserver, false, Resources.V3.SECRET_TYPE_URL);
+      }
+    };
+  }
+
+  /**
+   * Returns a SDS implementation that uses this server's {@link ConfigWatcher}.
+   */
+  public ExtensionConfigDiscoveryServiceImplBase getExtensionConfigDiscoveryServiceImpl() {
+    return new ExtensionConfigDiscoveryServiceImplBase() {
+      @Override
+      public StreamObserver<DiscoveryRequest> streamExtensionConfigs(
+          StreamObserver<DiscoveryResponse> responseObserver) {
+
+        return createRequestHandler(responseObserver, false, Resources.V3.EXTENSION_CONFIG_TYPE_URL);
+      }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaExtensionConfigs(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.EXTENSION_CONFIG_TYPE_URL);
       }
     };
   }
