@@ -3,13 +3,12 @@
 * See [CONTRIBUTING.md](CONTRIBUTING.md) for general contribution guidelines.
 
 # Maintainers
-
+* Anton Kanugalawattage ([AntonKanug](https://github.com/AntonKanug)) (antondilon@gmail.com)
 * Joey Bratton ([joeyb](https://github.com/joeyb)) (jbratton@salesforce.com)
 * Rama Chavali ([ramaraochavali](https://github.com/ramaraochavali)) (rama.rao@salesforce.com)
 * Ben Hoyt ([b-hoyt](https://github.com/b-hoyt)) (bhoyt@salesforce.com)
 * Michael Puncel ([mpuncel](https://github.com/mpuncel)) (mpuncel@squareup.com)
 * Dariusz Jędrzejczyk ([chemicL](https://github.com/chemicL)) (dariusz.jedrzejczyk@allegro.pl)
-* Krzysztof Słonka ([slonka](https://github.com/slonka)) (krzysztof.slonka@allegro.pl)
 * Łukasz Dziedziak ([lukidzi](https://github.com/lukidzi)) (lukasz.dziedziak@allegro.pl)
 * Radosław Chrzanowski ([Ferdudas97](https://github.com/Ferdudas97)) (radoslaw.chrzanowski@allegro.pl)
 * Marcin Skalski ([Automaat](https://github.com/Automaat)) (marcin.skalski@allegro.pl)
@@ -21,3 +20,4 @@
 * Erik Lindblad ([onemanbucket](https://github.com/onemanbucket)) (erili@spotify.com)
 * Kateryna Nezdolii ([nezdolik](https://github.com/nezdolik)) (nezdolik@spotify.com)
 * Snow Pettersen ([snowp](https://github.com/snowp)) (snowp@squareup.com)
+* Krzysztof Słonka ([slonka](https://github.com/slonka)) (krzysztof.slonka@allegro.pl)
