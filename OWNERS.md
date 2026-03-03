@@ -3,7 +3,7 @@
 * See [CONTRIBUTING.md](CONTRIBUTING.md) for general contribution guidelines.
 
 # Maintainers
-* Anton Kanugalawattage ([AntonKanug](https://github.com/AntonKanug)) (antondilon@gmail.com)
+* Anton Kanugalawattage ([AntonKanug](https://github.com/AntonKanug)) (antonk@palantir.com)
 * Joey Bratton ([joeyb](https://github.com/joeyb)) (jbratton@salesforce.com)
 * Rama Chavali ([ramaraochavali](https://github.com/ramaraochavali)) (rama.rao@salesforce.com)
 * Ben Hoyt ([b-hoyt](https://github.com/b-hoyt)) (bhoyt@salesforce.com)
