@@ -6,9 +6,6 @@
 * Anton Kanugalawattage ([AntonKanug](https://github.com/AntonKanug)) (antonk@palantir.com)
 * Joey Bratton ([joeyb](https://github.com/joeyb)) (jbratton@salesforce.com)
 * Ben Hoyt ([b-hoyt](https://github.com/b-hoyt)) (bhoyt@salesforce.com)
-* Michael Puncel ([mpuncel](https://github.com/mpuncel)) (mpuncel@squareup.com)
-* Radosław Chrzanowski ([Ferdudas97](https://github.com/Ferdudas97)) (radoslaw.chrzanowski@allegro.pl)
-* Michał Gawarzyński ([gawarz](https://github.com/gawarz)) (michal.gawarzynski@allegro.pl)
 * Erica Manno ([rulex123](https://github.com/rulex123)) (ericam@spotify.com)
 
 # Emeritus maintainers
@@ -21,3 +18,6 @@
 * Łukasz Dziedziak ([lukidzi](https://github.com/lukidzi)) (lukasz.dziedziak@allegro.pl)
 * Marcin Skalski ([Automaat](https://github.com/Automaat)) (marcin.skalski@allegro.pl)
 * Dariusz Jędrzejczyk ([chemicL](https://github.com/chemicL)) (dariusz.jedrzejczyk@allegro.pl)
+* Michael Puncel ([mpuncel](https://github.com/mpuncel)) (mpuncel@squareup.com)
+* Radosław Chrzanowski ([Ferdudas97](https://github.com/Ferdudas97)) (radoslaw.chrzanowski@allegro.pl)
+* Michał Gawarzyński ([gawarz](https://github.com/gawarz)) (michal.gawarzynski@allegro.pl)
