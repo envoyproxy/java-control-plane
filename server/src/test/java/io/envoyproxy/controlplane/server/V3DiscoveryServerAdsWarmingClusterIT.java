@@ -196,6 +196,8 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         ImmutableList.of(route),
         "2",
         ImmutableList.of(),
+        "2",
+        ImmutableList.of(),
         "2");
   }
 
