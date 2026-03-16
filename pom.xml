@@ -4,7 +4,7 @@
 
     <groupId>io.github.ovadiagal</groupId>
     <artifactId>java-control-plane</artifactId>
-    <version>1.0.52-SNAPSHOT</version>
+    <version>0.0.1-test</version>
     <packaging>pom</packaging>
 
     <modules>

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>java-control-plane</artifactId>
         <groupId>io.github.ovadiagal</groupId>
-        <version>1.0.52-SNAPSHOT</version>
+        <version>0.0.1-test</version>
     </parent>
 
     <artifactId>cache</artifactId>
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>io.github.ovadiagal</groupId>
             <artifactId>api</artifactId>
-            <version>1.0.52-SNAPSHOT</version>
+            <version>0.0.1-test</version>
         </dependency>
 
         <dependency>
