@@ -48,8 +48,9 @@ jobs:
                 git config --global user.email "envoy-bot@users.noreply.github.com"
                 git config --global user.name "envoy-bot"
                 mvn -B -s .circleci/settings.xml release:prepare -Darguments="-s .circleci/settings.xml" -DreleaseVersion=$RELEASE -DdevelopmentVersion=$NEXT -DscmCommentPrefix="release: "
+                mvn -B -s .circleci/settings.xml release:perform -Darguments="-s .circleci/settings.xml -pl '!test'"
               else
-                mvn -B -s .circleci/settings.xml deploy
+                mvn -B -s .circleci/settings.xml deploy -pl '!test'
               fi
             elif [[ -n "${DEPLOY_BRANCH}" ]]; then
               echo $GPG_KEY | base64 --decode > signing-key
