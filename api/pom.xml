@@ -9,6 +9,7 @@
     </parent>
 
     <artifactId>api</artifactId>
+    <name>api</name>
 
     <properties>
         <checkstyle.skip>true</checkstyle.skip>
