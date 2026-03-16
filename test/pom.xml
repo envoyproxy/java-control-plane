@@ -9,10 +9,11 @@
     </parent>
 
     <artifactId>test</artifactId>
+    <name>test</name>
+    <packaging>pom</packaging>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
-        <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
     </properties>
 
     <dependencies>

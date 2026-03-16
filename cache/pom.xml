@@ -9,6 +9,7 @@
     </parent>
 
     <artifactId>cache</artifactId>
+    <name>cache</name>
 
     <dependencies>
         <dependency>
