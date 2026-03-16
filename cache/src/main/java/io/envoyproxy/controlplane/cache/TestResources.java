@@ -14,6 +14,7 @@ import io.envoyproxy.envoy.config.core.v3.DataSource;
 import io.envoyproxy.envoy.config.core.v3.GrpcService;
 import io.envoyproxy.envoy.config.core.v3.SocketAddress;
 import io.envoyproxy.envoy.config.core.v3.SocketAddress.Protocol;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.endpoint.v3.Endpoint;
 import io.envoyproxy.envoy.config.endpoint.v3.LbEndpoint;
@@ -29,6 +30,7 @@ import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.extensions.filters.http.router.v3.Router;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.CodecType;
+import io.envoyproxy.envoy.extensions.filters.network.thrift_proxy.filters.header_to_metadata.v3.HeaderToMetadata;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.TlsCertificate;
 
@@ -242,6 +244,18 @@ public class TestResources {
         .setTlsCertificate(
             TlsCertificate.newBuilder()
                 .setPrivateKey(DataSource.newBuilder().setInlineString("secret!")))
+        .build();
+  }
+
+  /**
+   * Returns a new test v3 secret.
+   *
+   * @param configName name of the new config
+   */
+  public static TypedExtensionConfig createExtensionConfig(String configName) {
+    return TypedExtensionConfig.newBuilder()
+        .setName(configName)
+        .setTypedConfig(Any.pack(HeaderToMetadata.getDefaultInstance()))
         .build();
   }
 
