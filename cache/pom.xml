@@ -4,8 +4,8 @@
 
     <parent>
         <artifactId>java-control-plane</artifactId>
-        <groupId>io.envoyproxy.controlplane</groupId>
-        <version>1.0.50-SNAPSHOT</version>
+        <groupId>io.github.ovadiagal</groupId>
+        <version>1.0.52-SNAPSHOT</version>
     </parent>
 
     <artifactId>cache</artifactId>
@@ -37,9 +37,9 @@
         </dependency>
 
         <dependency>
-            <groupId>io.envoyproxy.controlplane</groupId>
+            <groupId>io.github.ovadiagal</groupId>
             <artifactId>api</artifactId>
-            <version>1.0.50-SNAPSHOT</version>
+            <version>1.0.52-SNAPSHOT</version>
         </dependency>
 
         <dependency>
