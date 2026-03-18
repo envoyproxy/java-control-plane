@@ -5,6 +5,7 @@
 # Maintainers
 * Anton Kanugalawattage ([AntonKanug](https://github.com/AntonKanug)) (antonk@palantir.com)
 * Erica Manno ([rulex123](https://github.com/rulex123)) (ericam@spotify.com)
+* Gal Ovadia ([ovadiagal](https://github.com/ovadiagal)) (govadia@palantir.com)
 
 # Emeritus maintainers
 * Erik Lindblad ([onemanbucket](https://github.com/onemanbucket)) (erili@spotify.com)
