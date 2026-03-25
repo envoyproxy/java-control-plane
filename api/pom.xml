@@ -5,10 +5,11 @@
     <parent>
         <artifactId>java-control-plane</artifactId>
         <groupId>io.envoyproxy.controlplane</groupId>
-        <version>1.0.50-SNAPSHOT</version>
+        <version>1.0.52</version>
     </parent>
 
     <artifactId>api</artifactId>
+    <name>api</name>
 
     <properties>
         <checkstyle.skip>true</checkstyle.skip>

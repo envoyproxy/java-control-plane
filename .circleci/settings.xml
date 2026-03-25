@@ -18,7 +18,7 @@
             <repositories>
                 <repository>
                     <id>sonatype-staging</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                    <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
                     <layout>default</layout>
                     <releases>
                         <enabled>true</enabled>
