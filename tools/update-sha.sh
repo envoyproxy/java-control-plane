@@ -8,13 +8,15 @@ set -o xtrace
 function find_sha() {
   local CONTENT=$1
   local DEPENDENCY=$2
-  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 "version =" | awk '{ print $3 }' | tr -d '"' | tr -d ","
+  echo "$CONTENT" | grep -E "^[[:space:]]*${DEPENDENCY} = dict\(" -A 11 | grep -m 1 "version =" | awk '{ print $3 }' | tr -d '"' | tr -d ","
 }
 
 function find_date() {
   local CONTENT=$1
   local DEPENDENCY=$2
-  echo "$CONTENT" | grep "$DEPENDENCY" -A 11 | grep -m 1 "release_date =" | awk '{ print $3 }' | tr -d '"' | tr -d ","
+  local DATE
+  DATE=$(echo "$CONTENT" | grep -E "^[[:space:]]*${DEPENDENCY} = dict\(" -A 11 | grep -m 1 "release_date =" | awk '{ print $3 }' | tr -d '"' | tr -d ",")
+  echo "${DATE:-unknown}"
 }
 
 function find_envoy_sha_from_tag() {
@@ -36,8 +38,8 @@ PGV_GIT_DATE=$(find_date "$CURL_OUTPUT" com_envoyproxy_protoc_gen_validate)
 PROMETHEUS_SHA=$(find_sha "$CURL_OUTPUT" prometheus_metrics_model)
 PROMETHEUS_DATE=$(find_date "$CURL_OUTPUT" prometheus_metrics_model)
 
-XDS_SHA=$(find_sha "$CURL_OUTPUT" com_github_cncf_xds)
-XDS_DATE=$(find_date "$CURL_OUTPUT" com_github_cncf_xds)
+XDS_SHA=$(find_sha "$CURL_OUTPUT" xds)
+XDS_DATE=$(find_date "$CURL_OUTPUT" xds)
 
 OPENTELEMETRY_SHA=$(find_sha "$CURL_OUTPUT" opentelemetry_proto)
 OPENTELEMETRY_DATE=$(find_date "$CURL_OUTPUT" opentelemetry_proto)
