@@ -37,6 +37,7 @@ class V3TestSnapshots {
         ImmutableList.of(listener),
         ImmutableList.of(route),
         ImmutableList.of(),
+        ImmutableList.of(),
         version);
   }
 
@@ -79,6 +80,7 @@ class V3TestSnapshots {
         ImmutableList.of(),
         ImmutableList.of(listener),
         ImmutableList.of(route),
+        ImmutableList.of(),
         ImmutableList.of(),
         version);
   }

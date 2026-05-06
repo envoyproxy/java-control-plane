@@ -69,6 +69,7 @@ public class V3DiscoveryServerXdsDeltaResourcesIT {
       builder.addService(server.getEndpointDiscoveryServiceImpl());
       builder.addService(server.getClusterDiscoveryServiceImpl());
       builder.addService(server.getSecretDiscoveryServiceImpl());
+      builder.addService(server.getExtensionConfigDiscoveryServiceImpl());
     }
   };
 
