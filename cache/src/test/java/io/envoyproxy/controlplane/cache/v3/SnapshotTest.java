@@ -4,6 +4,7 @@ import static io.envoyproxy.controlplane.cache.Resources.V3.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ENDPOINT_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.LISTENER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ROUTE_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.SCOPED_ROUTE_TYPE_URL;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,6 +18,7 @@ import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,6 +30,7 @@ public class SnapshotTest {
   private static final String CLUSTER_NAME = "cluster0";
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
+  private static final String SCOPED_ROUTE_NAME = "scoped_route0";
   private static final String SECRET_NAME = "secret0";
 
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
@@ -40,6 +43,8 @@ public class SnapshotTest {
       LISTENER = TestResources.createListener(ADS, false, V3, V3, LISTENER_NAME, LISTENER_PORT, ROUTE_NAME);
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
+  private static final ScopedRouteConfiguration SCOPED_ROUTE = TestResources.createScopedRoute(SCOPED_ROUTE_NAME,
+      ROUTE_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
 
   @Test
@@ -51,6 +56,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         version);
 
@@ -70,10 +76,15 @@ public class SnapshotTest {
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
+    assertThat(snapshot.scopedRoutes().resources())
+        .containsEntry(SCOPED_ROUTE_NAME, SCOPED_ROUTE)
+        .hasSize(1);
+
     assertThat(snapshot.clusters().version()).isEqualTo(version);
     assertThat(snapshot.endpoints().version()).isEqualTo(version);
     assertThat(snapshot.listeners().version()).isEqualTo(version);
     assertThat(snapshot.routes().version()).isEqualTo(version);
+    assertThat(snapshot.scopedRoutes().version()).isEqualTo(version);
   }
 
   @Test
@@ -82,6 +93,7 @@ public class SnapshotTest {
     final String endpointsVersion = UUID.randomUUID().toString();
     final String listenersVersion = UUID.randomUUID().toString();
     final String routesVersion = UUID.randomUUID().toString();
+    final String scopedRoutesVersion = UUID.randomUUID().toString();
     final String secretsVersion = UUID.randomUUID().toString();
 
     Snapshot snapshot = Snapshot.create(
@@ -89,6 +101,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT), endpointsVersion,
         ImmutableList.of(LISTENER), listenersVersion,
         ImmutableList.of(ROUTE), routesVersion,
+        ImmutableList.of(SCOPED_ROUTE), scopedRoutesVersion,
         ImmutableList.of(SECRET), secretsVersion
     );
 
@@ -108,10 +121,15 @@ public class SnapshotTest {
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
+    assertThat(snapshot.scopedRoutes().resources())
+        .containsEntry(SCOPED_ROUTE_NAME, SCOPED_ROUTE)
+        .hasSize(1);
+
     assertThat(snapshot.clusters().version()).isEqualTo(clustersVersion);
     assertThat(snapshot.endpoints().version()).isEqualTo(endpointsVersion);
     assertThat(snapshot.listeners().version()).isEqualTo(listenersVersion);
     assertThat(snapshot.routes().version()).isEqualTo(routesVersion);
+    assertThat(snapshot.scopedRoutes().version()).isEqualTo(scopedRoutesVersion);
   }
 
   @Test
@@ -122,6 +140,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -145,6 +164,10 @@ public class SnapshotTest {
         .containsEntry(ROUTE_NAME, VersionedResource.create(ROUTE))
         .hasSize(1);
 
+    assertThat(snapshot.resources(SCOPED_ROUTE_TYPE_URL))
+        .containsEntry(SCOPED_ROUTE_NAME, VersionedResource.create(SCOPED_ROUTE))
+        .hasSize(1);
+
     String nullString = null;
     assertThat(snapshot.resources(nullString)).isEmpty();
     assertThat(snapshot.resources("")).isEmpty();
@@ -160,6 +183,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         version);
 
@@ -167,6 +191,7 @@ public class SnapshotTest {
     assertThat(snapshot.version(ENDPOINT_TYPE_URL)).isEqualTo(version);
     assertThat(snapshot.version(LISTENER_TYPE_URL)).isEqualTo(version);
     assertThat(snapshot.version(ROUTE_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(SCOPED_ROUTE_TYPE_URL)).isEqualTo(version);
 
     String nullString = null;
     assertThat(snapshot.resources(nullString)).isEmpty();
@@ -182,6 +207,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -195,6 +221,7 @@ public class SnapshotTest {
         ImmutableList.of(),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -211,6 +238,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -233,6 +261,7 @@ public class SnapshotTest {
         ImmutableList.of(TestResources.createEndpoint(otherClusterName, ENDPOINT_PORT)),
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 
@@ -250,6 +279,7 @@ public class SnapshotTest {
         ImmutableList.of(ENDPOINT),
         ImmutableList.of(LISTENER),
         ImmutableList.of(TestResources.createRoute(otherRouteName, CLUSTER_NAME)),
+        ImmutableList.of(SCOPED_ROUTE),
         ImmutableList.of(SECRET),
         UUID.randomUUID().toString());
 

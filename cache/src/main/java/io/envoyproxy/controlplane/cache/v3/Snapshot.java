@@ -15,6 +15,7 @@ import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
 import java.util.Collections;
 import java.util.List;
@@ -32,17 +33,19 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns a new {@link io.envoyproxy.controlplane.cache.v3.Snapshot} instance that is versioned uniformly across all
    * resources.
    *
-   * @param clusters  the cluster resources in this snapshot
-   * @param endpoints the endpoint resources in this snapshot
-   * @param listeners the listener resources in this snapshot
-   * @param routes    the route resources in this snapshot
-   * @param version   the version associated with all resources in this snapshot
+   * @param clusters     the cluster resources in this snapshot
+   * @param endpoints    the endpoint resources in this snapshot
+   * @param listeners    the listener resources in this snapshot
+   * @param routes       the route resources in this snapshot
+   * @param scopedRoutes the scopedRoute resources in this snapshot
+   * @param version      the version associated with all resources in this snapshot
    */
   public static Snapshot create(
       Iterable<Cluster> clusters,
       Iterable<ClusterLoadAssignment> endpoints,
       Iterable<Listener> listeners,
       Iterable<RouteConfiguration> routes,
+      Iterable<ScopedRouteConfiguration> scopedRoutes,
       Iterable<Secret> secrets,
       String version) {
 
@@ -56,6 +59,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         SnapshotResources
             .create(generateSnapshotResourceIterable(routes), version),
         SnapshotResources
+            .create(generateSnapshotResourceIterable(scopedRoutes), version),
+        SnapshotResources
             .create(generateSnapshotResourceIterable(secrets), version));
   }
 
@@ -63,14 +68,16 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns a new {@link io.envoyproxy.controlplane.cache.v3.Snapshot} instance that has separate versions for each
    * resource type.
    *
-   * @param clusters         the cluster resources in this snapshot
-   * @param clustersVersion  the version of the cluster resources
-   * @param endpoints        the endpoint resources in this snapshot
-   * @param endpointsVersion the version of the endpoint resources
-   * @param listeners        the listener resources in this snapshot
-   * @param listenersVersion the version of the listener resources
-   * @param routes           the route resources in this snapshot
-   * @param routesVersion    the version of the route resources
+   * @param clusters            the cluster resources in this snapshot
+   * @param clustersVersion     the version of the cluster resources
+   * @param endpoints           the endpoint resources in this snapshot
+   * @param endpointsVersion    the version of the endpoint resources
+   * @param listeners           the listener resources in this snapshot
+   * @param listenersVersion    the version of the listener resources
+   * @param routes              the route resources in this snapshot
+   * @param routesVersion       the version of the route resources
+   * @param scopedRoutes        the route resources in this snapshot
+   * @param scopedRoutesVersion the version of the route resources
    */
   public static Snapshot create(
       Iterable<Cluster> clusters,
@@ -81,6 +88,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       String listenersVersion,
       Iterable<RouteConfiguration> routes,
       String routesVersion,
+      Iterable<ScopedRouteConfiguration> scopedRoutes,
+      String scopedRoutesVersion,
       Iterable<Secret> secrets,
       String secretsVersion) {
 
@@ -94,6 +103,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
             listenersVersion),
         SnapshotResources
             .create(generateSnapshotResourceIterable(routes), routesVersion),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(scopedRoutes), scopedRoutesVersion),
         SnapshotResources.create(generateSnapshotResourceIterable(secrets),
             secretsVersion));
   }
@@ -105,7 +116,7 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    */
   public static Snapshot createEmpty(String version) {
     return create(Collections.emptySet(), Collections.emptySet(),
-            Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), version);
+            Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), version);
   }
 
   /**
@@ -127,6 +138,11 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns all route items in the RDS payload.
    */
   public abstract SnapshotResources<RouteConfiguration> routes();
+
+  /**
+   * Returns all scoped route items in the SRDS payload.
+   */
+  public abstract SnapshotResources<ScopedRouteConfiguration> scopedRoutes();
 
   /**
    * Returns all secret items in the SDS payload.
@@ -154,6 +170,14 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
 
     ensureAllResourceNamesExist(Resources.V3.LISTENER_TYPE_URL, Resources.V3.ROUTE_TYPE_URL,
         listenerRouteRefs, routes().versionedResources());
+
+    Set<String> srdsRefs = Resources.getResourceReferences(scopedRoutes().versionedResources().values());
+    ensureAllResourceNamesExist(
+        Resources.V3.SCOPED_ROUTE_TYPE_URL,
+        Resources.V3.ROUTE_TYPE_URL,
+        srdsRefs,
+        routes().versionedResources()
+    );
   }
 
   /**
@@ -189,6 +213,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return (Map) listeners().resources();
       case ROUTE:
         return (Map) routes().resources();
+      case SCOPED_ROUTE:
+        return (Map) scopedRoutes().resources();
       case SECRET:
         return (Map) secrets().resources();
       default:
@@ -211,6 +237,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return (Map) listeners().versionedResources();
       case ROUTE:
         return (Map) routes().versionedResources();
+      case SCOPED_ROUTE:
+        return (Map) scopedRoutes().versionedResources();
       case SECRET:
         return (Map) secrets().versionedResources();
       default:
@@ -266,6 +294,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return listeners().version(resourceNames);
       case ROUTE:
         return routes().version(resourceNames);
+      case SCOPED_ROUTE:
+        return scopedRoutes().version(resourceNames);
       case SECRET:
         return secrets().version(resourceNames);
       default:

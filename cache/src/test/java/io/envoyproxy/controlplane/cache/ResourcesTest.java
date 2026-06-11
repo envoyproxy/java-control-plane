@@ -98,7 +98,7 @@ public class ResourcesTest {
             .put((Collection)ImmutableList.of(ROUTE), ImmutableSet.of())
             .put(
                 (Collection) ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE),
-                (Collection) ImmutableSet.of(CLUSTER_NAME, ROUTE_NAME))
+                ImmutableSet.of(CLUSTER_NAME, ROUTE_NAME))
             .build();
 
     cases.forEach(
