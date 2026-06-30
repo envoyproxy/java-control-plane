@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache.v3;
 
 import static io.envoyproxy.controlplane.cache.Resources.V3.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.EXTENSION_CONFIG_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.LISTENER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ROUTE_TYPE_URL;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V3;
@@ -14,6 +15,7 @@ import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -29,6 +31,7 @@ public class SnapshotTest {
   private static final String LISTENER_NAME = "listener0";
   private static final String ROUTE_NAME = "route0";
   private static final String SECRET_NAME = "secret0";
+  private static final String EXTENSION_CONFIG_NAME = "extension_config0";
 
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
@@ -41,6 +44,8 @@ public class SnapshotTest {
   private static final RouteConfiguration ROUTE = TestResources.createRoute(ROUTE_NAME,
       CLUSTER_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
+  private static final TypedExtensionConfig
+      EXTENSION_CONFIG = TestResources.createExtensionConfig(EXTENSION_CONFIG_NAME);
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -52,6 +57,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         version);
 
     assertThat(snapshot.clusters().resources())
@@ -83,13 +89,15 @@ public class SnapshotTest {
     final String listenersVersion = UUID.randomUUID().toString();
     final String routesVersion = UUID.randomUUID().toString();
     final String secretsVersion = UUID.randomUUID().toString();
+    final String extensionsVersion = UUID.randomUUID().toString();
 
     Snapshot snapshot = Snapshot.create(
         ImmutableList.of(CLUSTER), clustersVersion,
         ImmutableList.of(ENDPOINT), endpointsVersion,
         ImmutableList.of(LISTENER), listenersVersion,
         ImmutableList.of(ROUTE), routesVersion,
-        ImmutableList.of(SECRET), secretsVersion
+        ImmutableList.of(SECRET), secretsVersion,
+        ImmutableList.of(EXTENSION_CONFIG), extensionsVersion
     );
 
     assertThat(snapshot.clusters().resources())
@@ -108,10 +116,15 @@ public class SnapshotTest {
         .containsEntry(ROUTE_NAME, ROUTE)
         .hasSize(1);
 
+    assertThat(snapshot.extensions().resources())
+        .containsEntry(EXTENSION_CONFIG_NAME, EXTENSION_CONFIG)
+        .hasSize(1);
+
     assertThat(snapshot.clusters().version()).isEqualTo(clustersVersion);
     assertThat(snapshot.endpoints().version()).isEqualTo(endpointsVersion);
     assertThat(snapshot.listeners().version()).isEqualTo(listenersVersion);
     assertThat(snapshot.routes().version()).isEqualTo(routesVersion);
+    assertThat(snapshot.extensions().version()).isEqualTo(extensionsVersion);
   }
 
   @Test
@@ -123,6 +136,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         UUID.randomUUID().toString());
 
     // We have to do some lame casting to appease java's compiler, otherwise it fails to compile
@@ -145,6 +159,10 @@ public class SnapshotTest {
         .containsEntry(ROUTE_NAME, VersionedResource.create(ROUTE))
         .hasSize(1);
 
+    assertThat(snapshot.resources(EXTENSION_CONFIG_TYPE_URL))
+        .containsEntry(EXTENSION_CONFIG_NAME, VersionedResource.create(EXTENSION_CONFIG))
+        .hasSize(1);
+
     String nullString = null;
     assertThat(snapshot.resources(nullString)).isEmpty();
     assertThat(snapshot.resources("")).isEmpty();
@@ -161,12 +179,14 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         version);
 
     assertThat(snapshot.version(CLUSTER_TYPE_URL)).isEqualTo(version);
     assertThat(snapshot.version(ENDPOINT_TYPE_URL)).isEqualTo(version);
     assertThat(snapshot.version(LISTENER_TYPE_URL)).isEqualTo(version);
     assertThat(snapshot.version(ROUTE_TYPE_URL)).isEqualTo(version);
+    assertThat(snapshot.version(EXTENSION_CONFIG_TYPE_URL)).isEqualTo(version);
 
     String nullString = null;
     assertThat(snapshot.resources(nullString)).isEmpty();
@@ -183,6 +203,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         UUID.randomUUID().toString());
 
     snapshot.ensureConsistent();
@@ -196,6 +217,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot1::ensureConsistent)
@@ -212,6 +234,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot2::ensureConsistent)
@@ -234,6 +257,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(ROUTE),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot1::ensureConsistent)
@@ -251,6 +275,7 @@ public class SnapshotTest {
         ImmutableList.of(LISTENER),
         ImmutableList.of(TestResources.createRoute(otherRouteName, CLUSTER_NAME)),
         ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
         UUID.randomUUID().toString());
 
     assertThatThrownBy(snapshot2::ensureConsistent)
