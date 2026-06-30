@@ -4,7 +4,7 @@
 
     <groupId>io.envoyproxy.controlplane</groupId>
     <artifactId>java-control-plane</artifactId>
-    <version>0.1.55-SNAPSHOT</version>
+    <version>1.0.54-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
