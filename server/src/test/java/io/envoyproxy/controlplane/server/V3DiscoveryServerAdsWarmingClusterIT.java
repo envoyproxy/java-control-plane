@@ -18,6 +18,7 @@ import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import io.envoyproxy.envoy.extensions.upstreams.http.v3.HttpProtocolOptions;
 import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryRequest;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
@@ -82,7 +83,8 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
               EchoContainer.PORT,
               "listener0",
               LISTENER_PORT,
-              "route0"));
+              "route0",
+              "scoped_route0"));
 
       V3DiscoveryServer server = new V3DiscoveryServer(callbacks, cache);
 
@@ -145,6 +147,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
             "listener0",
             LISTENER_PORT,
             "route0",
+            "scoped_route0",
             "2"));
   }
 
@@ -154,7 +157,8 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
       int endpointPort,
       String listenerName,
       int listenerPort,
-      String routeName) {
+      String routeName,
+      String scopedRouteName) {
 
     ConfigSource edsSource = ConfigSource.newBuilder()
         .setAds(AggregatedConfigSource.getDefaultInstance())
@@ -184,6 +188,7 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
     Listener listener = TestResources.createListener(ads, false, V3, V3, listenerName,
         listenerPort, routeName);
     RouteConfiguration route = TestResources.createRoute(routeName, clusterName);
+    ScopedRouteConfiguration scopedRoute = TestResources.createScopedRoute(scopedRouteName, routeName);
 
     // here we have new version of resources other than CDS.
     return Snapshot.create(
@@ -194,6 +199,8 @@ public class V3DiscoveryServerAdsWarmingClusterIT {
         ImmutableList.of(listener),
         "2",
         ImmutableList.of(route),
+        "2",
+        ImmutableList.of(scopedRoute),
         "2",
         ImmutableList.of(),
         "2");
