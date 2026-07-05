@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.cache.v3;
 
 import static io.envoyproxy.controlplane.cache.Resources.V3.CLUSTER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ENDPOINT_TYPE_URL;
+import static io.envoyproxy.controlplane.cache.Resources.V3.EXTENSION_CONFIG_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.LISTENER_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.ROUTE_TYPE_URL;
 import static io.envoyproxy.controlplane.cache.Resources.V3.SCOPED_ROUTE_TYPE_URL;
@@ -15,6 +16,7 @@ import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.TestResources;
 import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -32,6 +34,7 @@ public class SnapshotTest {
   private static final String ROUTE_NAME = "route0";
   private static final String SCOPED_ROUTE_NAME = "scoped_route0";
   private static final String SECRET_NAME = "secret0";
+  private static final String EXTENSION_CONFIG_NAME = "extensionConfig0";
 
   private static final int ENDPOINT_PORT = ThreadLocalRandom.current().nextInt(10000, 20000);
   private static final int LISTENER_PORT = ThreadLocalRandom.current().nextInt(20000, 30000);
@@ -46,6 +49,8 @@ public class SnapshotTest {
   private static final ScopedRouteConfiguration SCOPED_ROUTE = TestResources.createScopedRoute(SCOPED_ROUTE_NAME,
       ROUTE_NAME);
   private static final Secret SECRET = TestResources.createSecret(SECRET_NAME);
+  private static final TypedExtensionConfig
+      EXTENSION_CONFIG = TestResources.createExtensionConfig(EXTENSION_CONFIG_NAME);
 
   @Test
   public void createSingleVersionSetsResourcesCorrectly() {
@@ -130,6 +135,58 @@ public class SnapshotTest {
     assertThat(snapshot.listeners().version()).isEqualTo(listenersVersion);
     assertThat(snapshot.routes().version()).isEqualTo(routesVersion);
     assertThat(snapshot.scopedRoutes().version()).isEqualTo(scopedRoutesVersion);
+  }
+
+  @Test
+  public void createSetsExtensionConfigsCorrectly() {
+    final String version = UUID.randomUUID().toString();
+
+    Snapshot snapshot = Snapshot.create(
+        ImmutableList.of(CLUSTER),
+        ImmutableList.of(ENDPOINT),
+        ImmutableList.of(LISTENER),
+        ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
+        ImmutableList.of(EXTENSION_CONFIG),
+        version);
+
+    assertThat(snapshot.extensionConfigs().resources())
+        .containsEntry(EXTENSION_CONFIG_NAME, EXTENSION_CONFIG)
+        .hasSize(1);
+    assertThat(snapshot.extensionConfigs().version()).isEqualTo(version);
+
+    assertThat(snapshot.resources(EXTENSION_CONFIG_TYPE_URL))
+        .containsEntry(EXTENSION_CONFIG_NAME, VersionedResource.create(EXTENSION_CONFIG))
+        .hasSize(1);
+    assertThat(snapshot.version(EXTENSION_CONFIG_TYPE_URL)).isEqualTo(version);
+
+    // The legacy create overload leaves the ECDS payload empty.
+    Snapshot withoutEcds = Snapshot.create(
+        ImmutableList.of(CLUSTER),
+        ImmutableList.of(ENDPOINT),
+        ImmutableList.of(LISTENER),
+        ImmutableList.of(ROUTE),
+        ImmutableList.of(SECRET),
+        version);
+    assertThat(withoutEcds.extensionConfigs().resources()).isEmpty();
+  }
+
+  @Test
+  public void createSeparateVersionsSetsExtensionConfigsCorrectly() {
+    final String extensionConfigsVersion = UUID.randomUUID().toString();
+
+    Snapshot snapshot = Snapshot.create(
+        ImmutableList.of(CLUSTER), UUID.randomUUID().toString(),
+        ImmutableList.of(ENDPOINT), UUID.randomUUID().toString(),
+        ImmutableList.of(LISTENER), UUID.randomUUID().toString(),
+        ImmutableList.of(ROUTE), UUID.randomUUID().toString(),
+        ImmutableList.of(SECRET), UUID.randomUUID().toString(),
+        ImmutableList.of(EXTENSION_CONFIG), extensionConfigsVersion);
+
+    assertThat(snapshot.extensionConfigs().resources())
+        .containsEntry(EXTENSION_CONFIG_NAME, EXTENSION_CONFIG)
+        .hasSize(1);
+    assertThat(snapshot.extensionConfigs().version()).isEqualTo(extensionConfigsVersion);
   }
 
   @Test

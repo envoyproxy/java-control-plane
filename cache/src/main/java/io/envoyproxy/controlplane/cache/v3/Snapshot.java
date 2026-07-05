@@ -12,6 +12,7 @@ import io.envoyproxy.controlplane.cache.SnapshotConsistencyException;
 import io.envoyproxy.controlplane.cache.SnapshotResources;
 import io.envoyproxy.controlplane.cache.VersionedResource;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
@@ -49,6 +50,30 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       Iterable<Secret> secrets,
       String version) {
 
+    return create(clusters, endpoints, listeners, routes, secrets, Collections.emptySet(), version);
+  }
+
+  /**
+   * Returns a new {@link io.envoyproxy.controlplane.cache.v3.Snapshot} instance that is versioned uniformly across all
+   * resources, including ECDS extension configs.
+   *
+   * @param clusters         the cluster resources in this snapshot
+   * @param endpoints        the endpoint resources in this snapshot
+   * @param listeners        the listener resources in this snapshot
+   * @param routes           the route resources in this snapshot
+   * @param secrets          the secret resources in this snapshot
+   * @param extensionConfigs the ECDS extension config resources in this snapshot
+   * @param version          the version associated with all resources in this snapshot
+   */
+  public static Snapshot create(
+      Iterable<Cluster> clusters,
+      Iterable<ClusterLoadAssignment> endpoints,
+      Iterable<Listener> listeners,
+      Iterable<RouteConfiguration> routes,
+      Iterable<Secret> secrets,
+      Iterable<TypedExtensionConfig> extensionConfigs,
+      String version) {
+
     return new AutoValue_Snapshot(
         SnapshotResources
             .create(generateSnapshotResourceIterable(clusters), version),
@@ -61,7 +86,9 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         SnapshotResources
             .create(generateSnapshotResourceIterable(scopedRoutes), version),
         SnapshotResources
-            .create(generateSnapshotResourceIterable(secrets), version));
+            .create(generateSnapshotResourceIterable(secrets), version),
+        SnapshotResources
+            .create(generateSnapshotResourceIterable(extensionConfigs), version));
   }
 
   /**
@@ -93,6 +120,41 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
       Iterable<Secret> secrets,
       String secretsVersion) {
 
+    return create(clusters, clustersVersion, endpoints, endpointsVersion, listeners, listenersVersion,
+        routes, routesVersion, secrets, secretsVersion, Collections.emptySet(), "");
+  }
+
+  /**
+   * Returns a new {@link io.envoyproxy.controlplane.cache.v3.Snapshot} instance that has separate versions for each
+   * resource type, including ECDS extension configs.
+   *
+   * @param clusters                the cluster resources in this snapshot
+   * @param clustersVersion         the version of the cluster resources
+   * @param endpoints               the endpoint resources in this snapshot
+   * @param endpointsVersion        the version of the endpoint resources
+   * @param listeners               the listener resources in this snapshot
+   * @param listenersVersion        the version of the listener resources
+   * @param routes                  the route resources in this snapshot
+   * @param routesVersion           the version of the route resources
+   * @param secrets                 the secret resources in this snapshot
+   * @param secretsVersion          the version of the secret resources
+   * @param extensionConfigs        the ECDS extension config resources in this snapshot
+   * @param extensionConfigsVersion the version of the ECDS extension config resources
+   */
+  public static Snapshot create(
+      Iterable<Cluster> clusters,
+      String clustersVersion,
+      Iterable<ClusterLoadAssignment> endpoints,
+      String endpointsVersion,
+      Iterable<Listener> listeners,
+      String listenersVersion,
+      Iterable<RouteConfiguration> routes,
+      String routesVersion,
+      Iterable<Secret> secrets,
+      String secretsVersion,
+      Iterable<TypedExtensionConfig> extensionConfigs,
+      String extensionConfigsVersion) {
+
     // TODO(snowp): add a builder alternative
     return new AutoValue_Snapshot(
         SnapshotResources.create(generateSnapshotResourceIterable(clusters),
@@ -106,7 +168,9 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         SnapshotResources
             .create(generateSnapshotResourceIterable(scopedRoutes), scopedRoutesVersion),
         SnapshotResources.create(generateSnapshotResourceIterable(secrets),
-            secretsVersion));
+            secretsVersion),
+        SnapshotResources.create(generateSnapshotResourceIterable(extensionConfigs),
+            extensionConfigsVersion));
   }
 
   /**
@@ -148,6 +212,11 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
    * Returns all secret items in the SDS payload.
    */
   public abstract SnapshotResources<Secret> secrets();
+
+  /**
+   * Returns all extension config items in the ECDS payload.
+   */
+  public abstract SnapshotResources<TypedExtensionConfig> extensionConfigs();
 
   /**
    * Asserts that all dependent resources are included in the snapshot. All EDS resources are listed by name in CDS
@@ -217,6 +286,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return (Map) scopedRoutes().resources();
       case SECRET:
         return (Map) secrets().resources();
+      case EXTENSION_CONFIG:
+        return (Map) extensionConfigs().resources();
       default:
         return ImmutableMap.of();
     }
@@ -241,6 +312,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return (Map) scopedRoutes().versionedResources();
       case SECRET:
         return (Map) secrets().versionedResources();
+      case EXTENSION_CONFIG:
+        return (Map) extensionConfigs().versionedResources();
       default:
         return ImmutableMap.of();
     }
@@ -298,6 +371,8 @@ public abstract class Snapshot extends io.envoyproxy.controlplane.cache.Snapshot
         return scopedRoutes().version(resourceNames);
       case SECRET:
         return secrets().version(resourceNames);
+      case EXTENSION_CONFIG:
+        return extensionConfigs().version(resourceNames);
       default:
         return "";
     }

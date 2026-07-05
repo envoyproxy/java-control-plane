@@ -14,6 +14,7 @@ import io.envoyproxy.envoy.config.core.v3.DataSource;
 import io.envoyproxy.envoy.config.core.v3.GrpcService;
 import io.envoyproxy.envoy.config.core.v3.SocketAddress;
 import io.envoyproxy.envoy.config.core.v3.SocketAddress.Protocol;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.endpoint.v3.Endpoint;
 import io.envoyproxy.envoy.config.endpoint.v3.LbEndpoint;
@@ -256,6 +257,18 @@ public class TestResources {
         .setTlsCertificate(
             TlsCertificate.newBuilder()
                 .setPrivateKey(DataSource.newBuilder().setInlineString("secret!")))
+        .build();
+  }
+
+  /**
+   * Returns a new test v3 extension config (ECDS), wrapping a no-op HTTP router filter.
+   *
+   * @param name name of the new extension config
+   */
+  public static TypedExtensionConfig createExtensionConfig(String name) {
+    return TypedExtensionConfig.newBuilder()
+        .setName(name)
+        .setTypedConfig(Any.pack(Router.newBuilder().build()))
         .build();
   }
 

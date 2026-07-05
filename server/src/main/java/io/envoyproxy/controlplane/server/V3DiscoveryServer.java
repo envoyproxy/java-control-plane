@@ -2,6 +2,7 @@ package io.envoyproxy.controlplane.server;
 
 import static io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc.AggregatedDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.endpoint.v3.EndpointDiscoveryServiceGrpc.EndpointDiscoveryServiceImplBase;
+import static io.envoyproxy.envoy.service.extension.v3.ExtensionConfigDiscoveryServiceGrpc.ExtensionConfigDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.listener.v3.ListenerDiscoveryServiceGrpc.ListenerDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.route.v3.RouteDiscoveryServiceGrpc.RouteDiscoveryServiceImplBase;
 import static io.envoyproxy.envoy.service.route.v3.ScopedRoutesDiscoveryServiceGrpc.ScopedRoutesDiscoveryServiceImplBase;
@@ -201,6 +202,27 @@ public class V3DiscoveryServer extends DiscoveryServer<DiscoveryRequest, Discove
           StreamObserver<DeltaDiscoveryResponse> responseObserver) {
 
         return createDeltaRequestHandler(responseObserver, false, Resources.V3.SECRET_TYPE_URL);
+      }
+    };
+  }
+
+  /**
+   * Returns an ECDS implementation that uses this server's {@link ConfigWatcher}.
+   */
+  public ExtensionConfigDiscoveryServiceImplBase getExtensionConfigDiscoveryServiceImpl() {
+    return new ExtensionConfigDiscoveryServiceImplBase() {
+      @Override
+      public StreamObserver<DiscoveryRequest> streamExtensionConfigs(
+          StreamObserver<DiscoveryResponse> responseObserver) {
+
+        return createRequestHandler(responseObserver, false, Resources.V3.EXTENSION_CONFIG_TYPE_URL);
+      }
+
+      @Override
+      public StreamObserver<DeltaDiscoveryRequest> deltaExtensionConfigs(
+          StreamObserver<DeltaDiscoveryResponse> responseObserver) {
+
+        return createDeltaRequestHandler(responseObserver, false, Resources.V3.EXTENSION_CONFIG_TYPE_URL);
       }
     };
   }

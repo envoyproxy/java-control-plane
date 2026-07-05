@@ -6,6 +6,8 @@
 * Anton Kanugalawattage ([AntonKanug](https://github.com/AntonKanug)) (antonk@palantir.com)
 * Erica Manno ([rulex123](https://github.com/rulex123)) (ericam@spotify.com)
 * Gal Ovadia ([ovadiagal](https://github.com/ovadiagal)) (govadia@palantir.com)
+* Basundhara Chakrabarty ([basundhara-c](https://github.com/basundhara-c)) (basundhara17061996@gmail.com)
+* Rohit Agrawal ([agrawroh](https://github.com/agrawroh)) (rohit.agrawal@databricks.com)
 
 # Emeritus maintainers
 * Erik Lindblad ([onemanbucket](https://github.com/onemanbucket)) (erili@spotify.com)

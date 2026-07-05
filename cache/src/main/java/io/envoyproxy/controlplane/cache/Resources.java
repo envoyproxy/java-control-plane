@@ -4,6 +4,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.envoyproxy.controlplane.cache.Resources.ApiVersion.V3;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.CLUSTER;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.ENDPOINT;
+import static io.envoyproxy.controlplane.cache.Resources.ResourceType.EXTENSION_CONFIG;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.LISTENER;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.ROUTE;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.SCOPED_ROUTE;
@@ -17,6 +18,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.TypedExtensionConfig;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Filter;
 import io.envoyproxy.envoy.config.listener.v3.FilterChain;
@@ -45,7 +47,8 @@ public class Resources {
     LISTENER,
     ROUTE,
     SCOPED_ROUTE,
-    SECRET
+    SECRET,
+    EXTENSION_CONFIG
   }
 
   public enum ApiVersion {
@@ -71,6 +74,8 @@ public class Resources {
         "type.googleapis.com/envoy.config.route.v3" + ".ScopedRouteConfiguration";
     public static final String SECRET_TYPE_URL =
         "type.googleapis.com/envoy.extensions" + ".transport_sockets.tls.v3.Secret";
+    public static final String EXTENSION_CONFIG_TYPE_URL =
+        "type.googleapis.com/envoy.config.core.v3" + ".TypedExtensionConfig";
 
     public static final List<String> TYPE_URLS =
         ImmutableList.of(
@@ -79,11 +84,13 @@ public class Resources {
             LISTENER_TYPE_URL,
             ROUTE_TYPE_URL,
             SCOPED_ROUTE_TYPE_URL,
-            SECRET_TYPE_URL);
+            SECRET_TYPE_URL,
+            EXTENSION_CONFIG_TYPE_URL);
   }
 
   public static final List<ResourceType> RESOURCE_TYPES_IN_ORDER =
-      ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, SCOPED_ROUTE, SECRET);
+      ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, SCOPED_ROUTE, SECRET, EXTENSION_CONFIG);
+  }
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
@@ -93,6 +100,7 @@ public class Resources {
           .put(Resources.V3.ROUTE_TYPE_URL, ROUTE)
           .put(Resources.V3.SCOPED_ROUTE_TYPE_URL, SCOPED_ROUTE)
           .put(Resources.V3.SECRET_TYPE_URL, SECRET)
+          .put(Resources.V3.EXTENSION_CONFIG_TYPE_URL, EXTENSION_CONFIG)
           .build();
 
   public static final Map<String, Class<? extends Message>> RESOURCE_TYPE_BY_URL =
@@ -103,6 +111,7 @@ public class Resources {
           .put(Resources.V3.ROUTE_TYPE_URL, RouteConfiguration.class)
           .put(Resources.V3.SCOPED_ROUTE_TYPE_URL, ScopedRouteConfiguration.class)
           .put(Resources.V3.SECRET_TYPE_URL, Secret.class)
+          .put(Resources.V3.EXTENSION_CONFIG_TYPE_URL, TypedExtensionConfig.class)
           .build();
 
   /**
@@ -133,6 +142,10 @@ public class Resources {
 
     if (resource instanceof Secret) {
       return ((Secret) resource).getName();
+    }
+
+    if (resource instanceof TypedExtensionConfig) {
+      return ((TypedExtensionConfig) resource).getName();
     }
 
     return "";
