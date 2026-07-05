@@ -309,7 +309,7 @@ public class SimpleCacheTest {
         Resources.V3.ENDPOINT_TYPE_URL, Resources.V3.LISTENER_TYPE_URL,
         Resources.V3.LISTENER_TYPE_URL, ROUTE_TYPE_URL, ROUTE_TYPE_URL,
         Resources.V3.SCOPED_ROUTE_TYPE_URL, Resources.V3.SCOPED_ROUTE_TYPE_URL,
-        Resources.V3.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL);
+        Resources.V3.SECRET_TYPE_URL, Resources.V3.SECRET_TYPE_URL),
         Resources.V3.EXTENSION_CONFIG_TYPE_URL, Resources.V3.EXTENSION_CONFIG_TYPE_URL);
   }
 
