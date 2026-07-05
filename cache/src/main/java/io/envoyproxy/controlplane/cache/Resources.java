@@ -90,7 +90,6 @@ public class Resources {
 
   public static final List<ResourceType> RESOURCE_TYPES_IN_ORDER =
       ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, SCOPED_ROUTE, SECRET, EXTENSION_CONFIG);
-  }
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
