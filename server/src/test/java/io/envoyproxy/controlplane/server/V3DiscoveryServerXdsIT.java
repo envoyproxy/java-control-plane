@@ -46,6 +46,7 @@ public class V3DiscoveryServerXdsIT {
               "listener0",
               LISTENER_PORT,
               "route0",
+              "scoped_route0",
               "1")
       );
 

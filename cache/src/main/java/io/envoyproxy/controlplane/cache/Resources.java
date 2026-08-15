@@ -7,6 +7,7 @@ import static io.envoyproxy.controlplane.cache.Resources.ResourceType.ENDPOINT;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.EXTENSION_CONFIG;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.LISTENER;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.ROUTE;
+import static io.envoyproxy.controlplane.cache.Resources.ResourceType.SCOPED_ROUTE;
 import static io.envoyproxy.controlplane.cache.Resources.ResourceType.SECRET;
 
 import com.google.common.base.Preconditions;
@@ -23,6 +24,7 @@ import io.envoyproxy.envoy.config.listener.v3.Filter;
 import io.envoyproxy.envoy.config.listener.v3.FilterChain;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager;
 import io.envoyproxy.envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.RouteSpecifierCase;
 import io.envoyproxy.envoy.extensions.transport_sockets.tls.v3.Secret;
@@ -44,6 +46,7 @@ public class Resources {
     ENDPOINT,
     LISTENER,
     ROUTE,
+    SCOPED_ROUTE,
     SECRET,
     EXTENSION_CONFIG
   }
@@ -67,6 +70,8 @@ public class Resources {
         "type.googleapis.com/envoy.config.listener.v3" + ".Listener";
     public static final String ROUTE_TYPE_URL =
         "type.googleapis.com/envoy.config.route.v3" + ".RouteConfiguration";
+    public static final String SCOPED_ROUTE_TYPE_URL =
+        "type.googleapis.com/envoy.config.route.v3" + ".ScopedRouteConfiguration";
     public static final String SECRET_TYPE_URL =
         "type.googleapis.com/envoy.extensions" + ".transport_sockets.tls.v3.Secret";
     public static final String EXTENSION_CONFIG_TYPE_URL =
@@ -78,12 +83,13 @@ public class Resources {
             ENDPOINT_TYPE_URL,
             LISTENER_TYPE_URL,
             ROUTE_TYPE_URL,
+            SCOPED_ROUTE_TYPE_URL,
             SECRET_TYPE_URL,
             EXTENSION_CONFIG_TYPE_URL);
   }
 
   public static final List<ResourceType> RESOURCE_TYPES_IN_ORDER =
-      ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, SECRET, EXTENSION_CONFIG);
+      ImmutableList.of(CLUSTER, ENDPOINT, LISTENER, ROUTE, SCOPED_ROUTE, SECRET, EXTENSION_CONFIG);
 
   public static final Map<String, ResourceType> TYPE_URLS_TO_RESOURCE_TYPE =
       new ImmutableMap.Builder<String, ResourceType>()
@@ -91,6 +97,7 @@ public class Resources {
           .put(Resources.V3.ENDPOINT_TYPE_URL, ENDPOINT)
           .put(Resources.V3.LISTENER_TYPE_URL, LISTENER)
           .put(Resources.V3.ROUTE_TYPE_URL, ROUTE)
+          .put(Resources.V3.SCOPED_ROUTE_TYPE_URL, SCOPED_ROUTE)
           .put(Resources.V3.SECRET_TYPE_URL, SECRET)
           .put(Resources.V3.EXTENSION_CONFIG_TYPE_URL, EXTENSION_CONFIG)
           .build();
@@ -101,6 +108,7 @@ public class Resources {
           .put(Resources.V3.ENDPOINT_TYPE_URL, ClusterLoadAssignment.class)
           .put(Resources.V3.LISTENER_TYPE_URL, Listener.class)
           .put(Resources.V3.ROUTE_TYPE_URL, RouteConfiguration.class)
+          .put(Resources.V3.SCOPED_ROUTE_TYPE_URL, ScopedRouteConfiguration.class)
           .put(Resources.V3.SECRET_TYPE_URL, Secret.class)
           .put(Resources.V3.EXTENSION_CONFIG_TYPE_URL, TypedExtensionConfig.class)
           .build();
@@ -125,6 +133,10 @@ public class Resources {
 
     if (resource instanceof RouteConfiguration) {
       return ((RouteConfiguration) resource).getName();
+    }
+
+    if (resource instanceof ScopedRouteConfiguration) {
+      return ((ScopedRouteConfiguration) resource).getName();
     }
 
     if (resource instanceof Secret) {
@@ -185,6 +197,11 @@ public class Resources {
             refs.add(c.getName());
           }
         }
+      } else if (r instanceof ScopedRouteConfiguration) {
+        ScopedRouteConfiguration s = (ScopedRouteConfiguration) r;
+        if (!isNullOrEmpty(s.getRouteConfigurationName())) {
+          refs.add(s.getRouteConfigurationName());
+        }
       } else if (r instanceof Listener) {
 
         Listener l = (Listener) r;
@@ -207,6 +224,14 @@ public class Resources {
               if (config.getRouteSpecifierCase() == RouteSpecifierCase.RDS
                   && !isNullOrEmpty(config.getRds().getRouteConfigName())) {
                 refs.add(config.getRds().getRouteConfigName());
+              }
+              if (config.getRouteSpecifierCase() == RouteSpecifierCase.SCOPED_ROUTES) {
+                if (config.getScopedRoutes().hasScopedRouteConfigurationsList()) {
+                  for (ScopedRouteConfiguration s :
+                      config.getScopedRoutes().getScopedRouteConfigurationsList().getScopedRouteConfigurationsList()) {
+                    refs.add(s.getRouteConfigurationName());
+                  }
+                }
               }
             } catch (InvalidProtocolBufferException e) {
               LOGGER.error(
