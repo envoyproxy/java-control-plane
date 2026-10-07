@@ -14,6 +14,7 @@ import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.listener.v3.Listener;
 import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
+import io.envoyproxy.envoy.config.route.v3.ScopedRouteConfiguration;
 import io.grpc.netty.NettyServerBuilder;
 import io.restassured.http.ContentType;
 import java.util.Collections;
@@ -58,6 +59,8 @@ public class V3DiscoveryServerAdsAllowDefaultEmptyEdsIT {
           Listener listener = TestResources.createListener(true, false, V3, V3, "listener0",
               LISTENER_PORT, "route0");
           RouteConfiguration route = TestResources.createRoute("route0", "upstream");
+          ScopedRouteConfiguration scopedRoute = TestResources.createScopedRoute("scoped_route0",
+              "route0");
 
           // Construct a snapshot with no_endpoints clusters which does not have EDS data
           Snapshot snapshot = Snapshot.create(
@@ -65,6 +68,7 @@ public class V3DiscoveryServerAdsAllowDefaultEmptyEdsIT {
               ImmutableList.of(endpoint),
               ImmutableList.of(listener),
               ImmutableList.of(route),
+              ImmutableList.of(scopedRoute),
               ImmutableList.of(),
               "1");
 

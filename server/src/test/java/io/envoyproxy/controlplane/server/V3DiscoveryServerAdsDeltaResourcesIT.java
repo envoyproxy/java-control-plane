@@ -54,6 +54,7 @@ public class V3DiscoveryServerAdsDeltaResourcesIT {
           "listener0",
           LISTENER_PORT,
           "route0",
+          "scoped_route0",
           "1");
       LOGGER.info("snapshot={}", snapshot);
       cache.setSnapshot(
@@ -123,6 +124,7 @@ public class V3DiscoveryServerAdsDeltaResourcesIT {
         "listener1",
         LISTENER_PORT,
         "route0",
+        "scoped_route0",
         "2");
     LOGGER.info("snapshot={}", snapshot);
     cache.setSnapshot(
@@ -151,6 +153,7 @@ public class V3DiscoveryServerAdsDeltaResourcesIT {
         "listener1",
         LISTENER_PORT,
         "route0",
+        "scoped_route0",
         "3");
     LOGGER.info("snapshot={}", snapshot);
     cache.setSnapshot(
