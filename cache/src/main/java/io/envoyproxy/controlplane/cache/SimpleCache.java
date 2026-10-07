@@ -377,10 +377,9 @@ public abstract class SimpleCache<T, U extends Snapshot> implements SnapshotCach
                   version);
             }
 
-            respond(watch, snapshot, group);
-
-            // Discard the watch. A new watch will be created for future snapshots once envoy ACKs the response.
-            return true;
+            // If we respond with an actual message, we can proceed to discard the watch. 
+            // A new watch will be created for future snapshots once envoy ACKs the response.
+            return respond(watch, snapshot, group);
           }
 
           // Do not discard the watch. The request version is the same as the snapshot version, so we wait to respond.
