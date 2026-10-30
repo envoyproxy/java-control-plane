@@ -19,13 +19,13 @@ function find_date() {
 
 function find_envoy_sha_from_tag() {
   local TAG=$1
-  curl -s "https://api.github.com/repos/envoyproxy/envoy/commits/$TAG" | awk -F'"' '/"sha"/ && !found {print $4; found=1}'
+  curl -fsSL "https://api.github.com/repos/envoyproxy/envoy/commits/$TAG" | awk -F'"' '/"sha"/ && !found {print $4; found=1}'
 }
 
 CURRENT_ENVOY_RELEASE=$(cat envoy_release)
 ENVOY_VERSION=$(find_envoy_sha_from_tag "$1")
 
-CURL_OUTPUT=$(curl -s "https://raw.githubusercontent.com/envoyproxy/envoy/$ENVOY_VERSION/api/bazel/repository_locations.bzl")
+CURL_OUTPUT=$(curl -fsSL "https://raw.githubusercontent.com/envoyproxy/envoy/$ENVOY_VERSION/api/bazel/repository_locations.bzl")
 
 GOOGLEAPIS_SHA=$(find_sha "$CURL_OUTPUT" com_google_googleapis)
 GOOGLEAPIS_DATE=$(find_date "$CURL_OUTPUT" com_google_googleapis)
