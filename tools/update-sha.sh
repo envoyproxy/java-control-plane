@@ -8,7 +8,6 @@ set -o xtrace
 function find_sha() {
   local MODULE=$1
   local SOURCE_JSON ARCHIVE_URL REVISION
-  # The lockfile includes both the public and Envoy-specific registry URLs.
   SOURCE_JSON=$(
     jq -r '.registryFileHashes | keys[]' <<< "$LOCKFILE" |
       grep -F "/modules/$MODULE/" |
