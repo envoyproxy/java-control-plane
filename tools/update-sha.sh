@@ -7,15 +7,20 @@ set -o xtrace
 
 function find_sha() {
   local MODULE=$1
-  local SOURCE_JSON
+  local SOURCE_JSON ARCHIVE_URL REVISION
   # The lockfile includes both the public and Envoy-specific registry URLs.
-  SOURCE_JSON=$(jq -er --arg module "$MODULE" '
-    .registryFileHashes | to_entries[] |
-    select(.value != "not found") |
-    .key | select(contains("/modules/" + $module + "/") and endswith("/source.json"))
-  ' <<< "$LOCKFILE")
-  curl -fsSL "$SOURCE_JSON" | jq -er '.url' |
-    sed -E 's@.*/archive/(refs/tags/)?@@; s@\.(tar\.gz|zip)$@@; s@^v@@'
+  SOURCE_JSON=$(
+    jq -r '.registryFileHashes | keys[]' <<< "$LOCKFILE" |
+      grep -F "/modules/$MODULE/" |
+      grep '/source.json$'
+  )
+
+  ARCHIVE_URL=$(curl -fsSL "$SOURCE_JSON" | jq -er '.url')
+
+  REVISION=${ARCHIVE_URL##*/}   # Keep only the filename, e.g. v1.8.0.tar.gz.
+  REVISION=${REVISION%.tar.gz}  # Remove .tar.gz if present.
+  REVISION=${REVISION%.zip}     # Remove .zip if present.
+  echo "${REVISION#v}"         # Remove a leading v and print the revision for the caller.
 }
 
 function find_envoy_sha_from_tag() {
