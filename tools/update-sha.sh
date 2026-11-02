@@ -37,7 +37,10 @@ PGV_GIT_SHA=$(find_sha protoc-gen-validate)
 PROMETHEUS_SHA=$(find_sha prometheus-metrics-model)
 XDS_SHA=$(find_sha xds)
 OPENTELEMETRY_SHA=$(find_sha opentelemetry-proto)
-CEL_SHA="0.25.1"  # Preserve our generated CEL API; Envoy's API lockfile selects 0.24.0.
+# Envoy removed its direct CEL pin in envoyproxy/envoy#43265, so the API
+# lockfile now selects 0.24.0. Keep 0.25.1 to preserve our generated CEL API
+# while we clarify upstream whether api/ should restore that version.
+CEL_SHA="0.25.1"
 
 echo -n "# Update the versions here and run update-api.sh
 
