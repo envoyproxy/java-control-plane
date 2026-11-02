@@ -30,26 +30,26 @@ function find_envoy_sha_from_tag() {
 CURRENT_ENVOY_RELEASE=$(cat envoy_release)
 ENVOY_VERSION=$(find_envoy_sha_from_tag "$1")
 
-LOCKFILE=$(curl -fsSL "https://raw.githubusercontent.com/envoyproxy/envoy/$ENVOY_VERSION/MODULE.bazel.lock")
+LOCKFILE=$(curl -fsSL "https://raw.githubusercontent.com/envoyproxy/envoy/$ENVOY_VERSION/api/MODULE.bazel.lock")
 
 GOOGLEAPIS_SHA=$(find_sha googleapis)
 PGV_GIT_SHA=$(find_sha protoc-gen-validate)
 PROMETHEUS_SHA=$(find_sha prometheus-metrics-model)
 XDS_SHA=$(find_sha xds)
 OPENTELEMETRY_SHA=$(find_sha opentelemetry-proto)
-CEL_SHA=$(find_sha cel-spec)
+CEL_SHA="0.25.1"  # Preserve our generated CEL API; Envoy's API lockfile selects 0.24.0.
 
 echo -n "# Update the versions here and run update-api.sh
 
 # envoy (source: SHA from https://github.com/envoyproxy/envoy)
 ENVOY_SHA=\"$ENVOY_VERSION\"
 
-# dependencies (source: https://github.com/envoyproxy/envoy/blob/$ENVOY_VERSION/MODULE.bazel.lock)
+# dependencies (source: https://github.com/envoyproxy/envoy/blob/$ENVOY_VERSION/api/MODULE.bazel.lock)
 GOOGLEAPIS_SHA=\"$GOOGLEAPIS_SHA\"
 PGV_VERSION=\"$PGV_GIT_SHA\"
 PROMETHEUS_SHA=\"$PROMETHEUS_SHA\"
 OPENTELEMETRY_VERSION=\"$OPENTELEMETRY_SHA\"
-CEL_VERSION=\"$CEL_SHA\"
+CEL_VERSION=\"$CEL_SHA\"  # Pinned for API compatibility.
 XDS_SHA=\"$XDS_SHA\"
 "
 
