@@ -38,7 +38,7 @@ PROMETHEUS_SHA=$(find_sha prometheus-metrics-model)
 XDS_SHA=$(find_sha xds)
 # Envoy's API module still pins OpenTelemetry to 1.8.0, while its old
 # metadata and our shipped protos use 1.10.0. Preserve the generated API
-# while we investigate the version mismatch with the Envoy community.
+# while we clarify upstream whether 1.10.0 should be restored.
 OPENTELEMETRY_SHA="1.10.0"
 # Envoy removed its direct CEL pin in envoyproxy/envoy#43265, so the API
 # lockfile now selects 0.24.0. Keep 0.25.1 to preserve our generated CEL API
