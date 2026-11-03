@@ -36,7 +36,10 @@ GOOGLEAPIS_SHA=$(find_sha googleapis)
 PGV_GIT_SHA=$(find_sha protoc-gen-validate)
 PROMETHEUS_SHA=$(find_sha prometheus-metrics-model)
 XDS_SHA=$(find_sha xds)
-OPENTELEMETRY_SHA=$(find_sha opentelemetry-proto)
+# Envoy's API module still pins OpenTelemetry to 1.8.0, while its old
+# metadata and our shipped protos use 1.10.0. Preserve the generated API
+# while we investigate the version mismatch with the Envoy community.
+OPENTELEMETRY_SHA="1.10.0"
 # Envoy removed its direct CEL pin in envoyproxy/envoy#43265, so the API
 # lockfile now selects 0.24.0. Keep 0.25.1 to preserve our generated CEL API
 # while we clarify upstream whether api/ should restore that version.
@@ -51,7 +54,7 @@ ENVOY_SHA=\"$ENVOY_VERSION\"
 GOOGLEAPIS_SHA=\"$GOOGLEAPIS_SHA\"
 PGV_VERSION=\"$PGV_GIT_SHA\"
 PROMETHEUS_SHA=\"$PROMETHEUS_SHA\"
-OPENTELEMETRY_VERSION=\"$OPENTELEMETRY_SHA\"
+OPENTELEMETRY_VERSION=\"$OPENTELEMETRY_SHA\"  # Pinned for API compatibility.
 CEL_VERSION=\"$CEL_SHA\"  # Pinned for API compatibility.
 XDS_SHA=\"$XDS_SHA\"
 "
