@@ -28,6 +28,13 @@ mvn clean package
 More thorough usage examples are still TODO, but there is a basic test implementation in
 [TestMain](server/src/test/java/io/envoyproxy/controlplane/server/TestMain.java).
 
+[CanaryRolloutExample](server/src/test/java/io/envoyproxy/controlplane/server/example/CanaryRolloutExample.java)
+shows a staged rollout: one snapshot per group of Envoys (keyed by `node.cluster`), a new version
+pushed to a canary group first, and promoted only after every canary Envoy has applied it.
+[AckTracker](server/src/test/java/io/envoyproxy/controlplane/server/example/AckTracker.java), a
+`DiscoveryServerCallbacks`, learns from the ACKs and NACKs in the xDS stream which version each
+Envoy has applied, so the control plane can wait for "applied" rather than "pushed".
+
 ### Envoy API
 There is automation built into this repo to keep the Envoy API (i.e. protobuf files)
 up to date with the latest available Envoy release.
